@@ -7,20 +7,6 @@
 }
 
 <section class="dashboard-main dashboard-analytics">
-    <header class="dashboard-welcome">
-        <div class="dashboard-welcome-title">
-            <span class="dashboard-printer-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                    <path d="M7 8V3h10v5" />
-                    <path d="M7 17H5a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2" />
-                    <path d="M7 14h10v7H7z" />
-                    <path d="M8 17h8" />
-                </svg>
-            </span>
-            <h1>Hola Francisco. Bienvenido(a) al Sistema de Impresiones</h1>
-        </div>
-    </header>
-
     <section class="dashboard-analytics-grid" aria-label="Resumen del sistema de impresiones">
         <article class="analytics-card machine-card">
             <header>
@@ -99,8 +85,8 @@
                 </span>
                 <div>
                     <p>Cantidad de pedidos entregados</p>
-                    <strong id="metric-delivered">0</strong>
-                    <span>Pedidos entregados a clientes</span>
+                    <strong id="metric-delivered">0/0</strong>
+                    <span>Pedidos entregados del total cargado</span>
                 </div>
             </article>
         </section>
@@ -202,7 +188,7 @@
             document.getElementById("metric-loaded-today").textContent = formatInteger(dashboard.pedidosCargados);
             document.getElementById("metric-printed").textContent = formatInteger(dashboard.pedidosImpresos);
             document.getElementById("metric-missing-print").textContent = formatInteger(dashboard.pedidosPendientesImpresion);
-            document.getElementById("metric-delivered").textContent = formatInteger(dashboard.pedidosEntregados);
+            document.getElementById("metric-delivered").textContent = `${formatInteger(dashboard.pedidosEntregados)}/${formatInteger(dashboard.totalPedidos)}`;
             document.getElementById("machine-total").textContent = formatInteger(dashboard.totalPedidos || totalMachines);
 
             renderDonut(machines, totalMachines);
