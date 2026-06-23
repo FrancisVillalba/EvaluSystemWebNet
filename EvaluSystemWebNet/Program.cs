@@ -15,7 +15,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpClient<IBackendApiClient, BackendApiClient>((serviceProvider, client) =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["BackendApi:BaseUrl"] ?? "http://localhost:5211";
+    var baseUrl = configuration["BackendApi:BaseUrl"] ?? "https://localhost:44318";
     client.BaseAddress = new Uri(baseUrl);
 });
 
