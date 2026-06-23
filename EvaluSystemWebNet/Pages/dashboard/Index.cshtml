@@ -6,175 +6,210 @@
     ViewData["ShellClass"] = "dashboard-shell";
 }
 
-<section class="dashboard-main">
-            <header class="dashboard-header">
-                <div>
-                    <p class="eyebrow">Operacion diaria</p>
-                    <h1>Tablero de impresion</h1>
-                    <p>Resumen actualizado de ventas, pedidos y cola de produccion.</p>
-                </div>
-                <button class="primary-button" type="button" onclick="window.location.href='/pedidos'">Nuevo pedido</button>
+<section class="dashboard-main dashboard-analytics">
+    <header class="dashboard-welcome">
+        <div class="dashboard-welcome-title">
+            <span class="dashboard-printer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 8V3h10v5" />
+                    <path d="M7 17H5a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2" />
+                    <path d="M7 14h10v7H7z" />
+                    <path d="M8 17h8" />
+                </svg>
+            </span>
+            <h1>Hola Francisco. Bienvenido(a) al Sistema de Impresiones</h1>
+        </div>
+    </header>
+
+    <section class="dashboard-analytics-grid" aria-label="Resumen del sistema de impresiones">
+        <article class="analytics-card machine-card">
+            <header>
+                <h2>Pedidos cargados por maquina</h2>
             </header>
+            <div class="machine-chart-layout">
+                <div class="donut-chart" id="machine-donut">
+                    <div>
+                        <span>Total</span>
+                        <strong id="machine-total">0</strong>
+                    </div>
+                </div>
+                <ul class="machine-legend" id="machine-legend"></ul>
+            </div>
+            <p class="chart-caption">Distribucion de pedidos cargados por equipo</p>
+        </article>
 
-            <section class="metric-grid" aria-label="Resumen de pedidos">
-                <article class="metric-card metric-blue">
-                    <span>Pedidos cargados hoy</span>
+        <section class="summary-card-grid" aria-label="Indicadores principales">
+            <article class="summary-tile tile-green">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M7 3h7l4 4v14H7z" />
+                        <path d="M14 3v5h5" />
+                        <path d="M9 13h4" />
+                        <path d="M9 17h3" />
+                        <path d="M17 13v6" />
+                        <path d="M14 16h6" />
+                    </svg>
+                </span>
+                <div>
+                    <p>Cantidad de pedidos cargados</p>
                     <strong id="metric-loaded-today">0</strong>
-                    <small>Total ingresado por ventas</small>
-                </article>
-                <article class="metric-card metric-green">
-                    <span>Impresos</span>
+                    <span>Pedidos listos para iniciar diseno o produccion</span>
+                </div>
+            </article>
+
+            <article class="summary-tile tile-blue">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M7 8V3h10v5" />
+                        <path d="M7 17H5a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 14h10v7H7z" />
+                    </svg>
+                </span>
+                <div>
+                    <p>Cantidad de pedidos impresos</p>
                     <strong id="metric-printed">0</strong>
-                    <small>Pedidos ya producidos</small>
-                </article>
-                <article class="metric-card metric-red">
-                    <span>Faltan imprimir</span>
+                    <span>Pedidos que ya pasaron por impresion</span>
+                </div>
+            </article>
+
+            <article class="summary-tile tile-orange">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M12 7v5l4 2" />
+                        <path d="M21 12a9 9 0 1 1-9-9" />
+                        <path d="M12 3v3" />
+                    </svg>
+                </span>
+                <div>
+                    <p>Cantidad de pedidos pendientes de impresion</p>
                     <strong id="metric-missing-print">0</strong>
-                    <small>Pendientes de produccion</small>
-                </article>
-                <article class="metric-card metric-yellow">
-                    <span>Entregados</span>
-                    <strong id="metric-delivered">0 / 0</strong>
-                    <small>50 entregados de 60 pedidos</small>
-                </article>
-            </section>
-
-            <section class="panel orders-panel">
-                <div class="panel-heading">
-                    <div>
-                        <h2>Pedidos recientes</h2>
-                        <p>Seguimiento desde ventas hasta impresion.</p>
-                    </div>
-                    <label class="order-search" for="order-search">
-                        Buscar pedido
-                        <input id="order-search" type="search" placeholder="Vendedor, cliente o tipo" />
-                    </label>
+                    <span>Pedidos en espera de entrar a impresion</span>
                 </div>
+            </article>
 
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pedido</th>
-                                <th>Cliente</th>
-                                <th>Vendedor</th>
-                                <th>Tipo</th>
-                                <th>Metros</th>
-                                <th>Estado</th>
-                                <th>Entrega</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashboard-orders-body"></tbody>
-                    </table>
+            <article class="summary-tile tile-teal">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 6h11v10H3z" />
+                        <path d="M14 10h4l3 3v3h-7z" />
+                        <path d="M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                        <path d="M18 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                        <path d="m6 11 2 2 4-5" />
+                    </svg>
+                </span>
+                <div>
+                    <p>Cantidad de pedidos entregados</p>
+                    <strong id="metric-delivered">0</strong>
+                    <span>Pedidos entregados a clientes</span>
                 </div>
+            </article>
+        </section>
 
-                <div class="orders-pagination">
-                    <span id="dashboard-pagination-summary">Pagina 1 de 1</span>
-                    <div>
-                        <label class="page-size-control" for="dashboard-page-size">
-                            Registros
-                            <select id="dashboard-page-size">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="80">80</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-                        <button id="dashboard-prev-page" type="button">Anterior</button>
-                        <strong id="dashboard-current-page">1</strong>
-                        <button id="dashboard-next-page" type="button">Siguiente</button>
-                    </div>
-                </div>
-            </section>
+        <article class="analytics-card bar-card">
+            <header>
+                <h2>Pendientes de pago</h2>
+            </header>
+            <div class="bar-chart" id="payment-bars"></div>
+            <p class="chart-axis-label">Monto pendiente</p>
+        </article>
+
+        <article class="analytics-card bar-card">
+            <header>
+                <h2>Mejor vendedor</h2>
+            </header>
+            <div class="bar-chart seller-chart" id="seller-bars"></div>
+            <p class="chart-axis-label">Cantidad de pedidos</p>
+        </article>
+    </section>
 </section>
 
 @section Scripts {
     <script>
-        const searchInput = document.getElementById("order-search");
-        const ordersBody = document.getElementById("dashboard-orders-body");
-        const paginationSummary = document.getElementById("dashboard-pagination-summary");
-        const currentPageLabel = document.getElementById("dashboard-current-page");
-        const prevPageButton = document.getElementById("dashboard-prev-page");
-        const nextPageButton = document.getElementById("dashboard-next-page");
-        const pageSizeSelect = document.getElementById("dashboard-page-size");
-        let rows = [];
-        let currentPage = 1;
-        let pageSize = 10;
-        let totalPages = 1;
-        let searchDebounce;
+        const chartColors = ["#20b85a", "#0f7cf2", "#ff9800", "#7545c9", "#10aeb8", "#ff2f21", "#e543a4"];
 
-        function statusClass(status) {
-            return status.toLowerCase().replaceAll(" ", "-");
+        function formatInteger(value) {
+            return Number(value || 0).toLocaleString("es-PY");
+        }
+
+        function formatMoney(value) {
+            return `Gs. ${Number(value || 0).toLocaleString("es-PY")}`;
+        }
+
+        function renderDonut(items, total) {
+            const donut = document.getElementById("machine-donut");
+            const legend = document.getElementById("machine-legend");
+            let cursor = 0;
+
+            if (!items.length || total === 0) {
+                donut.style.background = "#edf2f5";
+                legend.innerHTML = `<li><span></span><strong>Sin datos</strong><em>0</em></li>`;
+                return;
+            }
+
+            const segments = items.map((item, index) => {
+                const start = cursor;
+                const value = (item.cantidad / total) * 100;
+                cursor += value;
+                return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
+            });
+
+            donut.style.background = `conic-gradient(${segments.join(", ")})`;
+            legend.innerHTML = items.map((item, index) => `
+                <li>
+                    <span style="background:${chartColors[index % chartColors.length]}"></span>
+                    <strong>${item.nombre}</strong>
+                    <em>${formatInteger(item.cantidad)}</em>
+                </li>
+            `).join("");
+        }
+
+        function renderBars(containerId, items, valueKey, formatter) {
+            const container = document.getElementById(containerId);
+            const max = Math.max(...items.map(item => Number(item[valueKey] || 0)), 1);
+
+            if (!items.length) {
+                container.innerHTML = `<p class="empty-chart">Sin datos para mostrar</p>`;
+                return;
+            }
+
+            container.innerHTML = items.map((item, index) => {
+                const value = Number(item[valueKey] || 0);
+                const width = Math.max((value / max) * 100, 3);
+                return `
+                    <div class="bar-row">
+                        <span>${item.nombre}</span>
+                        <div class="bar-track">
+                            <i style="width:${width}%; background:${chartColors[index % chartColors.length]}"></i>
+                        </div>
+                        <strong>${formatter(value)}</strong>
+                    </div>
+                `;
+            }).join("");
         }
 
         async function loadDashboard() {
-            const search = encodeURIComponent(searchInput.value.trim());
-            const response = await fetch(`/api/dashboard?page=${currentPage}&pageSize=${pageSize}&search=${search}`);
+            const response = await fetch("/api/dashboard");
+
             if (!response.ok) {
                 showToast("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
             }
+
             const dashboard = await response.json();
-            currentPage = dashboard.page || currentPage;
-            totalPages = Math.max(dashboard.totalPages || 1, 1);
+            const machines = dashboard.pedidosPorMaquina || [];
+            const totalMachines = machines.reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
 
-            document.getElementById("metric-loaded-today").textContent = dashboard.metrics.loadedToday;
-            document.getElementById("metric-printed").textContent = dashboard.metrics.printed;
-            document.getElementById("metric-missing-print").textContent = dashboard.metrics.missingPrint;
-            document.getElementById("metric-delivered").textContent = dashboard.metrics.delivered;
+            document.getElementById("metric-loaded-today").textContent = formatInteger(dashboard.pedidosCargados);
+            document.getElementById("metric-printed").textContent = formatInteger(dashboard.pedidosImpresos);
+            document.getElementById("metric-missing-print").textContent = formatInteger(dashboard.pedidosPendientesImpresion);
+            document.getElementById("metric-delivered").textContent = formatInteger(dashboard.pedidosEntregados);
+            document.getElementById("machine-total").textContent = formatInteger(dashboard.totalPedidos || totalMachines);
 
-            ordersBody.innerHTML = dashboard.recentOrders.map(order => `
-                <tr>
-                    <td>${order.id}</td>
-                    <td>${order.client}</td>
-                    <td>${order.seller}</td>
-                    <td>${order.type}</td>
-                    <td>${order.meters}</td>
-                    <td><span class="status ${statusClass(order.status)}">${order.status}</span></td>
-                    <td>${order.delivery}</td>
-                </tr>
-            `).join("");
-
-            rows = Array.from(document.querySelectorAll("#dashboard-orders-body tr"));
-            paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
-            currentPageLabel.textContent = currentPage;
-            prevPageButton.disabled = currentPage <= 1;
-            nextPageButton.disabled = currentPage >= totalPages;
+            renderDonut(machines, totalMachines);
+            renderBars("payment-bars", dashboard.pendientesPago || [], "monto", formatMoney);
+            renderBars("seller-bars", dashboard.mejoresVendedores || [], "cantidad", formatInteger);
         }
 
-        prevPageButton.addEventListener("click", function () {
-            if (currentPage <= 1) {
-                return;
-            }
-
-            currentPage -= 1;
-            loadDashboard();
-        });
-
-        nextPageButton.addEventListener("click", function () {
-            if (currentPage >= totalPages) {
-                return;
-            }
-
-            currentPage += 1;
-            loadDashboard();
-        });
-
-        pageSizeSelect.addEventListener("change", function () {
-            pageSize = Number(pageSizeSelect.value) || 10;
-            currentPage = 1;
-            loadDashboard();
-        });
-
-        searchInput.addEventListener("input", function () {
-            window.clearTimeout(searchDebounce);
-            searchDebounce = window.setTimeout(() => {
-                currentPage = 1;
-                loadDashboard();
-            }, 350);
-        });
         loadDashboard();
     </script>
 }
