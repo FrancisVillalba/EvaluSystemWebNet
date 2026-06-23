@@ -10,7 +10,7 @@
     <section class="dashboard-analytics-grid" aria-label="Resumen del sistema de impresiones">
         <article class="analytics-card machine-card">
             <header>
-                <h2>Pedidos cargados por maquina</h2>
+                <h2>Pedidos cargados por maquina hoy</h2>
             </header>
             <div class="machine-chart-layout">
                 <div class="donut-chart" id="machine-donut">
@@ -21,7 +21,7 @@
                 </div>
                 <ul class="machine-legend" id="machine-legend"></ul>
             </div>
-            <p class="chart-caption">Distribucion de pedidos cargados por equipo</p>
+            <p class="chart-caption">Distribucion de pedidos cargados hoy por equipo</p>
         </article>
 
         <section class="summary-card-grid" aria-label="Indicadores principales">
@@ -37,9 +37,9 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos cargados</p>
+                    <p>Cantidad de pedidos cargados hoy</p>
                     <strong id="metric-loaded-today">0</strong>
-                    <span>Pedidos listos para iniciar diseno o produccion</span>
+                    <span>Pedidos del dia listos para iniciar diseno o produccion</span>
                 </div>
             </article>
 
@@ -52,9 +52,9 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos impresos</p>
+                    <p>Cantidad de pedidos impresos hoy</p>
                     <strong id="metric-printed">0</strong>
-                    <span>Pedidos que ya pasaron por impresion</span>
+                    <span>Pedidos del dia que ya pasaron por impresion</span>
                 </div>
             </article>
 
@@ -67,9 +67,9 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos pendientes de impresion</p>
+                    <p>Cantidad de pedidos pendientes de impresion hoy</p>
                     <strong id="metric-missing-print">0</strong>
-                    <span>Pedidos en espera de entrar a impresion</span>
+                    <span>Pedidos del dia en espera de entrar a impresion</span>
                 </div>
             </article>
 
@@ -84,9 +84,9 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos entregados</p>
+                    <p>Cantidad de pedidos entregados hoy</p>
                     <strong id="metric-delivered">0/0</strong>
-                    <span>Pedidos entregados del total cargado</span>
+                    <span>Pedidos entregados del total cargado hoy</span>
                 </div>
             </article>
         </section>
@@ -101,7 +101,7 @@
 
         <article class="analytics-card bar-card">
             <header>
-                <h2>Mejor vendedor</h2>
+                <h2>Mejor vendedor del mes</h2>
             </header>
             <div class="bar-chart seller-chart" id="seller-bars"></div>
             <p class="chart-axis-label">Cantidad de pedidos</p>
