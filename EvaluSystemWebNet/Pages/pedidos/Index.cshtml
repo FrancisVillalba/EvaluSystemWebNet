@@ -142,13 +142,29 @@
             count.textContent = `${visibleOrders.length} pedidos encontrados`;
         }
 
-        function deleteOrder(id) {
-            orders = orders.filter(order => order.id !== id);
-            renderOrders();
+        async function deleteOrder(id) {
+            if (!confirm("Desea eliminar este pedido?")) {
+                return;
+            }
+
+            const response = await fetch(`/api/pedidos/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                alert("No se pudo eliminar el pedido.");
+                return;
+            }
+
+            await loadOrders();
         }
 
         async function loadOrders() {
             const response = await fetch("/api/pedidos");
+            if (!response.ok) {
+                alert("No se pudo cargar pedidos. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                return;
+            }
             orders = await response.json();
             renderOrders();
         }

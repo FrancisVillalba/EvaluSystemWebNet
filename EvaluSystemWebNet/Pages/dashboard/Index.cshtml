@@ -90,6 +90,10 @@
 
         async function loadDashboard() {
             const response = await fetch("/api/dashboard");
+            if (!response.ok) {
+                alert("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                return;
+            }
             const dashboard = await response.json();
 
             document.getElementById("metric-loaded-today").textContent = dashboard.metrics.loadedToday;

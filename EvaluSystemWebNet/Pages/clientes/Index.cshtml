@@ -117,13 +117,29 @@
             count.textContent = `${visibleClients.length} clientes encontrados`;
         }
 
-        function deleteClient(id) {
-            clients = clients.filter(client => client.id !== id);
-            renderClients();
+        async function deleteClient(id) {
+            if (!confirm("Desea eliminar este cliente?")) {
+                return;
+            }
+
+            const response = await fetch(`/api/clientes/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                alert("No se pudo eliminar el cliente.");
+                return;
+            }
+
+            await loadClients();
         }
 
         async function loadClients() {
             const response = await fetch("/api/clientes");
+            if (!response.ok) {
+                alert("No se pudo cargar clientes. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                return;
+            }
             clients = await response.json();
             renderClients();
         }

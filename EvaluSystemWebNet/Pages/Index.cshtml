@@ -66,8 +66,25 @@
     </main>
 
     <script>
-        document.getElementById("login-form").addEventListener("submit", function (event) {
+        document.getElementById("login-form").addEventListener("submit", async function (event) {
             event.preventDefault();
+
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    usuario: document.getElementById("email").value,
+                    pass: document.getElementById("password").value
+                })
+            });
+
+            if (!response.ok) {
+                alert("Usuario o contrasena incorrectos.");
+                return;
+            }
+
             window.location.href = "/dashboard";
         });
     </script>

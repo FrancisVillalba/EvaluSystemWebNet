@@ -1,3 +1,4 @@
+using EvaluSystemWebNet.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EvaluSystemWebNet.Controllers;
@@ -6,100 +7,67 @@ namespace EvaluSystemWebNet.Controllers;
 [Route("api/[controller]")]
 public class PedidosController : ControllerBase
 {
-    private static readonly List<PedidoMock> Pedidos =
-    [
-        new(
-            "DTF-1048",
-            DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd"),
-            "Urban Print Co.",
-            "Camila",
-            "Pendiente de impresion",
-            "2026-06-22",
-            "Transferencia",
-            "Pendiente",
-            "0",
-            "",
-            "",
-            [new PedidoDetalleMock("DTF Textil por metro", "Epson DTF 60cm", "18", "80000", "", "YESSICA MORINIGO TEXTIL.png")]
-        ),
-        new(
-            "UV-1047",
-            DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd"),
-            "Brava Store",
-            "Martin",
-            "Impreso",
-            "2026-06-22",
-            "Transferencia",
-            "Parcial",
-            "400000",
-            "",
-            "",
-            [new PedidoDetalleMock("Sticker UV DTF", "UV DTF A3+", "9", "95000", "", "logo-brava.png")]
-        ),
-        new(
-            "DTF-1046",
-            DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd"),
-            "Norte Uniformes",
-            "Sofia",
-            "Entregado",
-            "2026-06-23",
-            "Efectivo",
-            "Pagado",
-            "2120000",
-            "",
-            "",
-            [new PedidoDetalleMock("DTF Textil por metro", "Epson DTF 60cm", "24", "82000", "152000", "uniformes-norte.png")]
-        ),
-        new(
-            "UV-1045",
-            DateOnly.FromDateTime(DateTime.Today.AddDays(-1)).ToString("yyyy-MM-dd"),
-            "Mateo Accesorios",
-            "Camila",
-            "Cargado",
-            "2026-06-22",
-            "Tarjeta",
-            "Pendiente",
-            "0",
-            "",
-            "",
-            [new PedidoDetalleMock("Sticker UV DTF", "UV DTF A3+", "6", "90000", "", "sticker-mateo.png")]
-        )
-    ];
+    private readonly IBackendApiClient _backendApiClient;
+
+    public PedidosController(IBackendApiClient backendApiClient)
+    {
+        _backendApiClient = backendApiClient;
+    }
 
     [HttpGet]
-    public ActionResult<IEnumerable<PedidoMock>> GetAll()
+    public async Task<ActionResult<IEnumerable<PedidoView>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(Pedidos);
+        var pedidos = await _backendApiClient.GetAsync<IEnumerable<VentaImpresionCabDto>>("api/VentasImpresion", cancellationToken);
+
+        if (pedidos is null)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener pedidos desde EvaluSystemBack." });
+        }
+
+        return Ok(pedidos.Select(ToView));
     }
 
-    [HttpGet("{id}")]
-    public ActionResult<PedidoMock> GetById(string id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<PedidoView>> GetById(int id, CancellationToken cancellationToken)
     {
-        var pedido = Pedidos.FirstOrDefault(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-        return pedido is null ? NotFound() : Ok(pedido);
+        var pedido = await _backendApiClient.GetAsync<VentaImpresionCabDto>($"api/VentasImpresion/{id}", cancellationToken);
+        return pedido is null ? NotFound() : Ok(ToView(pedido));
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var deleted = await _backendApiClient.DeleteAsync($"api/VentasImpresion/{id}", cancellationToken);
+        return deleted ? NoContent() : StatusCode(StatusCodes.Status502BadGateway);
+    }
+
+    private static PedidoView ToView(VentaImpresionCabDto pedido)
+    {
+        var delivery = pedido.FechaEntrega?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+        return new PedidoView(
+            pedido.Id.ToString(),
+            delivery,
+            pedido.Cliente ?? string.Empty,
+            pedido.VendedorId.ToString(),
+            pedido.EstadoVenta ?? pedido.EstadoVentaId,
+            delivery,
+            pedido.FormaPago ?? pedido.FormaPagoId,
+            pedido.EstadoPagado ?? pedido.EstadoPagadoId ?? "Pendiente",
+            pedido.MontoPagado?.ToString("N0") ?? "0",
+            pedido.ComprobantePagoNombre ?? string.Empty,
+            pedido.Observacion ?? string.Empty,
+            pedido.Detalles.Select(ToDetailView).ToList());
+    }
+
+    private static PedidoDetalleView ToDetailView(VentaImpresionDetDto detalle)
+    {
+        return new PedidoDetalleView(
+            detalle.Producto ?? string.Empty,
+            detalle.TipoMaquina ?? string.Empty,
+            detalle.Cantidad.ToString("N2"),
+            detalle.PrecioUnitario.ToString("N0"),
+            detalle.PrecioExtra?.ToString("N0") ?? string.Empty,
+            detalle.ArchivoDisenioNombre ?? string.Empty);
     }
 }
-
-public record PedidoMock(
-    string Id,
-    string Date,
-    string Client,
-    string Seller,
-    string Status,
-    string Delivery,
-    string PaymentMethod,
-    string PaymentStatus,
-    string PaidAmount,
-    string ProofName,
-    string Notes,
-    List<PedidoDetalleMock> Details
-);
-
-public record PedidoDetalleMock(
-    string Product,
-    string Machine,
-    string Quantity,
-    string UnitPrice,
-    string ExtraPrice,
-    string DesignName
-);

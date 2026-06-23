@@ -1,3 +1,4 @@
+using EvaluSystemWebNet.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EvaluSystemWebNet.Controllers;
@@ -6,27 +7,67 @@ namespace EvaluSystemWebNet.Controllers;
 [Route("api/[controller]")]
 public class DashboardController : ControllerBase
 {
-    [HttpGet]
-    public IActionResult Get()
+    private readonly IBackendApiClient _backendApiClient;
+
+    public DashboardController(IBackendApiClient backendApiClient)
     {
-        var dashboard = new
+        _backendApiClient = backendApiClient;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    {
+        var pedidos = await _backendApiClient.GetAsync<IEnumerable<VentaImpresionCabDto>>("api/VentasImpresion", cancellationToken);
+
+        if (pedidos is null)
         {
-            Metrics = new
-            {
-                LoadedToday = 60,
-                Printed = 46,
-                MissingPrint = 14,
-                Delivered = "50 / 60"
-            },
-            RecentOrders = new[]
-            {
-                new { Id = "DTF-1048", Client = "Urban Print Co.", Seller = "Camila", Type = "DTF Textil", Meters = "18 m", Status = "Pendiente de impresion", Delivery = "Hoy 16:30" },
-                new { Id = "UV-1047", Client = "Brava Store", Seller = "Martin", Type = "UV DTF", Meters = "9 m", Status = "En impresion", Delivery = "Hoy 18:00" },
-                new { Id = "DTF-1046", Client = "Norte Uniformes", Seller = "Sofia", Type = "DTF Textil", Meters = "24 m", Status = "Diseno aprobado", Delivery = "Manana 10:00" },
-                new { Id = "UV-1045", Client = "Mateo Accesorios", Seller = "Camila", Type = "UV DTF", Meters = "6 m", Status = "Pendiente de pago", Delivery = "Manana 15:00" }
-            }
-        };
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener el dashboard desde EvaluSystemBack." });
+        }
+
+        var lista = pedidos.ToList();
+        var today = DateTime.Today;
+        var loadedToday = lista.Count(x => x.FechaEntrega?.Date == today);
+        var printed = lista.Count(x => IsPrinted(x.EstadoVenta));
+        var delivered = lista.Count(x => IsDelivered(x.EstadoVenta));
+
+        var dashboard = new DashboardView(
+            new DashboardMetrics(
+                loadedToday,
+                printed,
+                Math.Max(lista.Count - printed, 0),
+                $"{delivered} / {lista.Count}"),
+            lista
+                .OrderByDescending(x => x.Id)
+                .Take(10)
+                .Select(ToDashboardOrder));
 
         return Ok(dashboard);
+    }
+
+    private static DashboardOrderView ToDashboardOrder(VentaImpresionCabDto pedido)
+    {
+        var detalles = pedido.Detalles.ToList();
+        var firstDetail = detalles.FirstOrDefault();
+        var meters = detalles.Sum(x => x.Cantidad);
+
+        return new DashboardOrderView(
+            pedido.Id.ToString(),
+            pedido.Cliente ?? string.Empty,
+            pedido.VendedorId.ToString(),
+            firstDetail?.Producto ?? string.Empty,
+            meters > 0 ? $"{meters:N2} m" : "0 m",
+            pedido.EstadoVenta ?? pedido.EstadoVentaId,
+            pedido.FechaEntrega?.ToString("yyyy-MM-dd") ?? string.Empty);
+    }
+
+    private static bool IsPrinted(string? estado)
+    {
+        return estado?.Contains("impres", StringComparison.OrdinalIgnoreCase) == true
+            || estado?.Contains("entreg", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static bool IsDelivered(string? estado)
+    {
+        return estado?.Contains("entreg", StringComparison.OrdinalIgnoreCase) == true;
     }
 }

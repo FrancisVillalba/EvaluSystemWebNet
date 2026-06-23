@@ -1,3 +1,4 @@
+using EvaluSystemWebNet.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EvaluSystemWebNet.Controllers;
@@ -6,27 +7,43 @@ namespace EvaluSystemWebNet.Controllers;
 [Route("api/[controller]")]
 public class ClientesController : ControllerBase
 {
-    [HttpGet]
-    public ActionResult<IEnumerable<ClienteMock>> GetAll()
-    {
-        var clientes = new List<ClienteMock>
-        {
-            new(1, "Urban Print Co.", "80012345-1", "0981 220 440", "ventas@urbanprint.com", "Asuncion", false, "Activo"),
-            new(2, "Brava Store", "80155220-7", "0972 880 112", "pedidos@bravastore.com", "San Lorenzo", false, "Activo"),
-            new(3, "Casa Grafica", "80045090-2", "0984 610 722", "admin@casagrafica.com", "Luque", true, "Inactivo")
-        };
+    private readonly IBackendApiClient _backendApiClient;
 
-        return Ok(clientes);
+    public ClientesController(IBackendApiClient backendApiClient)
+    {
+        _backendApiClient = backendApiClient;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ClienteView>>> GetAll(CancellationToken cancellationToken)
+    {
+        var clientes = await _backendApiClient.GetAsync<IEnumerable<ClienteDto>>("api/Clientes", cancellationToken);
+
+        if (clientes is null)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener clientes desde EvaluSystemBack." });
+        }
+
+        return Ok(clientes.Select(ToView));
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var deleted = await _backendApiClient.DeleteAsync($"api/Clientes/{id}", cancellationToken);
+        return deleted ? NoContent() : StatusCode(StatusCodes.Status502BadGateway);
+    }
+
+    private static ClienteView ToView(ClienteDto cliente)
+    {
+        return new ClienteView(
+            cliente.Id,
+            cliente.Nombre ?? string.Empty,
+            cliente.Documento ?? string.Empty,
+            cliente.NroTelefono ?? string.Empty,
+            cliente.Email ?? string.Empty,
+            cliente.DatosEnvio?.Ciudad ?? string.Empty,
+            cliente.DatosEnvio is not null,
+            cliente.Estado == false ? "Inactivo" : "Activo");
     }
 }
-
-public record ClienteMock(
-    int Id,
-    string Name,
-    string Document,
-    string Phone,
-    string Email,
-    string City,
-    bool Carrier,
-    string Status
-);
