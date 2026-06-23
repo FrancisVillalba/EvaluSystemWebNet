@@ -18,13 +18,18 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> Get(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
+        var searchQuery = string.IsNullOrWhiteSpace(search)
+            ? string.Empty
+            : $"&search={Uri.EscapeDataString(search.Trim())}";
+
         var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
-            $"api/VentasImpresion?page={page}&pageSize={pageSize}",
+            $"api/VentasImpresion?page={page}&pageSize={pageSize}{searchQuery}",
             cancellationToken);
 
         if (pedidos is null)

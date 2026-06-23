@@ -103,21 +103,15 @@
         let currentPage = 1;
         let pageSize = 10;
         let totalPages = 1;
+        let searchDebounce;
 
         function statusClass(status) {
             return status.toLowerCase().replaceAll(" ", "-");
         }
 
-        function filterRows() {
-            const search = searchInput.value.trim().toLowerCase();
-
-            rows.forEach(row => {
-                row.hidden = search && !row.textContent.toLowerCase().includes(search);
-            });
-        }
-
         async function loadDashboard() {
-            const response = await fetch(`/api/dashboard?page=${currentPage}&pageSize=${pageSize}`);
+            const search = encodeURIComponent(searchInput.value.trim());
+            const response = await fetch(`/api/dashboard?page=${currentPage}&pageSize=${pageSize}&search=${search}`);
             if (!response.ok) {
                 showToast("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
@@ -148,7 +142,6 @@
             currentPageLabel.textContent = currentPage;
             prevPageButton.disabled = currentPage <= 1;
             nextPageButton.disabled = currentPage >= totalPages;
-            filterRows();
         }
 
         prevPageButton.addEventListener("click", function () {
@@ -175,7 +168,13 @@
             loadDashboard();
         });
 
-        searchInput.addEventListener("input", filterRows);
+        searchInput.addEventListener("input", function () {
+            window.clearTimeout(searchDebounce);
+            searchDebounce = window.setTimeout(() => {
+                currentPage = 1;
+                loadDashboard();
+            }, 350);
+        });
         loadDashboard();
     </script>
 }
