@@ -43,8 +43,8 @@
 
             <form id="login-form" class="login-form">
                 <label for="email">
-                    Correo institucional
-                    <input id="email" name="email" type="email" placeholder="ventas@empresa.com" autocomplete="email" />
+                    Usuario
+                    <input id="email" name="usuario" type="text" placeholder="Nombre de usuario" autocomplete="username" />
                 </label>
 
                 <label for="password">
@@ -81,7 +81,16 @@
             });
 
             if (!response.ok) {
-                alert("Usuario o contrasena incorrectos.");
+                let message = "No se pudo iniciar sesion. Verifique usuario, contrasena y que la API este levantada.";
+
+                try {
+                    const error = await response.json();
+                    message = error.message || message;
+                } catch {
+                    // Keep the default message when the server response is not JSON.
+                }
+
+                alert(message);
                 return;
             }
 
