@@ -80,6 +80,16 @@
                 <div class="orders-pagination">
                     <span id="order-pagination-summary">Pagina 1 de 1</span>
                     <div>
+                        <label class="page-size-control" for="order-page-size">
+                            Registros
+                            <select id="order-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="80">80</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
                         <button id="order-prev-page" type="button">Anterior</button>
                         <strong id="order-current-page">1</strong>
                         <button id="order-next-page" type="button">Siguiente</button>
@@ -93,7 +103,7 @@
         const today = new Date().toISOString().slice(0, 10);
         let orders = [];
         let currentPage = 1;
-        const pageSize = 10;
+        let pageSize = 10;
         let totalPages = 1;
 
         const body = document.getElementById("orders-body");
@@ -106,6 +116,7 @@
         const currentPageLabel = document.getElementById("order-current-page");
         const prevPageButton = document.getElementById("order-prev-page");
         const nextPageButton = document.getElementById("order-next-page");
+        const pageSizeSelect = document.getElementById("order-page-size");
 
         function statusClass(status) {
             return status.toLowerCase().replaceAll(" ", "-");
@@ -208,6 +219,12 @@
             }
 
             currentPage += 1;
+            loadOrders();
+        });
+
+        pageSizeSelect.addEventListener("change", function () {
+            pageSize = Number(pageSizeSelect.value) || 10;
+            currentPage = 1;
             loadOrders();
         });
 

@@ -71,6 +71,16 @@
                 <div class="orders-pagination">
                     <span id="dashboard-pagination-summary">Pagina 1 de 1</span>
                     <div>
+                        <label class="page-size-control" for="dashboard-page-size">
+                            Registros
+                            <select id="dashboard-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="80">80</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
                         <button id="dashboard-prev-page" type="button">Anterior</button>
                         <strong id="dashboard-current-page">1</strong>
                         <button id="dashboard-next-page" type="button">Siguiente</button>
@@ -87,9 +97,10 @@
         const currentPageLabel = document.getElementById("dashboard-current-page");
         const prevPageButton = document.getElementById("dashboard-prev-page");
         const nextPageButton = document.getElementById("dashboard-next-page");
+        const pageSizeSelect = document.getElementById("dashboard-page-size");
         let rows = [];
         let currentPage = 1;
-        const pageSize = 10;
+        let pageSize = 10;
         let totalPages = 1;
 
         function statusClass(status) {
@@ -154,6 +165,12 @@
             }
 
             currentPage += 1;
+            loadDashboard();
+        });
+
+        pageSizeSelect.addEventListener("change", function () {
+            pageSize = Number(pageSizeSelect.value) || 10;
+            currentPage = 1;
             loadDashboard();
         });
 

@@ -71,6 +71,16 @@
                 <div class="clients-pagination">
                     <span id="client-pagination-summary">Pagina 1 de 1</span>
                     <div>
+                        <label class="page-size-control" for="client-page-size">
+                            Registros
+                            <select id="client-page-size">
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="80">80</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
                         <button id="client-prev-page" type="button">Anterior</button>
                         <strong id="client-current-page">1</strong>
                         <button id="client-next-page" type="button">Siguiente</button>
@@ -83,7 +93,7 @@
     <script>
         let clients = [];
         let currentPage = 1;
-        const pageSize = 10;
+        let pageSize = 10;
         let totalPages = 1;
 
         const count = document.getElementById("client-count");
@@ -95,6 +105,7 @@
         const currentPageLabel = document.getElementById("client-current-page");
         const prevPageButton = document.getElementById("client-prev-page");
         const nextPageButton = document.getElementById("client-next-page");
+        const pageSizeSelect = document.getElementById("client-page-size");
 
         function filteredClients() {
             const search = searchFilter.value.trim().toLowerCase();
@@ -183,6 +194,12 @@
             }
 
             currentPage += 1;
+            loadClients();
+        });
+
+        pageSizeSelect.addEventListener("change", function () {
+            pageSize = Number(pageSizeSelect.value) || 10;
+            currentPage = 1;
             loadClients();
         });
 
