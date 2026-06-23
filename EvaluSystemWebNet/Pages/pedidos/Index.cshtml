@@ -1,0 +1,165 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Pedidos";
+    ViewData["ActiveMenu"] = "pedidos";
+    ViewData["ShellClass"] = "orders-shell";
+}
+
+<section class="orders-main">
+            <header class="orders-header">
+                <div>
+                    <p class="eyebrow">ABM de pedidos</p>
+                    <h1>Pedidos</h1>
+                    <p>Pedidos cargados en el dia, con filtros por fecha y cliente.</p>
+                </div>
+                <button class="orders-primary" type="button" onclick="window.location.href='/pedidos/formulario'">Cargar pedido</button>
+            </header>
+
+            <section class="orders-panel">
+                <div class="orders-panel-heading">
+                    <div>
+                        <h2>Pedidos cargados en el dia</h2>
+                        <p id="order-count">0 pedidos encontrados</p>
+                    </div>
+                </div>
+
+                <section class="orders-filters" aria-label="Filtros de pedidos">
+                    <label for="filter-date-from">
+                        Fecha desde
+                        <input id="filter-date-from" type="date" />
+                    </label>
+
+                    <label for="filter-date-to">
+                        Fecha hasta
+                        <input id="filter-date-to" type="date" />
+                    </label>
+
+                    <label for="filter-client">
+                        Cliente
+                        <select id="filter-client">
+                            <option value="">Todos</option>
+                            <option>Urban Print Co.</option>
+                            <option>Brava Store</option>
+                            <option>Norte Uniformes</option>
+                            <option>Mateo Accesorios</option>
+                        </select>
+                    </label>
+
+                    <label for="filter-status">
+                        Estado
+                        <select id="filter-status">
+                            <option value="">Todos</option>
+                            <option>Cargado</option>
+                            <option>Pendiente de impresion</option>
+                            <option>Impreso</option>
+                            <option>Entregado</option>
+                        </select>
+                    </label>
+                </section>
+
+                <div class="orders-table-wrap">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Pedido</th>
+                                <th>Fecha carga</th>
+                                <th>Cliente</th>
+                                <th>Vendedor</th>
+                                <th>Tipo</th>
+                                <th>Metros</th>
+                                <th>Estado</th>
+                                <th>Entrega</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body"></tbody>
+                    </table>
+                </div>
+            </section>
+</section>
+
+@section Scripts {
+    <script>
+        const today = new Date().toISOString().slice(0, 10);
+        let orders = [];
+
+        const body = document.getElementById("orders-body");
+        const count = document.getElementById("order-count");
+        const dateFrom = document.getElementById("filter-date-from");
+        const dateTo = document.getElementById("filter-date-to");
+        const clientFilter = document.getElementById("filter-client");
+        const statusFilter = document.getElementById("filter-status");
+
+        function statusClass(status) {
+            return status.toLowerCase().replaceAll(" ", "-");
+        }
+
+        function numberValue(value) {
+            return Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+        }
+
+        function orderTypeFromDetails(orderDetails) {
+            const product = orderDetails[0]?.product || "DTF Textil";
+            return product.includes("UV") ? "UV DTF" : "DTF Textil";
+        }
+
+        function metersFromDetails(orderDetails) {
+            const total = orderDetails.reduce((sum, detail) => sum + numberValue(detail.quantity), 0);
+            return total ? `${total} m` : "0 m";
+        }
+
+        function filteredOrders() {
+            return orders.filter(order => {
+                const matchesFrom = !dateFrom.value || order.date >= dateFrom.value;
+                const matchesTo = !dateTo.value || order.date <= dateTo.value;
+                const matchesClient = !clientFilter.value || order.client === clientFilter.value;
+                const matchesStatus = !statusFilter.value || order.status === statusFilter.value;
+                return matchesFrom && matchesTo && matchesClient && matchesStatus;
+            });
+        }
+
+        function renderOrders() {
+            const visibleOrders = filteredOrders();
+
+            body.innerHTML = visibleOrders.map(order => `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.date}</td>
+                    <td>${order.client}</td>
+                    <td>${order.seller}</td>
+                    <td>${orderTypeFromDetails(order.details)}</td>
+                    <td>${metersFromDetails(order.details)}</td>
+                    <td><span class="orders-status ${statusClass(order.status)}">${order.status}</span></td>
+                    <td>${order.delivery}</td>
+                    <td>
+                        <button class="orders-edit" type="button" onclick="window.location.href='/pedidos/formulario?id=${order.id}'">Editar</button>
+                        <button class="orders-edit" type="button" onclick="deleteOrder('${order.id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join("");
+
+            count.textContent = `${visibleOrders.length} pedidos encontrados`;
+        }
+
+        function deleteOrder(id) {
+            orders = orders.filter(order => order.id !== id);
+            renderOrders();
+        }
+
+        async function loadOrders() {
+            const response = await fetch("/api/pedidos");
+            orders = await response.json();
+            renderOrders();
+        }
+
+        [dateFrom, dateTo, clientFilter, statusFilter].forEach(filter => {
+            filter.addEventListener("input", renderOrders);
+            filter.addEventListener("change", renderOrders);
+        });
+
+        dateFrom.value = today;
+        dateTo.value = today;
+        loadOrders();
+    </script>
+}

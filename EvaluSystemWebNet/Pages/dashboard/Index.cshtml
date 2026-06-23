@@ -1,0 +1,119 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveMenu"] = "dashboard";
+    ViewData["ShellClass"] = "dashboard-shell";
+}
+
+<section class="dashboard-main">
+            <header class="dashboard-header">
+                <div>
+                    <p class="eyebrow">Operacion diaria</p>
+                    <h1>Tablero de impresion</h1>
+                    <p>Resumen actualizado de ventas, pedidos y cola de produccion.</p>
+                </div>
+                <button class="primary-button" type="button" onclick="window.location.href='/pedidos'">Nuevo pedido</button>
+            </header>
+
+            <section class="metric-grid" aria-label="Resumen de pedidos">
+                <article class="metric-card metric-blue">
+                    <span>Pedidos cargados hoy</span>
+                    <strong id="metric-loaded-today">0</strong>
+                    <small>Total ingresado por ventas</small>
+                </article>
+                <article class="metric-card metric-green">
+                    <span>Impresos</span>
+                    <strong id="metric-printed">0</strong>
+                    <small>Pedidos ya producidos</small>
+                </article>
+                <article class="metric-card metric-red">
+                    <span>Faltan imprimir</span>
+                    <strong id="metric-missing-print">0</strong>
+                    <small>Pendientes de produccion</small>
+                </article>
+                <article class="metric-card metric-yellow">
+                    <span>Entregados</span>
+                    <strong id="metric-delivered">0 / 0</strong>
+                    <small>50 entregados de 60 pedidos</small>
+                </article>
+            </section>
+
+            <section class="panel orders-panel">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Pedidos recientes</h2>
+                        <p>Seguimiento desde ventas hasta impresion.</p>
+                    </div>
+                    <label class="order-search" for="order-search">
+                        Buscar pedido
+                        <input id="order-search" type="search" placeholder="Vendedor, cliente o tipo" />
+                    </label>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Vendedor</th>
+                                <th>Tipo</th>
+                                <th>Metros</th>
+                                <th>Estado</th>
+                                <th>Entrega</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-orders-body"></tbody>
+                    </table>
+                </div>
+            </section>
+</section>
+
+@section Scripts {
+    <script>
+        const searchInput = document.getElementById("order-search");
+        const ordersBody = document.getElementById("dashboard-orders-body");
+        let rows = [];
+
+        function statusClass(status) {
+            return status.toLowerCase().replaceAll(" ", "-");
+        }
+
+        function filterRows() {
+            const search = searchInput.value.trim().toLowerCase();
+
+            rows.forEach(row => {
+                row.hidden = search && !row.textContent.toLowerCase().includes(search);
+            });
+        }
+
+        async function loadDashboard() {
+            const response = await fetch("/api/dashboard");
+            const dashboard = await response.json();
+
+            document.getElementById("metric-loaded-today").textContent = dashboard.metrics.loadedToday;
+            document.getElementById("metric-printed").textContent = dashboard.metrics.printed;
+            document.getElementById("metric-missing-print").textContent = dashboard.metrics.missingPrint;
+            document.getElementById("metric-delivered").textContent = dashboard.metrics.delivered;
+
+            ordersBody.innerHTML = dashboard.recentOrders.map(order => `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.client}</td>
+                    <td>${order.seller}</td>
+                    <td>${order.type}</td>
+                    <td>${order.meters}</td>
+                    <td><span class="status ${statusClass(order.status)}">${order.status}</span></td>
+                    <td>${order.delivery}</td>
+                </tr>
+            `).join("");
+
+            rows = Array.from(document.querySelectorAll("#dashboard-orders-body tr"));
+            filterRows();
+        }
+
+        searchInput.addEventListener("input", filterRows);
+        loadDashboard();
+    </script>
+}

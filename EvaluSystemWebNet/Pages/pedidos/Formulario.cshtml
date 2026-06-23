@@ -1,0 +1,347 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Crear pedido";
+    ViewData["ActiveMenu"] = "pedidos";
+    ViewData["ShellClass"] = "entry-shell";
+}
+
+<section class="entry-main">
+            <header class="entry-header">
+                <div>
+                    <p class="eyebrow">Carga de ventas impresiones</p>
+                    <h1 id="order-form-title">Nuevo pedido</h1>
+                    <p>Registra la venta y sus detalles para enviarla a produccion.</p>
+                </div>
+                <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
+            </header>
+
+            <form id="order-form" class="entry-form">
+                <input type="hidden" id="order-id" />
+                <input type="hidden" id="order-date" />
+                <input type="hidden" id="order-status" />
+
+                <section class="entry-section" aria-label="Carga de ventas impresiones">
+                    <div class="section-title">Carga de ventas impresiones</div>
+
+                    <div class="entry-fields">
+                        <label class="field client-field" for="order-client">
+                            Cliente
+                            <select id="order-client" required>
+                                <option value="">Seleccionar cliente</option>
+                                <option>Urban Print Co.</option>
+                                <option>Brava Store</option>
+                                <option>Norte Uniformes</option>
+                                <option>Mateo Accesorios</option>
+                            </select>
+                        </label>
+
+                        <label class="field" for="payment-method">
+                            Forma Pago
+                            <select id="payment-method">
+                                <option>Transferencia</option>
+                                <option>Efectivo</option>
+                                <option>Tarjeta</option>
+                                <option>Credito</option>
+                            </select>
+                        </label>
+
+                        <label class="field" for="order-seller">
+                            Vendedor
+                            <select id="order-seller" required>
+                                <option>Francisco Villalba</option>
+                                <option>Camila</option>
+                                <option>Martin</option>
+                                <option>Sofia</option>
+                            </select>
+                        </label>
+
+                        <label class="field" for="order-delivery">
+                            Fecha Entrega
+                            <input id="order-delivery" required type="date" />
+                        </label>
+
+                        <label class="field" for="paid-amount">
+                            Monto pagado
+                            <input id="paid-amount" inputmode="numeric" placeholder="0" />
+                        </label>
+
+                        <label class="field" for="payment-status">
+                            Estado de pago
+                            <select id="payment-status">
+                                <option>Pendiente</option>
+                                <option>Parcial</option>
+                                <option>Pagado</option>
+                            </select>
+                        </label>
+
+                        <div class="field payment-proof-field">
+                            <label for="payment-proof">Comprobante de pago</label>
+                            <div class="file-control payment-proof-control">
+                                <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
+                                <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
+                                <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
+                                <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
+                                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                        <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+
+                        <label class="field notes-field" for="order-notes">
+                            Observacion
+                            <textarea id="order-notes" rows="2" placeholder="Notas del pedido"></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="entry-section" aria-label="Detalle de productos y disenos">
+                    <div class="section-title detail-title">
+                        <span>Detalle de productos y disenos</span>
+                        <button type="button" id="add-detail-button">+ Agregar detalle</button>
+                    </div>
+
+                    <div class="detail-table-wrap">
+                        <div class="detail-list" id="detail-list"></div>
+                    </div>
+                </section>
+
+                <footer class="entry-footer">
+                    <div>
+                        <span>Total estimado</span>
+                        <strong id="estimated-total">Gs. 0</strong>
+                    </div>
+                    <button class="save-button" type="submit">Guardar</button>
+                </footer>
+            </form>
+</section>
+
+@section Scripts {
+    <script>
+        const today = new Date().toISOString().slice(0, 10);
+        let details = [];
+
+        const form = document.getElementById("order-form");
+        const title = document.getElementById("order-form-title");
+        const detailList = document.getElementById("detail-list");
+        const estimatedTotal = document.getElementById("estimated-total");
+        const proofInput = document.getElementById("payment-proof");
+        const proofName = document.getElementById("payment-proof-name");
+        const proofDownload = document.getElementById("payment-proof-download");
+        let proofUrl = "";
+
+        function numberValue(value) {
+            return Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+        }
+
+        function formatNumber(value) {
+            const onlyNumbers = String(value).replace(/\D/g, "");
+            return onlyNumbers ? Number(onlyNumbers).toLocaleString("es-PY") : "";
+        }
+
+        function createDetail(seed = {}) {
+            return {
+                id: Date.now() + Math.random(),
+                product: seed.product || "",
+                machine: seed.machine || "",
+                quantity: seed.quantity || "",
+                unitPrice: seed.unitPrice || "",
+                extraPrice: seed.extraPrice || "",
+                designName: seed.designName || "",
+                designUrl: seed.designUrl || ""
+            };
+        }
+
+        function detailTotal(detail) {
+            return numberValue(detail.quantity) * numberValue(detail.unitPrice) + numberValue(detail.extraPrice);
+        }
+
+        function updateEstimatedTotal() {
+            const total = details.reduce((sum, detail) => sum + detailTotal(detail), 0);
+            estimatedTotal.textContent = `Gs. ${total.toLocaleString("es-PY")}`;
+        }
+
+        function setPaymentProof(name, url = "") {
+            if (proofUrl) {
+                URL.revokeObjectURL(proofUrl);
+            }
+
+            proofUrl = url;
+            proofName.textContent = name || "Sin comprobante adjunto";
+            proofDownload.hidden = !name;
+            proofDownload.href = url || "#";
+            proofDownload.download = name || "";
+        }
+
+        function renderDetails() {
+            detailList.innerHTML = details.map((detail, index) => `
+                <article class="detail-row">
+                    <div class="detail-row-header">
+                        <span>Detalle #${index + 1}</span>
+                        <button class="row-remove" type="button" onclick="removeDetail(${detail.id})">Quitar</button>
+                    </div>
+
+                    <div class="detail-grid">
+                        <label class="detail-field product-field">
+                            Producto
+                            <select data-id="${detail.id}" data-field="product">
+                                <option value="">Seleccionar</option>
+                                <option ${detail.product === "Sticker UV DTF" ? "selected" : ""}>Sticker UV DTF</option>
+                                <option ${detail.product === "DTF Textil por metro" ? "selected" : ""}>DTF Textil por metro</option>
+                                <option ${detail.product === "Logo manga" ? "selected" : ""}>Logo manga</option>
+                                <option ${detail.product === "Etiqueta textil" ? "selected" : ""}>Etiqueta textil</option>
+                            </select>
+                        </label>
+
+                        <label class="detail-field machine-field">
+                            Maquina
+                            <select data-id="${detail.id}" data-field="machine">
+                                <option value="">Seleccionar</option>
+                                <option ${detail.machine === "UV DTF A3+" ? "selected" : ""}>UV DTF A3+</option>
+                                <option ${detail.machine === "Epson DTF 60cm" ? "selected" : ""}>Epson DTF 60cm</option>
+                                <option ${detail.machine === "Horno curado textil" ? "selected" : ""}>Horno curado textil</option>
+                            </select>
+                        </label>
+
+                        <label class="detail-field quantity-field">
+                            Cantidad
+                            <input data-id="${detail.id}" data-field="quantity" inputmode="decimal" value="${detail.quantity}" />
+                        </label>
+
+                        <label class="detail-field price-field">
+                            Precio unitario
+                            <input data-id="${detail.id}" data-field="unitPrice" inputmode="numeric" value="${detail.unitPrice}" />
+                        </label>
+
+                        <label class="detail-field extra-field">
+                            Precio extra
+                            <input data-id="${detail.id}" data-field="extraPrice" inputmode="numeric" value="${detail.extraPrice}" />
+                        </label>
+
+                        <div class="detail-field design-field">
+                            <label for="design-file-${detail.id}">Diseno PNG</label>
+                            <div class="file-control">
+                                <input id="design-file-${detail.id}" class="file-control-input" type="file" accept="image/png" data-id="${detail.id}" data-field="designName" />
+                                <label class="file-control-picker" for="design-file-${detail.id}">Seleccionar archivo</label>
+                                <span class="file-control-name">${detail.designName || "Sin diseno adjunto"}</span>
+                                ${detail.designName ? `
+                                    <a class="file-control-download" href="${detail.designUrl || "#"}" download="${detail.designName}" title="Descargar diseno" aria-label="Descargar diseno">
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                            <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
+                                        </svg>
+                                    </a>
+                                ` : ""}
+                            </div>
+                        </div>
+
+                        <div class="detail-total">
+                            <span>Precio total</span>
+                            <output>Gs. ${detailTotal(detail).toLocaleString("es-PY")}</output>
+                        </div>
+                    </div>
+                </article>
+            `).join("");
+
+            detailList.querySelectorAll("[data-field]").forEach(input => {
+                input.addEventListener("input", updateDetailFromInput);
+                input.addEventListener("change", updateDetailFromInput);
+            });
+
+            updateEstimatedTotal();
+        }
+
+        function updateDetailFromInput(event) {
+            const input = event.target;
+            const id = Number(input.dataset.id);
+            const field = input.dataset.field;
+            const value = input.type === "file"
+                ? input.files[0]?.name || ""
+                : field === "unitPrice" || field === "extraPrice"
+                    ? formatNumber(input.value)
+                    : input.value;
+
+            const selectedUrl = input.type === "file" && input.files[0]
+                ? URL.createObjectURL(input.files[0])
+                : "";
+
+            details = details.map(detail => {
+                if (detail.id !== id) {
+                    return detail;
+                }
+
+                if (field === "designName") {
+                    if (detail.designUrl) {
+                        URL.revokeObjectURL(detail.designUrl);
+                    }
+                    return { ...detail, designName: value, designUrl: selectedUrl };
+                }
+
+                return { ...detail, [field]: value };
+            });
+            renderDetails();
+        }
+
+        function removeDetail(id) {
+            details = details.filter(detail => detail.id !== id);
+            if (details.length === 0) {
+                details = [createDetail()];
+            }
+            renderDetails();
+        }
+
+        function loadOrder(order) {
+            document.getElementById("order-id").value = order.id || "";
+            document.getElementById("order-date").value = order.date || today;
+            document.getElementById("order-status").value = order.status || "Cargado";
+            document.getElementById("order-client").value = order.client || "";
+            document.getElementById("payment-method").value = order.paymentMethod || "Transferencia";
+            document.getElementById("order-seller").value = order.seller || "Francisco Villalba";
+            document.getElementById("order-delivery").value = order.delivery || today;
+            document.getElementById("paid-amount").value = formatNumber(order.paidAmount || "0");
+            document.getElementById("payment-status").value = order.paymentStatus || "Pendiente";
+            document.getElementById("order-notes").value = order.notes || "";
+            setPaymentProof(order.proofName || "");
+            details = (order.details || [createDetail()]).map(detail => createDetail(detail));
+            title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
+            renderDetails();
+        }
+
+        document.getElementById("add-detail-button").addEventListener("click", function () {
+            details = [...details, createDetail()];
+            renderDetails();
+        });
+
+        proofInput.addEventListener("change", function () {
+            const file = proofInput.files[0];
+            setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "");
+        });
+
+        document.getElementById("paid-amount").addEventListener("input", function (event) {
+            event.target.value = formatNumber(event.target.value);
+        });
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            window.location.href = "/pedidos";
+        });
+
+        const orderId = new URLSearchParams(window.location.search).get("id");
+        async function loadInitialOrder() {
+            if (!orderId) {
+                loadOrder({ date: today });
+                return;
+            }
+
+            const response = await fetch(`/api/pedidos/${orderId}`);
+            if (!response.ok) {
+                loadOrder({ date: today });
+                return;
+            }
+
+            loadOrder(await response.json());
+        }
+
+        loadInitialOrder();
+    </script>
+}

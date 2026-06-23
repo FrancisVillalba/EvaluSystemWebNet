@@ -1,0 +1,138 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Clientes";
+    ViewData["ActiveMenu"] = "clientes";
+    ViewData["ShellClass"] = "clients-shell";
+}
+
+<section class="clients-main">
+            <header class="clients-header">
+                <div>
+                    <p class="eyebrow">ABM de clientes</p>
+                    <h1>Clientes</h1>
+                    <p>Clientes cargados, con filtros por busqueda, ciudad y estado.</p>
+                </div>
+                <button class="clients-primary" type="button" onclick="window.location.href='/clientes/formulario'">Cargar cliente</button>
+            </header>
+
+            <section class="clients-panel" id="client-list-panel">
+                <div class="clients-panel-heading">
+                    <div>
+                        <h2>Clientes cargados</h2>
+                        <p id="client-count">0 clientes encontrados</p>
+                    </div>
+                </div>
+
+                <section class="clients-filters" aria-label="Filtros de clientes">
+                    <label for="filter-search">
+                        Buscar cliente
+                        <input id="filter-search" type="search" placeholder="Nombre, documento o correo" />
+                    </label>
+
+                    <label for="filter-city">
+                        Ciudad
+                        <select id="filter-city">
+                            <option value="">Todas</option>
+                            <option>Asuncion</option>
+                            <option>San Lorenzo</option>
+                            <option>Luque</option>
+                        </select>
+                    </label>
+
+                    <label for="filter-status">
+                        Estado
+                        <select id="filter-status">
+                            <option value="">Todos</option>
+                            <option>Activo</option>
+                            <option>Inactivo</option>
+                        </select>
+                    </label>
+                </section>
+
+                <div class="clients-table-wrap">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Documento</th>
+                                <th>Telefono</th>
+                                <th>Correo</th>
+                                <th>Ciudad</th>
+                                <th>Transportadora</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-body"></tbody>
+                    </table>
+                </div>
+            </section>
+</section>
+
+@section Scripts {
+    <script>
+        let clients = [];
+
+        const count = document.getElementById("client-count");
+        const body = document.getElementById("clients-body");
+        const searchFilter = document.getElementById("filter-search");
+        const cityFilter = document.getElementById("filter-city");
+        const statusFilter = document.getElementById("filter-status");
+
+        function filteredClients() {
+            const search = searchFilter.value.trim().toLowerCase();
+
+            return clients.filter(client => {
+                const matchesSearch = !search
+                    || client.name.toLowerCase().includes(search)
+                    || client.document.toLowerCase().includes(search)
+                    || client.email.toLowerCase().includes(search);
+                const matchesCity = !cityFilter.value || client.city === cityFilter.value;
+                const matchesStatus = !statusFilter.value || client.status === statusFilter.value;
+                return matchesSearch && matchesCity && matchesStatus;
+            });
+        }
+
+        function renderClients() {
+            const visibleClients = filteredClients();
+
+            body.innerHTML = visibleClients.map(client => `
+                <tr>
+                    <td>${client.name}</td>
+                    <td>${client.document}</td>
+                    <td>${client.phone}</td>
+                    <td>${client.email}</td>
+                    <td>${client.city}</td>
+                    <td><span class="carrier-status ${client.carrier ? "yes" : ""}">${client.carrier ? "Si" : "No"}</span></td>
+                    <td><span class="client-status ${client.status.toLowerCase()}">${client.status}</span></td>
+                    <td>
+                        <div class="client-row-actions">
+                            <button type="button" onclick="window.location.href='/clientes/formulario?id=${client.id}'">Editar</button>
+                            <button class="delete-client" type="button" onclick="deleteClient(${client.id})">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+            count.textContent = `${visibleClients.length} clientes encontrados`;
+        }
+
+        function deleteClient(id) {
+            clients = clients.filter(client => client.id !== id);
+            renderClients();
+        }
+
+        async function loadClients() {
+            const response = await fetch("/api/clientes");
+            clients = await response.json();
+            renderClients();
+        }
+
+        [searchFilter, cityFilter, statusFilter].forEach(filter => {
+            filter.addEventListener("input", renderClients);
+            filter.addEventListener("change", renderClients);
+        });
+
+        loadClients();
+    </script>
+}

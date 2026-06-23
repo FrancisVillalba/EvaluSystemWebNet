@@ -1,0 +1,115 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Formulario de cliente";
+    ViewData["ActiveMenu"] = "clientes";
+    ViewData["ShellClass"] = "client-entry-shell";
+}
+
+<section class="client-entry-main">
+    <header class="client-entry-header">
+        <div>
+            <p class="eyebrow">ABM de clientes</p>
+            <h1 id="client-form-heading">Nuevo cliente</h1>
+            <p>Registra o modifica los datos principales del cliente.</p>
+        </div>
+        <button class="back-list-button" type="button" onclick="window.location.href='/clientes'">Volver a la lista</button>
+    </header>
+
+    <section class="client-entry-card" aria-label="Formulario de cliente">
+        <div class="client-entry-card-header">
+            <h2 id="client-form-title">Nuevo cliente</h2>
+        </div>
+
+        <form id="client-form">
+            <div class="client-entry-grid">
+                <input type="hidden" id="client-id" />
+
+                <label for="client-name">
+                    Nombre / razon social
+                    <input id="client-name" required placeholder="Urban Print Co." />
+                </label>
+
+                <label for="client-document">
+                    RUC / documento
+                    <input id="client-document" required placeholder="80012345-1" />
+                </label>
+
+                <label for="client-phone">
+                    Telefono
+                    <input id="client-phone" placeholder="0981 220 440" />
+                </label>
+
+                <label for="client-email">
+                    Correo
+                    <input id="client-email" type="email" placeholder="ventas@empresa.com" />
+                </label>
+
+                <label for="client-city">
+                    Ciudad
+                    <input id="client-city" placeholder="Asuncion" />
+                </label>
+
+                <label for="client-status">
+                    Estado
+                    <select id="client-status">
+                        <option>Activo</option>
+                        <option>Inactivo</option>
+                    </select>
+                </label>
+
+                <label class="client-entry-check" for="client-carrier">
+                    <input id="client-carrier" type="checkbox" />
+                    Es transportadora
+                </label>
+            </div>
+
+            <div class="client-entry-actions">
+                <button class="client-entry-secondary" type="button" onclick="window.location.href='/clientes'">Cancelar</button>
+                <button class="client-entry-primary" type="submit">Guardar cliente</button>
+            </div>
+        </form>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        const form = document.getElementById("client-form");
+        const heading = document.getElementById("client-form-heading");
+        const title = document.getElementById("client-form-title");
+
+        function loadClient(client) {
+            document.getElementById("client-id").value = client.id || "";
+            document.getElementById("client-name").value = client.name || "";
+            document.getElementById("client-document").value = client.document || "";
+            document.getElementById("client-phone").value = client.phone || "";
+            document.getElementById("client-email").value = client.email || "";
+            document.getElementById("client-city").value = client.city || "";
+            document.getElementById("client-status").value = client.status || "Activo";
+            document.getElementById("client-carrier").checked = !!client.carrier;
+
+            heading.textContent = client.id ? `Editar cliente ${client.name}` : "Nuevo cliente";
+            title.textContent = client.id ? "Editar cliente" : "Nuevo cliente";
+        }
+
+        async function loadInitialClient() {
+            const clientId = new URLSearchParams(window.location.search).get("id");
+            if (!clientId) {
+                loadClient({});
+                return;
+            }
+
+            const response = await fetch("/api/clientes");
+            const clients = await response.json();
+            const client = clients.find(item => String(item.id) === clientId);
+            loadClient(client || {});
+        }
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            window.location.href = "/clientes";
+        });
+
+        loadInitialClient();
+    </script>
+}

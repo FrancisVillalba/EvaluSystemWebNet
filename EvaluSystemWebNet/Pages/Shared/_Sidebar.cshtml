@@ -1,0 +1,28 @@
+@{
+    var activeMenu = ViewData["ActiveMenu"]?.ToString() ?? "";
+}
+
+<aside class="app-sidebar">
+    <div class="brand-logo" aria-label="EvaluSystem">
+        <svg class="brand-symbol" viewBox="0 0 64 44" aria-hidden="true" focusable="false">
+            <path d="M32 22C23 12 23 5 32 1c9 4 9 11 0 21Z" />
+            <path d="M32 22C19 18 13 12 16 4c10-1 16 5 16 18Z" />
+            <path d="M32 22C45 18 51 12 48 4c-10-1-16 5-16 18Z" />
+            <path d="M32 22C20 28 12 28 7 22c6-7 14-7 25 0Z" />
+            <path d="M32 22c12 6 20 6 25 0-6-7-14-7-25 0Z" />
+            <path d="M32 22v20" />
+        </svg>
+        <div class="brand-name">EVALUSYSTEM</div>
+        <div class="brand-tagline">Impresion UV DTF y Textil</div>
+    </div>
+
+    <nav aria-label="Menu principal">
+        <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">Tablero</button>
+        <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button>
+        <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">Clientes</button>
+        <button class="@(activeMenu == "produccion" ? "active" : "")" type="button">Produccion</button>
+        <button class="@(activeMenu == "reportes" ? "active" : "")" type="button">Reportes</button>
+    </nav>
+
+    <a class="app-sidebar-logout" href="/">Cerrar sesion</a>
+</aside>

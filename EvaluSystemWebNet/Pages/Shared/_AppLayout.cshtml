@@ -1,0 +1,40 @@
+@{
+    var title = ViewData["Title"]?.ToString() ?? "EvaluSystem";
+    var shellClass = ViewData["ShellClass"]?.ToString() ?? "dashboard-shell";
+}
+
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - EvaluSystem</title>
+    <link rel="stylesheet" href="~/assets/index-Cio5xgoS.css" asp-append-version="true" />
+    <style>
+        .back-list-button {
+            color: #075f72;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid #cfdde6;
+            border-radius: 8px;
+            min-width: 174px;
+            padding: 14px 20px;
+            font-weight: 850;
+            box-shadow: none;
+        }
+
+        .back-list-button:hover {
+            background: #f7fbfc;
+            border-color: #b8ccd8;
+        }
+    </style>
+</head>
+<body>
+    <main class="@shellClass">
+        <partial name="_Sidebar" />
+        @RenderBody()
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
