@@ -67,18 +67,34 @@
                         <tbody id="clients-body"></tbody>
                     </table>
                 </div>
+
+                <div class="clients-pagination">
+                    <span id="client-pagination-summary">Pagina 1 de 1</span>
+                    <div>
+                        <button id="client-prev-page" type="button">Anterior</button>
+                        <strong id="client-current-page">1</strong>
+                        <button id="client-next-page" type="button">Siguiente</button>
+                    </div>
+                </div>
             </section>
 </section>
 
 @section Scripts {
     <script>
         let clients = [];
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalPages = 1;
 
         const count = document.getElementById("client-count");
         const body = document.getElementById("clients-body");
         const searchFilter = document.getElementById("filter-search");
         const cityFilter = document.getElementById("filter-city");
         const statusFilter = document.getElementById("filter-status");
+        const paginationSummary = document.getElementById("client-pagination-summary");
+        const currentPageLabel = document.getElementById("client-current-page");
+        const prevPageButton = document.getElementById("client-prev-page");
+        const nextPageButton = document.getElementById("client-next-page");
 
         function filteredClients() {
             const search = searchFilter.value.trim().toLowerCase();
@@ -115,6 +131,10 @@
                 </tr>
             `).join("");
             count.textContent = `${visibleClients.length} clientes encontrados`;
+            paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
+            currentPageLabel.textContent = currentPage;
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = currentPage >= totalPages;
         }
 
         async function deleteClient(id) {
@@ -127,22 +147,44 @@
             });
 
             if (!response.ok) {
-                alert("No se pudo eliminar el cliente.");
+                showToast("No se pudo eliminar el cliente.", "error");
                 return;
             }
 
+            showToast("Cliente eliminado correctamente.", "success");
             await loadClients();
         }
 
         async function loadClients() {
-            const response = await fetch("/api/clientes");
+            const response = await fetch(`/api/clientes?page=${currentPage}&pageSize=${pageSize}`);
             if (!response.ok) {
-                alert("No se pudo cargar clientes. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                showToast("No se pudo cargar clientes. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
             }
-            clients = await response.json();
+            const result = await response.json();
+            clients = result.items || [];
+            currentPage = result.page || currentPage;
+            totalPages = Math.max(result.totalPages || 1, 1);
             renderClients();
         }
+
+        prevPageButton.addEventListener("click", function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage -= 1;
+            loadClients();
+        });
+
+        nextPageButton.addEventListener("click", function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage += 1;
+            loadClients();
+        });
 
         [searchFilter, cityFilter, statusFilter].forEach(filter => {
             filter.addEventListener("input", renderClients);

@@ -76,6 +76,15 @@
                         <tbody id="orders-body"></tbody>
                     </table>
                 </div>
+
+                <div class="orders-pagination">
+                    <span id="order-pagination-summary">Pagina 1 de 1</span>
+                    <div>
+                        <button id="order-prev-page" type="button">Anterior</button>
+                        <strong id="order-current-page">1</strong>
+                        <button id="order-next-page" type="button">Siguiente</button>
+                    </div>
+                </div>
             </section>
 </section>
 
@@ -83,6 +92,9 @@
     <script>
         const today = new Date().toISOString().slice(0, 10);
         let orders = [];
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalPages = 1;
 
         const body = document.getElementById("orders-body");
         const count = document.getElementById("order-count");
@@ -90,6 +102,10 @@
         const dateTo = document.getElementById("filter-date-to");
         const clientFilter = document.getElementById("filter-client");
         const statusFilter = document.getElementById("filter-status");
+        const paginationSummary = document.getElementById("order-pagination-summary");
+        const currentPageLabel = document.getElementById("order-current-page");
+        const prevPageButton = document.getElementById("order-prev-page");
+        const nextPageButton = document.getElementById("order-next-page");
 
         function statusClass(status) {
             return status.toLowerCase().replaceAll(" ", "-");
@@ -140,6 +156,10 @@
             `).join("");
 
             count.textContent = `${visibleOrders.length} pedidos encontrados`;
+            paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
+            currentPageLabel.textContent = currentPage;
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = currentPage >= totalPages;
         }
 
         async function deleteOrder(id) {
@@ -152,22 +172,44 @@
             });
 
             if (!response.ok) {
-                alert("No se pudo eliminar el pedido.");
+                showToast("No se pudo eliminar el pedido.", "error");
                 return;
             }
 
+            showToast("Pedido eliminado correctamente.", "success");
             await loadOrders();
         }
 
         async function loadOrders() {
-            const response = await fetch("/api/pedidos");
+            const response = await fetch(`/api/pedidos?page=${currentPage}&pageSize=${pageSize}`);
             if (!response.ok) {
-                alert("No se pudo cargar pedidos. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                showToast("No se pudo cargar pedidos. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
             }
-            orders = await response.json();
+            const result = await response.json();
+            orders = result.items || [];
+            currentPage = result.page || currentPage;
+            totalPages = Math.max(result.totalPages || 1, 1);
             renderOrders();
         }
+
+        prevPageButton.addEventListener("click", function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage -= 1;
+            loadOrders();
+        });
+
+        nextPageButton.addEventListener("click", function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage += 1;
+            loadOrders();
+        });
 
         [dateFrom, dateTo, clientFilter, statusFilter].forEach(filter => {
             filter.addEventListener("input", renderOrders);

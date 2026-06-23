@@ -15,16 +15,26 @@ public class ClientesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ClienteView>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedView<ClienteView>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var clientes = await _backendApiClient.GetAsync<IEnumerable<ClienteDto>>("api/Clientes", cancellationToken);
+        var clientes = await _backendApiClient.GetAsync<PagedResponse<ClienteDto>>(
+            $"api/Clientes?page={page}&pageSize={pageSize}",
+            cancellationToken);
 
         if (clientes is null)
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener clientes desde EvaluSystemBack." });
         }
 
-        return Ok(clientes.Select(ToView));
+        return Ok(new PagedView<ClienteView>(
+            clientes.Items.Select(ToView),
+            clientes.Page,
+            clientes.PageSize,
+            clientes.TotalItems,
+            clientes.TotalPages));
     }
 
     [HttpDelete("{id:int}")]

@@ -17,14 +17,16 @@ public class DashboardController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var pedidos = await _backendApiClient.GetAsync<IEnumerable<VentaImpresionCabDto>>("api/VentasImpresion", cancellationToken);
+        var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
+            "api/VentasImpresion?page=1&pageSize=100",
+            cancellationToken);
 
         if (pedidos is null)
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener el dashboard desde EvaluSystemBack." });
         }
 
-        var lista = pedidos.ToList();
+        var lista = pedidos.Items.ToList();
         var today = DateTime.Today;
         var loadedToday = lista.Count(x => x.FechaEntrega?.Date == today);
         var printed = lista.Count(x => IsPrinted(x.EstadoVenta));

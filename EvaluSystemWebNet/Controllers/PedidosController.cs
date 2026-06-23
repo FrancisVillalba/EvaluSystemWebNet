@@ -15,16 +15,26 @@ public class PedidosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<PedidoView>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedView<PedidoView>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var pedidos = await _backendApiClient.GetAsync<IEnumerable<VentaImpresionCabDto>>("api/VentasImpresion", cancellationToken);
+        var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
+            $"api/VentasImpresion?page={page}&pageSize={pageSize}",
+            cancellationToken);
 
         if (pedidos is null)
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener pedidos desde EvaluSystemBack." });
         }
 
-        return Ok(pedidos.Select(ToView));
+        return Ok(new PagedView<PedidoView>(
+            pedidos.Items.Select(ToView),
+            pedidos.Page,
+            pedidos.PageSize,
+            pedidos.TotalItems,
+            pedidos.TotalPages));
     }
 
     [HttpGet("{id:int}")]

@@ -11,8 +11,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EvaluSystem</title>
     <link rel="stylesheet" href="~/assets/index-Cio5xgoS.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <div id="toast-host" class="toast-host" aria-live="polite" aria-atomic="true"></div>
     <main id="app" class="login-page">
         <section class="brand-panel" aria-label="Resumen de EvaluSystem">
             <div class="brand-logo" aria-label="EvaluSystem">
@@ -57,28 +59,36 @@
                         <input id="remember" name="remember" type="checkbox" />
                         Recordarme
                     </label>
-                    <a href="#recuperar">Olvide mi contrasena</a>
-                </div>
+@*                     <a href="#recuperar">Olvide mi contrasena</a>
+ *@                </div>
 
                 <button type="submit">Ingresar</button>
             </form>
         </section>
     </main>
 
+    <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         document.getElementById("login-form").addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    usuario: document.getElementById("email").value,
-                    pass: document.getElementById("password").value
-                })
-            });
+            let response;
+
+            try {
+                response = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        usuario: document.getElementById("email").value,
+                        pass: document.getElementById("password").value
+                    })
+                });
+            } catch {
+                showToast("No se pudo conectar con el back. Verifique que la API este abierta.", "error");
+                return;
+            }
 
             if (!response.ok) {
                 let message = "No se pudo iniciar sesion. Verifique usuario, contrasena y que la API este levantada.";
@@ -90,11 +100,14 @@
                     // Keep the default message when the server response is not JSON.
                 }
 
-                alert(message);
+                showToast(message, "error");
                 return;
             }
 
-            window.location.href = "/dashboard";
+            showToast("Inicio de sesion correcto.", "success");
+            window.setTimeout(() => {
+                window.location.href = "/dashboard";
+            }, 600);
         });
     </script>
 </body>

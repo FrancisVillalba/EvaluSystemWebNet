@@ -1,5 +1,12 @@
 namespace EvaluSystemWebNet.Services;
 
+public record PagedResponse<T>(
+    IEnumerable<T> Items,
+    int Page,
+    int PageSize,
+    int TotalItems,
+    int TotalPages);
+
 public record LoginRequest(string Usuario, string Pass);
 
 public record LoginResponse(

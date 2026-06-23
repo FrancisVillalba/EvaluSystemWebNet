@@ -1,5 +1,12 @@
 namespace EvaluSystemWebNet.Services;
 
+public record PagedView<T>(
+    IEnumerable<T> Items,
+    int Page,
+    int PageSize,
+    int TotalItems,
+    int TotalPages);
+
 public record ClienteView(
     int Id,
     string Name,

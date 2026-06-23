@@ -18,5 +18,124 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+  margin-bottom: 0;
+}
+
+.toast-host {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1000;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.app-toast {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid;
+  color: #123047;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 39, 53, 0.18);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.app-toast.leaving {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.app-toast.success {
+  border-color: #91d7b0;
+  background: #effaf4;
+}
+
+.app-toast.error {
+  border-color: #efaaaa;
+  background: #fff1f1;
+}
+
+.app-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 900;
+}
+
+.app-toast.success .app-toast-icon {
+  background: #1d9f72;
+}
+
+.app-toast.error .app-toast-icon {
+  background: #cf3f3f;
+}
+
+.app-toast-message {
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.orders-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f5;
+}
+
+.orders-pagination span,
+.orders-pagination strong {
+  color: #506779;
+  font-size: 0.88rem;
+}
+
+.orders-pagination div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.orders-pagination button {
+  color: #0c5f72;
+  cursor: pointer;
+  background: #e7f5f3;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 850;
+}
+
+.orders-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (width <= 720px) {
+  .toast-host {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .orders-pagination,
+  .orders-pagination div {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }

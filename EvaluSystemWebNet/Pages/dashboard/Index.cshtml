@@ -91,7 +91,7 @@
         async function loadDashboard() {
             const response = await fetch("/api/dashboard");
             if (!response.ok) {
-                alert("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.");
+                showToast("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
             }
             const dashboard = await response.json();

@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - EvaluSystem</title>
     <link rel="stylesheet" href="~/assets/index-Cio5xgoS.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         .back-list-button {
             color: #075f72;
@@ -30,11 +31,13 @@
     </style>
 </head>
 <body>
+    <div id="toast-host" class="toast-host" aria-live="polite" aria-atomic="true"></div>
     <main class="@shellClass">
         <partial name="_Sidebar" />
         @RenderBody()
     </main>
 
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
