@@ -15,10 +15,16 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
-            "api/VentasImpresion?page=1&pageSize=100",
+            $"api/VentasImpresion?page={page}&pageSize={pageSize}",
             cancellationToken);
 
         if (pedidos is null)
@@ -40,8 +46,11 @@ public class DashboardController : ControllerBase
                 $"{delivered} / {lista.Count}"),
             lista
                 .OrderByDescending(x => x.Id)
-                .Take(10)
-                .Select(ToDashboardOrder));
+                .Select(ToDashboardOrder),
+            pedidos.Page,
+            pedidos.PageSize,
+            pedidos.TotalItems,
+            pedidos.TotalPages);
 
         return Ok(dashboard);
     }

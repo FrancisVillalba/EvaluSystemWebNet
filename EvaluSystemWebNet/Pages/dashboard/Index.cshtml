@@ -67,6 +67,15 @@
                         <tbody id="dashboard-orders-body"></tbody>
                     </table>
                 </div>
+
+                <div class="orders-pagination">
+                    <span id="dashboard-pagination-summary">Pagina 1 de 1</span>
+                    <div>
+                        <button id="dashboard-prev-page" type="button">Anterior</button>
+                        <strong id="dashboard-current-page">1</strong>
+                        <button id="dashboard-next-page" type="button">Siguiente</button>
+                    </div>
+                </div>
             </section>
 </section>
 
@@ -74,7 +83,14 @@
     <script>
         const searchInput = document.getElementById("order-search");
         const ordersBody = document.getElementById("dashboard-orders-body");
+        const paginationSummary = document.getElementById("dashboard-pagination-summary");
+        const currentPageLabel = document.getElementById("dashboard-current-page");
+        const prevPageButton = document.getElementById("dashboard-prev-page");
+        const nextPageButton = document.getElementById("dashboard-next-page");
         let rows = [];
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalPages = 1;
 
         function statusClass(status) {
             return status.toLowerCase().replaceAll(" ", "-");
@@ -89,12 +105,14 @@
         }
 
         async function loadDashboard() {
-            const response = await fetch("/api/dashboard");
+            const response = await fetch(`/api/dashboard?page=${currentPage}&pageSize=${pageSize}`);
             if (!response.ok) {
                 showToast("No se pudo cargar el dashboard. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
             }
             const dashboard = await response.json();
+            currentPage = dashboard.page || currentPage;
+            totalPages = Math.max(dashboard.totalPages || 1, 1);
 
             document.getElementById("metric-loaded-today").textContent = dashboard.metrics.loadedToday;
             document.getElementById("metric-printed").textContent = dashboard.metrics.printed;
@@ -114,8 +132,30 @@
             `).join("");
 
             rows = Array.from(document.querySelectorAll("#dashboard-orders-body tr"));
+            paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
+            currentPageLabel.textContent = currentPage;
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = currentPage >= totalPages;
             filterRows();
         }
+
+        prevPageButton.addEventListener("click", function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage -= 1;
+            loadDashboard();
+        });
+
+        nextPageButton.addEventListener("click", function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage += 1;
+            loadDashboard();
+        });
 
         searchInput.addEventListener("input", filterRows);
         loadDashboard();

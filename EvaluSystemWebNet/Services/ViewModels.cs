@@ -39,7 +39,13 @@ public record PedidoDetalleView(
     string ExtraPrice,
     string DesignName);
 
-public record DashboardView(DashboardMetrics Metrics, IEnumerable<DashboardOrderView> RecentOrders);
+public record DashboardView(
+    DashboardMetrics Metrics,
+    IEnumerable<DashboardOrderView> RecentOrders,
+    int Page,
+    int PageSize,
+    int TotalItems,
+    int TotalPages);
 
 public record DashboardMetrics(int LoadedToday, int Printed, int MissingPrint, string Delivered);
 
