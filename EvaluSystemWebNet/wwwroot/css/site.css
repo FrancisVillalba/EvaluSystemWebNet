@@ -150,6 +150,16 @@ body {
   box-shadow: 0 0 0 3px #1d9f9221;
 }
 
+.entry-fields .compact-proof-field {
+  grid-column: 4;
+}
+
+@media (width <= 1080px) {
+  .entry-fields .compact-proof-field {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (width <= 720px) {
   .toast-host {
     top: 12px;

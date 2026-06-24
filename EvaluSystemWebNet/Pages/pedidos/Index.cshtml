@@ -39,10 +39,6 @@
                         Cliente
                         <select id="filter-client">
                             <option value="">Todos</option>
-                            <option>Urban Print Co.</option>
-                            <option>Brava Store</option>
-                            <option>Norte Uniformes</option>
-                            <option>Mateo Accesorios</option>
                         </select>
                     </label>
 
@@ -50,10 +46,6 @@
                         Estado
                         <select id="filter-status">
                             <option value="">Todos</option>
-                            <option>Cargado</option>
-                            <option>Pendiente de impresion</option>
-                            <option>Impreso</option>
-                            <option>Entregado</option>
                         </select>
                     </label>
                 </section>
@@ -106,6 +98,7 @@
         let currentPage = 1;
         let pageSize = 10;
         let totalPages = 1;
+        let totalItems = 0;
 
         const body = document.getElementById("orders-body");
         const count = document.getElementById("order-count");
@@ -137,20 +130,8 @@
             return total ? `${total} m` : "0 m";
         }
 
-        function filteredOrders() {
-            return orders.filter(order => {
-                const matchesFrom = !dateFrom.value || order.date >= dateFrom.value;
-                const matchesTo = !dateTo.value || order.date <= dateTo.value;
-                const matchesClient = !clientFilter.value || order.client === clientFilter.value;
-                const matchesStatus = !statusFilter.value || order.status === statusFilter.value;
-                return matchesFrom && matchesTo && matchesClient && matchesStatus;
-            });
-        }
-
         function renderOrders() {
-            const visibleOrders = filteredOrders();
-
-            body.innerHTML = visibleOrders.map(order => `
+            body.innerHTML = orders.map(order => `
                 <tr>
                     <td>${order.id}</td>
                     <td>${order.date}</td>
@@ -167,11 +148,31 @@
                 </tr>
             `).join("");
 
-            count.textContent = `${visibleOrders.length} pedidos encontrados`;
+            count.textContent = `${totalItems} pedidos encontrados`;
             paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
             currentPageLabel.textContent = currentPage;
             prevPageButton.disabled = currentPage <= 1;
             nextPageButton.disabled = currentPage >= totalPages;
+        }
+
+        function optionMarkup(items, valueKey, labelKey) {
+            return `<option value="">Todos</option>` + items.map(item => {
+                const value = item[valueKey] ?? "";
+                const label = item[labelKey] || value;
+                return `<option value="${value}">${label}</option>`;
+            }).join("");
+        }
+
+        async function loadFilterOptions() {
+            const response = await fetch("/api/pedidos/opciones");
+            if (!response.ok) {
+                showToast("No se pudieron cargar los filtros desde la base de datos.", "error");
+                return;
+            }
+
+            const options = await response.json();
+            clientFilter.innerHTML = optionMarkup(options.clientes || [], "id", "nombre");
+            statusFilter.innerHTML = optionMarkup(options.estadosVenta || [], "id", "nombre");
         }
 
         async function deleteOrder(id) {
@@ -193,7 +194,28 @@
         }
 
         async function loadOrders() {
-            const response = await fetch(`/api/pedidos?page=${currentPage}&pageSize=${pageSize}`);
+            const params = new URLSearchParams({
+                page: currentPage,
+                pageSize: pageSize
+            });
+
+            if (dateFrom.value) {
+                params.set("dateFrom", dateFrom.value);
+            }
+
+            if (dateTo.value) {
+                params.set("dateTo", dateTo.value);
+            }
+
+            if (clientFilter.value) {
+                params.set("clienteId", clientFilter.value);
+            }
+
+            if (statusFilter.value) {
+                params.set("estadoVentaId", statusFilter.value);
+            }
+
+            const response = await fetch(`/api/pedidos?${params.toString()}`);
             if (!response.ok) {
                 showToast("No se pudo cargar pedidos. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                 return;
@@ -202,6 +224,7 @@
             orders = result.items || [];
             currentPage = result.page || currentPage;
             totalPages = Math.max(result.totalPages || 1, 1);
+            totalItems = result.totalItems || orders.length;
             renderOrders();
         }
 
@@ -230,12 +253,18 @@
         });
 
         [dateFrom, dateTo, clientFilter, statusFilter].forEach(filter => {
-            filter.addEventListener("input", renderOrders);
-            filter.addEventListener("change", renderOrders);
+            filter.addEventListener("input", function () {
+                currentPage = 1;
+                loadOrders();
+            });
+            filter.addEventListener("change", function () {
+                currentPage = 1;
+                loadOrders();
+            });
         });
 
         dateFrom.value = today;
         dateTo.value = today;
-        loadOrders();
+        loadFilterOptions().then(loadOrders);
     </script>
 }

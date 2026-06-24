@@ -18,10 +18,40 @@ public class PedidosController : ControllerBase
     public async Task<ActionResult<PagedView<PedidoView>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] int? clienteId = null,
+        [FromQuery] string? estadoVentaId = null,
         CancellationToken cancellationToken = default)
     {
+        var filters = new List<string>
+        {
+            $"page={page}",
+            $"pageSize={pageSize}"
+        };
+
+        if (dateFrom.HasValue)
+        {
+            filters.Add($"dateFrom={Uri.EscapeDataString(dateFrom.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (dateTo.HasValue)
+        {
+            filters.Add($"dateTo={Uri.EscapeDataString(dateTo.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (clienteId.HasValue)
+        {
+            filters.Add($"clienteId={clienteId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoVentaId))
+        {
+            filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
+        }
+
         var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
-            $"api/VentasImpresion?page={page}&pageSize={pageSize}",
+            $"api/VentasImpresion?{string.Join("&", filters)}",
             cancellationToken);
 
         if (pedidos is null)
@@ -76,17 +106,17 @@ public class PedidosController : ControllerBase
         [FromBody] VentaImpresionCompletaRequest request,
         CancellationToken cancellationToken)
     {
-        var venta = await _backendApiClient.PostAsync<VentaImpresionCabDto>(
+        var result = await _backendApiClient.PostResultAsync<VentaImpresionCabDto>(
             "api/VentasImpresion/completa",
             request,
             cancellationToken);
 
-        if (venta is null)
+        if (!result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo guardar la venta en EvaluSystemBack." });
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
         }
 
-        return Ok(venta);
+        return Ok(result.Value);
     }
 
     [HttpPut("{id:int}")]
@@ -95,17 +125,17 @@ public class PedidosController : ControllerBase
         [FromBody] VentaImpresionCompletaUpdateRequest request,
         CancellationToken cancellationToken)
     {
-        var venta = await _backendApiClient.PutAsync<VentaImpresionCabDto>(
+        var result = await _backendApiClient.PutResultAsync<VentaImpresionCabDto>(
             $"api/VentasImpresion/completa/{id}",
             request,
             cancellationToken);
 
-        if (venta is null)
+        if (!result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo actualizar la venta en EvaluSystemBack." });
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
         }
 
-        return Ok(venta);
+        return Ok(result.Value);
     }
 
     [HttpDelete("{id:int}")]
