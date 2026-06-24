@@ -109,8 +109,8 @@
                     </div>
                     <div class="workflow-actions">
                         <span id="current-sale-status" class="workflow-status">Estado: -</span>
-                        <button id="return-state-button" class="workflow-button workflow-return" type="button">Devolver</button>
-                        <button id="save-state-button" class="workflow-button workflow-save" type="submit">Guardar</button>
+                        <button id="return-state-button" class="workflow-button workflow-return" type="button">DEVOLVER</button>
+                        <button id="save-state-button" class="workflow-button workflow-save" type="submit">GUARDA</button>
                         <button id="next-state-button" class="workflow-button workflow-next" type="button">Siguiente</button>
                         <button id="delete-state-button" class="workflow-button workflow-delete" type="button">Eliminar</button>
                     </div>
@@ -270,13 +270,8 @@
             nextStateButton.hidden = ![1, 2, 3].includes(flow) || !next?.id || next.id === current?.id;
             deleteStateButton.hidden = !deleted?.id || flow >= 4;
 
-            if (next?.id && next.id !== current?.id) {
-                nextStateButton.textContent = `Siguiente: ${next.nombre || next.id}`;
-            }
-
-            if (previous?.id && flow === 2) {
-                returnStateButton.textContent = `Devolver: ${previous.nombre || previous.id}`;
-            }
+            nextStateButton.textContent = "Siguiente";
+            returnStateButton.textContent = "DEVOLVER";
         }
 
         function createDetail(seed = {}) {
