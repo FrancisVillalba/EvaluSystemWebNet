@@ -19,6 +19,11 @@ public record ClienteView(
 
 public record PedidoView(
     string Id,
+    int ClientId,
+    string FormaPagoId,
+    int VendedorId,
+    string EstadoVentaId,
+    string? EstadoPagadoId,
     string Date,
     string Client,
     string Seller,
@@ -32,6 +37,9 @@ public record PedidoView(
     List<PedidoDetalleView> Details);
 
 public record PedidoDetalleView(
+    int Id,
+    int ProductId,
+    int MachineId,
     string Product,
     string Machine,
     string Quantity,

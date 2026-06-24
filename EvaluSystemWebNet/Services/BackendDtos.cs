@@ -63,6 +63,8 @@ public record ClienteDatosEnvioDto(
 
 public record CatalogStringDto(string Id, string? Nombre, bool? Estado);
 
+public record EstadoVentaOptionDto(string Id, string? Nombre, string? Estado, int? NumeroFlujo);
+
 public record UsuarioDto(int Id, string? NombreUsuario, int? PersonaId, string? Persona, bool? Estado);
 
 public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal? Comision, int? MaquinaId, string? Maquina, bool Estado);
@@ -74,8 +76,10 @@ public record PedidoFormOptionsDto(
     IEnumerable<CatalogStringDto> FormasPago,
     IEnumerable<UsuarioDto> Vendedores,
     IEnumerable<CatalogStringDto> EstadosPago,
+    IEnumerable<EstadoVentaOptionDto> EstadosVenta,
     IEnumerable<ProductoDto> Productos,
-    IEnumerable<TipoMaquinaDto> Maquinas);
+    IEnumerable<TipoMaquinaDto> Maquinas,
+    int? UsuarioActualId);
 
 public record VentaImpresionCompletaRequest(
     int ClienteId,
@@ -91,6 +95,32 @@ public record VentaImpresionCompletaRequest(
     IEnumerable<VentaImpresionDetalleCreateRequest> Detalles);
 
 public record VentaImpresionDetalleCreateRequest(
+    int ProductoId,
+    int TipoMaquinaId,
+    decimal Cantidad,
+    decimal PrecioUnitario,
+    decimal? PrecioExtra,
+    string? ArchivoDisenio,
+    string? ArchivoDisenioNombre,
+    string? Observacion,
+    string? EstadoItem,
+    bool? CheckImpresion);
+
+public record VentaImpresionCompletaUpdateRequest(
+    int ClienteId,
+    string FormaPagoId,
+    int VendedorId,
+    decimal? MontoPagado,
+    string? EstadoPagadoId,
+    DateTime? FechaEntrega,
+    string? ComprobantePago,
+    string? ComprobantePagoNombre,
+    string? Observacion,
+    string? EstadoVentaId,
+    IEnumerable<VentaImpresionDetalleUpdateRequest> Detalles);
+
+public record VentaImpresionDetalleUpdateRequest(
+    int? Id,
     int ProductoId,
     int TipoMaquinaId,
     decimal Cantidad,

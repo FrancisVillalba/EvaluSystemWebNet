@@ -63,6 +63,13 @@
                             </select>
                         </label>
 
+                        <label class="field" for="order-sale-status">
+                            Estado
+                            <select id="order-sale-status">
+                                <option value="">Seleccionar estado</option>
+                            </select>
+                        </label>
+
                         <div class="field payment-proof-field">
                             <label for="payment-proof">Comprobante de pago</label>
                             <div class="file-control payment-proof-control">
@@ -114,8 +121,10 @@
             formasPago: [],
             vendedores: [],
             estadosPago: [],
+            estadosVenta: [],
             productos: [],
-            maquinas: []
+            maquinas: [],
+            usuarioActualId: null
         };
 
         const form = document.getElementById("order-form");
@@ -129,6 +138,7 @@
         const paymentMethodSelect = document.getElementById("payment-method");
         const sellerSelect = document.getElementById("order-seller");
         const paymentStatusSelect = document.getElementById("payment-status");
+        const saleStatusSelect = document.getElementById("order-sale-status");
         let proofUrl = "";
 
         function numberValue(value) {
@@ -168,9 +178,15 @@
             return formOptions.maquinas.find(machine => String(machine.id) === String(machineId));
         }
 
+        function findOptionId(items, expectedName) {
+            const normalized = expectedName.toLowerCase();
+            return items.find(item => String(item.nombre || "").toLowerCase().includes(normalized))?.id || "";
+        }
+
         function createDetail(seed = {}) {
             return {
                 id: Date.now() + Math.random(),
+                detailId: seed.id || seed.detailId || null,
                 productId: seed.productId || "",
                 machineId: seed.machineId || "",
                 quantity: seed.quantity || "",
@@ -272,7 +288,7 @@
 
                         <div class="detail-total">
                             <span>Precio total</span>
-                            <output>Gs. ${detailTotal(detail).toLocaleString("es-PY")}</output>
+                            <output data-total-id="${detail.id}">Gs. ${detailTotal(detail).toLocaleString("es-PY")}</output>
                         </div>
                     </div>
                 </article>
@@ -324,6 +340,17 @@
 
                 return { ...detail, [field]: value };
             });
+
+            if (event.type === "input" && ["quantity", "unitPrice", "extraPrice"].includes(field)) {
+                const detail = details.find(item => item.id === id);
+                const output = detailList.querySelector(`[data-total-id="${id}"]`);
+                if (detail && output) {
+                    output.textContent = `Gs. ${detailTotal(detail).toLocaleString("es-PY")}`;
+                }
+                updateEstimatedTotal();
+                return;
+            }
+
             renderDetails();
         }
 
@@ -371,6 +398,15 @@
                 paymentStatusSelect.value,
                 "Seleccionar estado de pago"
             );
+
+            saleStatusSelect.innerHTML = selectOptions(
+                formOptions.estadosVenta.map(item => ({
+                    value: item.id,
+                    label: item.nombre || item.id
+                })),
+                saleStatusSelect.value,
+                "Seleccionar estado"
+            );
         }
 
         async function loadFormOptions() {
@@ -386,6 +422,16 @@
             return true;
         }
 
+        function applyDefaults() {
+            paymentMethodSelect.value = findOptionId(formOptions.formasPago, "transferencia") || paymentMethodSelect.value;
+            paymentStatusSelect.value = findOptionId(formOptions.estadosPago, "pendiente") || paymentStatusSelect.value;
+            saleStatusSelect.value = findOptionId(formOptions.estadosVenta, "cargado") || findOptionId(formOptions.estadosVenta, "pendiente") || saleStatusSelect.value;
+
+            if (formOptions.usuarioActualId) {
+                sellerSelect.value = String(formOptions.usuarioActualId);
+            }
+        }
+
         function loadOrder(order) {
             document.getElementById("order-id").value = order.id || "";
             document.getElementById("order-date").value = order.date || today;
@@ -396,6 +442,7 @@
             document.getElementById("order-delivery").value = order.delivery || today;
             document.getElementById("paid-amount").value = formatNumber(order.paidAmount || "0");
             document.getElementById("payment-status").value = order.estadoPagadoId || "";
+            document.getElementById("order-sale-status").value = order.estadoVentaId || "";
             document.getElementById("order-notes").value = order.notes || "";
             setPaymentProof(order.proofName || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
@@ -430,8 +477,9 @@
                 comprobantePago: proofName.textContent === "Sin comprobante adjunto" ? null : proofName.textContent,
                 comprobantePagoNombre: proofName.textContent === "Sin comprobante adjunto" ? null : proofName.textContent,
                 observacion: document.getElementById("order-notes").value || null,
-                estadoVentaId: null,
+                estadoVentaId: saleStatusSelect.value || null,
                 detalles: details.map(detail => ({
+                    id: detail.detailId,
                     productoId: Number(detail.productId),
                     tipoMaquinaId: Number(detail.machineId),
                     cantidad: numberValue(detail.quantity),
@@ -455,8 +503,9 @@
                 return;
             }
 
-            const response = await fetch("/api/pedidos", {
-                method: "POST",
+            const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
+            const response = await fetch(saveUrl, {
+                method: orderId ? "PUT" : "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -483,6 +532,7 @@
 
             if (!orderId) {
                 loadOrder({ date: today });
+                applyDefaults();
                 return;
             }
 

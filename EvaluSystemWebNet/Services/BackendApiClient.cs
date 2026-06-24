@@ -8,6 +8,7 @@ public interface IBackendApiClient
 {
     Task<T?> GetAsync<T>(string path, CancellationToken cancellationToken = default);
     Task<T?> PostAsync<T>(string path, object body, CancellationToken cancellationToken = default);
+    Task<T?> PutAsync<T>(string path, object body, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string path, CancellationToken cancellationToken = default);
 }
 
@@ -37,6 +38,15 @@ public class BackendApiClient : IBackendApiClient
     public async Task<T?> PostAsync<T>(string path, object body, CancellationToken cancellationToken = default)
     {
         using var request = CreateRequest(HttpMethod.Post, path);
+        request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await ReadResponseAsync<T>(response, cancellationToken);
+    }
+
+    public async Task<T?> PutAsync<T>(string path, object body, CancellationToken cancellationToken = default)
+    {
+        using var request = CreateRequest(HttpMethod.Put, path);
         request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);

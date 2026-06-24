@@ -27,6 +27,7 @@ public class AuthController : ControllerBase
 
         HttpContext.Session.SetString(TokenSessionKey, response.Token);
         HttpContext.Session.SetString("BackendUserName", response.Usuario);
+        HttpContext.Session.SetInt32("BackendUserId", response.UsuarioId);
 
         return Ok(new
         {
