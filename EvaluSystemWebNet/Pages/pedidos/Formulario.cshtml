@@ -147,6 +147,7 @@
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
         let loadedSaleStateId = "";
+        let paymentProofFileName = "";
         let proofUrl = "";
 
         function numberValue(value) {
@@ -271,7 +272,9 @@
             }
 
             proofUrl = url;
+            paymentProofFileName = name || "";
             proofName.textContent = name || "Sin comprobante adjunto";
+            proofName.title = name || "";
             proofDownload.hidden = !name;
             proofDownload.href = url || "#";
             proofDownload.download = name || "";
@@ -531,8 +534,8 @@
                 montoPagado: numberValue(document.getElementById("paid-amount").value),
                 estadoPagadoId: paymentStatusSelect.value || null,
                 fechaEntrega: document.getElementById("order-delivery").value || null,
-                comprobantePago: proofName.textContent === "Sin comprobante adjunto" ? null : proofName.textContent,
-                comprobantePagoNombre: proofName.textContent === "Sin comprobante adjunto" ? null : proofName.textContent,
+                comprobantePago: paymentProofFileName || null,
+                comprobantePagoNombre: paymentProofFileName || null,
                 observacion: document.getElementById("order-notes").value || null,
                 estadoVentaId: saleStatusSelect.value || null,
                 detalles: details.map(detail => ({

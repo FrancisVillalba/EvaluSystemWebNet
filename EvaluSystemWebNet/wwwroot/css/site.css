@@ -164,6 +164,22 @@ body {
   grid-column: 4;
 }
 
+.payment-proof-control {
+  min-width: 0;
+}
+
+.payment-proof-control .file-control-name {
+  max-width: 18ch;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-proof-control .file-control-download {
+  flex: 0 0 34px;
+}
+
 .entry-fields .state-field {
   background: #eef9f7;
   border: 1px solid #b8e3dd;
@@ -199,6 +215,26 @@ body {
     grid-column: 1 / -1;
   }
 
+}
+
+@media (width <= 720px) {
+  .payment-proof-control {
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+
+  .payment-proof-control .file-control-picker {
+    grid-column: 1 / -1;
+  }
+
+  .payment-proof-control .file-control-name {
+    max-width: none;
+    width: auto;
+  }
+
+  .payment-proof-control .file-control-download {
+    width: 34px;
+  }
 }
 
 @media (width <= 720px) {
