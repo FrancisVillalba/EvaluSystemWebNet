@@ -230,7 +230,7 @@
         }
 
         function renderSaleStatusOptions(selectedValue = saleStatusSelect.value) {
-            const allowedStates = workflowStateOptions();
+            const allowedStates = orderId ? workflowStateOptions() : [initialSaleState()].filter(Boolean);
             saleStatusSelect.innerHTML = selectOptions(
                 allowedStates.map(item => ({
                     value: item.id,
@@ -239,6 +239,7 @@
                 selectedValue,
                 "Seleccionar estado"
             );
+            saleStatusSelect.disabled = !orderId;
         }
 
         function createDetail(seed = {}) {
