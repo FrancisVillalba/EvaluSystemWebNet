@@ -19,6 +19,16 @@ html {
 
 body {
   margin-bottom: 0;
+  background: #eef3f5;
+}
+
+.dashboard-shell,
+.orders-shell,
+.entry-shell,
+.clients-shell,
+.client-entry-shell,
+.dashboard-analytics {
+  background: #eef3f5;
 }
 
 .toast-host {
