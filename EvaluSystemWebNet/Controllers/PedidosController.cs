@@ -95,7 +95,10 @@ public class PedidosController : ControllerBase
             (await formasPagoTask ?? []).Where(x => x.Estado != false),
             (await vendedoresTask ?? []).Where(x => x.Estado != false),
             (await estadosPagoTask ?? []).Where(x => x.Estado != false),
-            (await estadosVentaTask ?? []).Where(x => string.Equals(x.Estado, "A", StringComparison.OrdinalIgnoreCase)),
+            (await estadosVentaTask ?? [])
+                .Where(x => string.Equals(x.Estado, "A", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.NumeroFlujo ?? int.MaxValue)
+                .ThenBy(x => x.Nombre),
             (await productosTask ?? []).Where(x => x.Estado),
             (await maquinasTask ?? []).Where(x => x.Estado),
             usuarioActualId));
@@ -147,6 +150,7 @@ public class PedidosController : ControllerBase
 
     private static PedidoView ToView(VentaImpresionCabDto pedido)
     {
+        var date = pedido.FechaCreacion?.ToString("yyyy-MM-dd") ?? string.Empty;
         var delivery = pedido.FechaEntrega?.ToString("yyyy-MM-dd") ?? string.Empty;
 
         return new PedidoView(
@@ -156,7 +160,7 @@ public class PedidosController : ControllerBase
             pedido.VendedorId,
             pedido.EstadoVentaId,
             pedido.EstadoPagadoId,
-            delivery,
+            date,
             pedido.Cliente ?? string.Empty,
             pedido.VendedorId.ToString(),
             pedido.EstadoVenta ?? pedido.EstadoVentaId,

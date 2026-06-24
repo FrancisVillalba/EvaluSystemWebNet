@@ -154,6 +154,22 @@ body {
   grid-column: 4;
 }
 
+.orders-main {
+  padding-top: 22px;
+}
+
+.orders-header {
+  margin-bottom: 14px;
+}
+
+.orders-header h1 {
+  margin-bottom: 6px;
+}
+
+.orders-panel {
+  padding-top: 16px;
+}
+
 @media (width <= 1080px) {
   .entry-fields .compact-proof-field {
     grid-column: 1 / -1;

@@ -145,6 +145,7 @@ public record VentaImpresionCabDto(
     decimal? MontoPagado,
     string? EstadoPagadoId,
     string? EstadoPagado,
+    DateTime? FechaCreacion,
     DateTime? FechaEntrega,
     string? ComprobantePago,
     string? ComprobantePagoNombre,
