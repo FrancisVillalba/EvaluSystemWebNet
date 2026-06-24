@@ -154,6 +154,55 @@ body {
   grid-column: 4;
 }
 
+.entry-fields .state-field {
+  display: none;
+}
+
+.workflow-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.workflow-status {
+  color: #506779;
+  font-size: 0.86rem;
+  font-weight: 850;
+  margin-right: 4px;
+}
+
+.workflow-button {
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 850;
+  min-height: 42px;
+  padding: 11px 16px;
+}
+
+.workflow-return {
+  background: #6f42c1;
+}
+
+.workflow-save {
+  background: #0c5f72;
+}
+
+.workflow-next {
+  background: #1d8f5f;
+}
+
+.workflow-delete {
+  background: #cf3f3f;
+}
+
+.workflow-button:hover {
+  filter: brightness(0.94);
+}
+
 .orders-main {
   padding-top: 22px;
 }
@@ -173,6 +222,15 @@ body {
 @media (width <= 1080px) {
   .entry-fields .compact-proof-field {
     grid-column: 1 / -1;
+  }
+
+  .workflow-actions {
+    justify-content: stretch;
+  }
+
+  .workflow-status,
+  .workflow-button {
+    width: 100%;
   }
 }
 

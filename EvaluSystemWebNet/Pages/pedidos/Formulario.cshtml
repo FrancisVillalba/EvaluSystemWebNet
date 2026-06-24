@@ -63,7 +63,7 @@
                             </select>
                         </label>
 
-                        <label class="field" for="order-sale-status">
+                        <label class="field state-field" for="order-sale-status">
                             Estado
                             <select id="order-sale-status">
                                 <option value="">Seleccionar estado</option>
@@ -107,7 +107,13 @@
                         <span>Total estimado</span>
                         <strong id="estimated-total">Gs. 0</strong>
                     </div>
-                    <button class="save-button" type="submit">Guardar</button>
+                    <div class="workflow-actions">
+                        <span id="current-sale-status" class="workflow-status">Estado: -</span>
+                        <button id="return-state-button" class="workflow-button workflow-return" type="button">Devolver</button>
+                        <button id="save-state-button" class="workflow-button workflow-save" type="submit">Guardar</button>
+                        <button id="next-state-button" class="workflow-button workflow-next" type="button">Siguiente</button>
+                        <button id="delete-state-button" class="workflow-button workflow-delete" type="button">Eliminar</button>
+                    </div>
                 </footer>
             </form>
 </section>
@@ -146,6 +152,11 @@
         const sellerSelect = document.getElementById("order-seller");
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
+        const currentSaleStatus = document.getElementById("current-sale-status");
+        const returnStateButton = document.getElementById("return-state-button");
+        const saveStateButton = document.getElementById("save-state-button");
+        const nextStateButton = document.getElementById("next-state-button");
+        const deleteStateButton = document.getElementById("delete-state-button");
         let proofUrl = "";
 
         function numberValue(value) {
@@ -188,6 +199,84 @@
         function findOptionId(items, expectedName) {
             const normalized = expectedName.toLowerCase();
             return items.find(item => String(item.nombre || "").toLowerCase().includes(normalized))?.id || "";
+        }
+
+        function stateById(id) {
+            return formOptions.estadosVenta.find(item => String(item.id) === String(id));
+        }
+
+        function stateByFlow(flow) {
+            return formOptions.estadosVenta.find(item => Number(item.numeroFlujo) === flow);
+        }
+
+        function initialSaleState() {
+            return stateByFlow(1) || formOptions.estadosVenta[0];
+        }
+
+        function currentSaleState() {
+            return stateById(saleStatusSelect.value) || initialSaleState();
+        }
+
+        function stateForAction(action) {
+            const current = currentSaleState();
+            const flow = Number(current?.numeroFlujo);
+
+            if (action === "delete") {
+                return stateByFlow(5);
+            }
+
+            if (action === "previous" && flow === 2) {
+                return stateByFlow(1);
+            }
+
+            if (action === "next") {
+                if (flow === 1) {
+                    return stateByFlow(2);
+                }
+
+                if (flow === 2) {
+                    return stateByFlow(3);
+                }
+
+                if (flow === 3) {
+                    return stateByFlow(4);
+                }
+            }
+
+            return current;
+        }
+
+        function setSaleStateByAction(action) {
+            const state = stateForAction(action);
+            if (!state?.id) {
+                showToast("No se encontro el estado correspondiente al flujo.", "error");
+                return false;
+            }
+
+            saleStatusSelect.value = state.id;
+            renderWorkflowActions();
+            return true;
+        }
+
+        function renderWorkflowActions() {
+            const current = currentSaleState();
+            const flow = Number(current?.numeroFlujo);
+            const next = stateForAction("next");
+            const previous = stateForAction("previous");
+            const deleted = stateByFlow(5);
+
+            currentSaleStatus.textContent = `Estado: ${current?.nombre || current?.id || "-"}`;
+            returnStateButton.hidden = flow !== 2 || !previous?.id;
+            nextStateButton.hidden = ![1, 2, 3].includes(flow) || !next?.id || next.id === current?.id;
+            deleteStateButton.hidden = !deleted?.id || flow >= 4;
+
+            if (next?.id && next.id !== current?.id) {
+                nextStateButton.textContent = `Siguiente: ${next.nombre || next.id}`;
+            }
+
+            if (previous?.id && flow === 2) {
+                returnStateButton.textContent = `Devolver: ${previous.nombre || previous.id}`;
+            }
         }
 
         function createDetail(seed = {}) {
@@ -432,11 +521,13 @@
         function applyDefaults() {
             paymentMethodSelect.value = findOptionId(formOptions.formasPago, "transferencia") || paymentMethodSelect.value;
             paymentStatusSelect.value = findOptionId(formOptions.estadosPago, "pendiente") || paymentStatusSelect.value;
-            saleStatusSelect.value = findOptionId(formOptions.estadosVenta, "cargado") || findOptionId(formOptions.estadosVenta, "pendiente") || saleStatusSelect.value;
+            saleStatusSelect.value = initialSaleState()?.id || findOptionId(formOptions.estadosVenta, "cargado") || findOptionId(formOptions.estadosVenta, "pendiente") || saleStatusSelect.value;
 
             if (formOptions.usuarioActualId) {
                 sellerSelect.value = String(formOptions.usuarioActualId);
             }
+
+            renderWorkflowActions();
         }
 
         function loadOrder(order) {
@@ -455,6 +546,7 @@
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
             renderDetails();
+            renderWorkflowActions();
         }
 
         document.getElementById("add-detail-button").addEventListener("click", function () {
@@ -471,8 +563,12 @@
             event.target.value = formatNumber(event.target.value);
         });
 
-        form.addEventListener("submit", async function (event) {
-            event.preventDefault();
+        async function saveOrder(action = "save") {
+            const previousStateId = saleStatusSelect.value;
+
+            if (!setSaleStateByAction(action)) {
+                return;
+            }
 
             const payload = {
                 clienteId: Number(clientSelect.value),
@@ -501,11 +597,15 @@
             };
 
             if (!payload.clienteId || !payload.formaPagoId || !payload.vendedorId) {
+                saleStatusSelect.value = previousStateId;
+                renderWorkflowActions();
                 showToast("Seleccione cliente, forma de pago y vendedor.", "error");
                 return;
             }
 
             if (!payload.detalles.length || payload.detalles.some(detail => !detail.productoId || !detail.tipoMaquinaId || detail.cantidad <= 0)) {
+                saleStatusSelect.value = previousStateId;
+                renderWorkflowActions();
                 showToast("Complete producto, maquina y cantidad en todos los detalles.", "error");
                 return;
             }
@@ -520,6 +620,8 @@
             });
 
             if (!response.ok) {
+                saleStatusSelect.value = previousStateId;
+                renderWorkflowActions();
                 let message = "No se pudo guardar la venta. Revise los datos obligatorios.";
                 try {
                     const error = await response.json();
@@ -535,6 +637,27 @@
             window.setTimeout(() => {
                 window.location.href = "/pedidos";
             }, 700);
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            await saveOrder("save");
+        });
+
+        returnStateButton.addEventListener("click", async function () {
+            await saveOrder("previous");
+        });
+
+        nextStateButton.addEventListener("click", async function () {
+            await saveOrder("next");
+        });
+
+        deleteStateButton.addEventListener("click", async function () {
+            if (!confirm("Desea marcar este pedido como eliminado?")) {
+                return;
+            }
+
+            await saveOrder("delete");
         });
 
         const orderId = new URLSearchParams(window.location.search).get("id");
