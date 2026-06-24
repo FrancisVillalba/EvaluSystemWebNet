@@ -61,6 +61,47 @@ public record ClienteDatosEnvioDto(
     string? Observacion,
     bool Estado);
 
+public record CatalogStringDto(string Id, string? Nombre, bool? Estado);
+
+public record UsuarioDto(int Id, string? NombreUsuario, int? PersonaId, string? Persona, bool? Estado);
+
+public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal? Comision, int? MaquinaId, string? Maquina, bool Estado);
+
+public record TipoMaquinaDto(int Id, string Nombre, bool Estado);
+
+public record PedidoFormOptionsDto(
+    IEnumerable<ClienteDto> Clientes,
+    IEnumerable<CatalogStringDto> FormasPago,
+    IEnumerable<UsuarioDto> Vendedores,
+    IEnumerable<CatalogStringDto> EstadosPago,
+    IEnumerable<ProductoDto> Productos,
+    IEnumerable<TipoMaquinaDto> Maquinas);
+
+public record VentaImpresionCompletaRequest(
+    int ClienteId,
+    string FormaPagoId,
+    int VendedorId,
+    decimal? MontoPagado,
+    string? EstadoPagadoId,
+    DateTime? FechaEntrega,
+    string? ComprobantePago,
+    string? ComprobantePagoNombre,
+    string? Observacion,
+    string? EstadoVentaId,
+    IEnumerable<VentaImpresionDetalleCreateRequest> Detalles);
+
+public record VentaImpresionDetalleCreateRequest(
+    int ProductoId,
+    int TipoMaquinaId,
+    decimal Cantidad,
+    decimal PrecioUnitario,
+    decimal? PrecioExtra,
+    string? ArchivoDisenio,
+    string? ArchivoDisenioNombre,
+    string? Observacion,
+    string? EstadoItem,
+    bool? CheckImpresion);
+
 public record VentaImpresionCabDto(
     int Id,
     int ClienteId,
