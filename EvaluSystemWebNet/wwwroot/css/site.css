@@ -155,67 +155,17 @@ body {
 }
 
 .entry-fields .state-field {
-  display: none;
+  background: #eef9f7;
+  border: 1px solid #b8e3dd;
+  border-radius: 8px;
+  padding: 10px;
 }
 
-.entry-footer {
-  display: grid;
-  justify-content: center;
-  justify-items: center;
-}
-
-.entry-footer > div:not(.workflow-actions) {
-  justify-items: center;
-}
-
-.workflow-actions {
-  align-items: center;
-  display: grid;
-  gap: 14px 18px;
-  grid-template-columns: repeat(3, 164px);
-  justify-content: center;
-  margin: 0 auto;
-}
-
-.workflow-status {
-  display: none;
-}
-
-.workflow-button {
-  border: 4px solid #000;
-  border-radius: 14px;
-  box-shadow: 0 3px 0 #000;
-  cursor: pointer;
-  font-size: 1.12rem;
-  font-weight: 500;
-  min-height: 48px;
-  padding: 8px 16px;
-  text-align: center;
-}
-
-.workflow-return {
-  background: #1fb4ea;
-  color: #000;
-}
-
-.workflow-save {
-  background: #ffed00;
-  color: #000;
-}
-
-.workflow-next {
-  background: #22b24c;
-  color: #000;
-}
-
-.workflow-delete {
-  background: #ff1b1b;
-  color: #000;
-  grid-column: 2;
-}
-
-.workflow-button:hover {
-  filter: brightness(0.94);
+.entry-fields .state-field select {
+  background: #f7fffd;
+  border-color: #58bbae;
+  color: #073f45;
+  font-weight: 800;
 }
 
 .orders-main {
@@ -239,19 +189,6 @@ body {
     grid-column: 1 / -1;
   }
 
-  .workflow-actions {
-    grid-template-columns: 1fr;
-    justify-content: stretch;
-  }
-
-  .workflow-status,
-  .workflow-button {
-    width: 100%;
-  }
-
-  .workflow-delete {
-    grid-column: auto;
-  }
 }
 
 @media (width <= 720px) {

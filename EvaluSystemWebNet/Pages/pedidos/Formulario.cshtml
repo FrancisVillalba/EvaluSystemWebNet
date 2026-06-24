@@ -107,13 +107,7 @@
                         <span>Total estimado</span>
                         <strong id="estimated-total">Gs. 0</strong>
                     </div>
-                    <div class="workflow-actions">
-                        <span id="current-sale-status" class="workflow-status">Estado: -</span>
-                        <button id="return-state-button" class="workflow-button workflow-return" type="button">DEVOLVER</button>
-                        <button id="save-state-button" class="workflow-button workflow-save" type="submit">GUARDA</button>
-                        <button id="next-state-button" class="workflow-button workflow-next" type="button">Siguiente</button>
-                        <button id="delete-state-button" class="workflow-button workflow-delete" type="button">Eliminar</button>
-                    </div>
+                    <button class="save-button" type="submit">Guardar</button>
                 </footer>
             </form>
 </section>
@@ -152,11 +146,7 @@
         const sellerSelect = document.getElementById("order-seller");
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
-        const currentSaleStatus = document.getElementById("current-sale-status");
-        const returnStateButton = document.getElementById("return-state-button");
-        const saveStateButton = document.getElementById("save-state-button");
-        const nextStateButton = document.getElementById("next-state-button");
-        const deleteStateButton = document.getElementById("delete-state-button");
+        let loadedSaleStateId = "";
         let proofUrl = "";
 
         function numberValue(value) {
@@ -214,64 +204,41 @@
         }
 
         function currentSaleState() {
-            return stateById(saleStatusSelect.value) || initialSaleState();
+            return stateById(loadedSaleStateId || saleStatusSelect.value) || initialSaleState();
         }
 
-        function stateForAction(action) {
+        function workflowStateOptions() {
             const current = currentSaleState();
             const flow = Number(current?.numeroFlujo);
+            const options = [current];
 
-            if (action === "delete") {
-                return stateByFlow(5);
+            if (flow === 1) {
+                options.push(stateByFlow(2));
             }
 
-            if (action === "previous" && flow === 2) {
-                return stateByFlow(1);
+            if (flow === 2) {
+                options.unshift(stateByFlow(1));
+                options.push(stateByFlow(3));
             }
 
-            if (action === "next") {
-                if (flow === 1) {
-                    return stateByFlow(2);
-                }
-
-                if (flow === 2) {
-                    return stateByFlow(3);
-                }
-
-                if (flow === 3) {
-                    return stateByFlow(4);
-                }
+            if (flow === 3) {
+                options.push(stateByFlow(4));
             }
 
-            return current;
+            return options.filter((item, index, items) =>
+                item?.id && items.findIndex(option => option?.id === item.id) === index);
         }
 
-        function setSaleStateByAction(action) {
-            const state = stateForAction(action);
-            if (!state?.id) {
-                showToast("No se encontro el estado correspondiente al flujo.", "error");
-                return false;
-            }
-
-            saleStatusSelect.value = state.id;
-            renderWorkflowActions();
-            return true;
-        }
-
-        function renderWorkflowActions() {
-            const current = currentSaleState();
-            const flow = Number(current?.numeroFlujo);
-            const next = stateForAction("next");
-            const previous = stateForAction("previous");
-            const deleted = stateByFlow(5);
-
-            currentSaleStatus.textContent = `Estado: ${current?.nombre || current?.id || "-"}`;
-            returnStateButton.hidden = flow !== 2 || !previous?.id;
-            nextStateButton.hidden = ![1, 2, 3].includes(flow) || !next?.id || next.id === current?.id;
-            deleteStateButton.hidden = !deleted?.id || flow >= 4;
-
-            nextStateButton.textContent = "Siguiente";
-            returnStateButton.textContent = "DEVOLVER";
+        function renderSaleStatusOptions(selectedValue = saleStatusSelect.value) {
+            const allowedStates = workflowStateOptions();
+            saleStatusSelect.innerHTML = selectOptions(
+                allowedStates.map(item => ({
+                    value: item.id,
+                    label: item.nombre || item.id
+                })),
+                selectedValue,
+                "Seleccionar estado"
+            );
         }
 
         function createDetail(seed = {}) {
@@ -490,14 +457,7 @@
                 "Seleccionar estado de pago"
             );
 
-            saleStatusSelect.innerHTML = selectOptions(
-                formOptions.estadosVenta.map(item => ({
-                    value: item.id,
-                    label: item.nombre || item.id
-                })),
-                saleStatusSelect.value,
-                "Seleccionar estado"
-            );
+            renderSaleStatusOptions();
         }
 
         async function loadFormOptions() {
@@ -522,7 +482,8 @@
                 sellerSelect.value = String(formOptions.usuarioActualId);
             }
 
-            renderWorkflowActions();
+            loadedSaleStateId = saleStatusSelect.value;
+            renderSaleStatusOptions(saleStatusSelect.value);
         }
 
         function loadOrder(order) {
@@ -536,12 +497,13 @@
             document.getElementById("paid-amount").value = formatNumber(order.paidAmount || "0");
             document.getElementById("payment-status").value = order.estadoPagadoId || "";
             document.getElementById("order-sale-status").value = order.estadoVentaId || "";
+            loadedSaleStateId = order.estadoVentaId || saleStatusSelect.value || initialSaleState()?.id || "";
+            renderSaleStatusOptions(order.estadoVentaId || loadedSaleStateId);
             document.getElementById("order-notes").value = order.notes || "";
             setPaymentProof(order.proofName || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
             renderDetails();
-            renderWorkflowActions();
         }
 
         document.getElementById("add-detail-button").addEventListener("click", function () {
@@ -558,12 +520,8 @@
             event.target.value = formatNumber(event.target.value);
         });
 
-        async function saveOrder(action = "save") {
+        async function saveOrder() {
             const previousStateId = saleStatusSelect.value;
-
-            if (!setSaleStateByAction(action)) {
-                return;
-            }
 
             const payload = {
                 clienteId: Number(clientSelect.value),
@@ -593,14 +551,12 @@
 
             if (!payload.clienteId || !payload.formaPagoId || !payload.vendedorId) {
                 saleStatusSelect.value = previousStateId;
-                renderWorkflowActions();
                 showToast("Seleccione cliente, forma de pago y vendedor.", "error");
                 return;
             }
 
             if (!payload.detalles.length || payload.detalles.some(detail => !detail.productoId || !detail.tipoMaquinaId || detail.cantidad <= 0)) {
                 saleStatusSelect.value = previousStateId;
-                renderWorkflowActions();
                 showToast("Complete producto, maquina y cantidad en todos los detalles.", "error");
                 return;
             }
@@ -616,7 +572,6 @@
 
             if (!response.ok) {
                 saleStatusSelect.value = previousStateId;
-                renderWorkflowActions();
                 let message = "No se pudo guardar la venta. Revise los datos obligatorios.";
                 try {
                     const error = await response.json();
@@ -636,23 +591,7 @@
 
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
-            await saveOrder("save");
-        });
-
-        returnStateButton.addEventListener("click", async function () {
-            await saveOrder("previous");
-        });
-
-        nextStateButton.addEventListener("click", async function () {
-            await saveOrder("next");
-        });
-
-        deleteStateButton.addEventListener("click", async function () {
-            if (!confirm("Desea marcar este pedido como eliminado?")) {
-                return;
-            }
-
-            await saveOrder("delete");
+            await saveOrder();
         });
 
         const orderId = new URLSearchParams(window.location.search).get("id");
