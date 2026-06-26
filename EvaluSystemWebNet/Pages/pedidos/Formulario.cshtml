@@ -27,10 +27,18 @@
                     <div class="entry-fields">
                         <label class="field client-field" for="order-client">
                             Cliente
-                            <input id="client-search" class="client-search-input" type="search" placeholder="Buscar cliente" autocomplete="off" />
-                            <select id="order-client" required>
+                            <select id="order-client" class="select2-hidden-select">
                                 <option value="">Seleccionar cliente</option>
                             </select>
+                            <div id="client-select2" class="client-select2">
+                                <button id="client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="client-select2-label">Seleccionar cliente</span>
+                                </button>
+                                <div id="client-select2-dropdown" class="client-select2-dropdown" hidden>
+                                    <input id="client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                                    <div id="client-select2-options" class="client-select2-options" role="listbox"></div>
+                                </div>
+                            </div>
                         </label>
 
                         <label class="field" for="payment-method">
@@ -142,8 +150,13 @@
         const proofInput = document.getElementById("payment-proof");
         const proofName = document.getElementById("payment-proof-name");
         const proofDownload = document.getElementById("payment-proof-download");
-        const clientSearchInput = document.getElementById("client-search");
         const clientSelect = document.getElementById("order-client");
+        const clientSelect2 = document.getElementById("client-select2");
+        const clientSelect2Button = document.getElementById("client-select2-button");
+        const clientSelect2Label = document.getElementById("client-select2-label");
+        const clientSelect2Dropdown = document.getElementById("client-select2-dropdown");
+        const clientSelect2Search = document.getElementById("client-select2-search");
+        const clientSelect2Options = document.getElementById("client-select2-options");
         const paymentMethodSelect = document.getElementById("payment-method");
         const sellerSelect = document.getElementById("order-seller");
         const paymentStatusSelect = document.getElementById("payment-status");
@@ -181,23 +194,57 @@
             ].join("");
         }
 
-        function renderClientOptions(selectedValue = clientSelect.value) {
-            const search = clientSearchInput.value.trim().toLowerCase();
-            const selected = String(selectedValue || "");
-            const clientes = formOptions.clientes.filter(client => {
-                const value = String(client.id);
-                const text = `${client.nombre || ""} ${client.documento || ""}`.toLowerCase();
-                return !search || value === selected || text.includes(search);
-            });
+        function clientOptionLabel(client) {
+            return client.documento
+                ? `${client.nombre || `Cliente ${client.id}`} - ${client.documento}`
+                : client.nombre || `Cliente ${client.id}`;
+        }
 
+        function renderClientOptions(selectedValue = clientSelect.value) {
+            const selected = String(selectedValue || "");
             clientSelect.innerHTML = selectOptions(
-                clientes.map(client => ({
+                formOptions.clientes.map(client => ({
                     value: client.id,
-                    label: client.documento ? `${client.nombre || `Cliente ${client.id}`} - ${client.documento}` : client.nombre || `Cliente ${client.id}`
+                    label: clientOptionLabel(client)
                 })),
                 selected,
                 "Seleccionar cliente"
             );
+            updateClientSelect2Label();
+            renderClientSelect2Options();
+        }
+
+        function updateClientSelect2Label() {
+            const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
+            clientSelect2Label.textContent = selectedClient ? clientOptionLabel(selectedClient) : "Seleccionar cliente";
+        }
+
+        function renderClientSelect2Options() {
+            const search = clientSelect2Search.value.trim().toLowerCase();
+            const selected = String(clientSelect.value || "");
+            const clientes = formOptions.clientes.filter(client => {
+                const text = `${client.nombre || ""} ${client.documento || ""}`.toLowerCase();
+                return !search || text.includes(search);
+            });
+
+            clientSelect2Options.innerHTML = clientes.length
+                ? clientes.map(client => {
+                    const value = String(client.id);
+                    const isSelected = value === selected ? " is-selected" : "";
+                    return `<button class="client-select2-option${isSelected}" type="button" role="option" data-value="${escapeHtml(value)}">${escapeHtml(clientOptionLabel(client))}</button>`;
+                }).join("")
+                : `<div class="client-select2-empty">Sin resultados</div>`;
+        }
+
+        function setClientSelect2Open(isOpen) {
+            clientSelect2Dropdown.hidden = !isOpen;
+            clientSelect2Button.setAttribute("aria-expanded", String(isOpen));
+
+            if (isOpen) {
+                clientSelect2Search.value = "";
+                clientSelect2Search.focus();
+                renderClientSelect2Options();
+            }
         }
 
         function getProduct(productId) {
@@ -558,8 +605,28 @@
             setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "");
         });
 
-        clientSearchInput.addEventListener("input", function () {
-            renderClientOptions();
+        clientSelect2Button.addEventListener("click", function () {
+            setClientSelect2Open(clientSelect2Dropdown.hidden);
+        });
+
+        clientSelect2Search.addEventListener("input", renderClientSelect2Options);
+
+        clientSelect2Options.addEventListener("click", function (event) {
+            const option = event.target.closest("[data-value]");
+            if (!option) {
+                return;
+            }
+
+            clientSelect.value = option.dataset.value;
+            updateClientSelect2Label();
+            renderClientSelect2Options();
+            setClientSelect2Open(false);
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!clientSelect2.contains(event.target)) {
+                setClientSelect2Open(false);
+            }
         });
 
         document.getElementById("paid-amount").addEventListener("input", function (event) {
