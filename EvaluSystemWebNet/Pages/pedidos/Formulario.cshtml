@@ -376,7 +376,7 @@
             paymentProofFileName = name || "";
             proofName.textContent = name || "Sin comprobante adjunto";
             proofName.title = name || "";
-            proofDownload.hidden = !name;
+            proofDownload.hidden = !url;
             proofDownload.href = url || "#";
             proofDownload.download = name || "";
         }

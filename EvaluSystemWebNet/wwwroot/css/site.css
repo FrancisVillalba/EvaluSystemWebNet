@@ -301,6 +301,10 @@ body {
   flex: 0 0 34px;
 }
 
+.payment-proof-control .file-control-download[hidden] {
+  display: none;
+}
+
 .entry-fields .state-field {
   background: #eef9f7;
   border: 1px solid #b8e3dd;
