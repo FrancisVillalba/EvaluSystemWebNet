@@ -27,6 +27,7 @@
                     <div class="entry-fields">
                         <label class="field client-field" for="order-client">
                             Cliente
+                            <input id="client-search" class="client-search-input" type="search" placeholder="Buscar cliente" autocomplete="off" />
                             <select id="order-client" required>
                                 <option value="">Seleccionar cliente</option>
                             </select>
@@ -141,6 +142,7 @@
         const proofInput = document.getElementById("payment-proof");
         const proofName = document.getElementById("payment-proof-name");
         const proofDownload = document.getElementById("payment-proof-download");
+        const clientSearchInput = document.getElementById("client-search");
         const clientSelect = document.getElementById("order-client");
         const paymentMethodSelect = document.getElementById("payment-method");
         const sellerSelect = document.getElementById("order-seller");
@@ -177,6 +179,25 @@
                     return `<option value="${escapeHtml(value)}" ${isSelected}>${escapeHtml(item.label)}</option>`;
                 })
             ].join("");
+        }
+
+        function renderClientOptions(selectedValue = clientSelect.value) {
+            const search = clientSearchInput.value.trim().toLowerCase();
+            const selected = String(selectedValue || "");
+            const clientes = formOptions.clientes.filter(client => {
+                const value = String(client.id);
+                const text = `${client.nombre || ""} ${client.documento || ""}`.toLowerCase();
+                return !search || value === selected || text.includes(search);
+            });
+
+            clientSelect.innerHTML = selectOptions(
+                clientes.map(client => ({
+                    value: client.id,
+                    label: client.documento ? `${client.nombre || `Cliente ${client.id}`} - ${client.documento}` : client.nombre || `Cliente ${client.id}`
+                })),
+                selected,
+                "Seleccionar cliente"
+            );
         }
 
         function getProduct(productId) {
@@ -448,14 +469,7 @@
         }
 
         function populateHeaderOptions() {
-            clientSelect.innerHTML = selectOptions(
-                formOptions.clientes.map(client => ({
-                    value: client.id,
-                    label: client.nombre || `Cliente ${client.id}`
-                })),
-                clientSelect.value,
-                "Seleccionar cliente"
-            );
+            renderClientOptions();
 
             paymentMethodSelect.innerHTML = selectOptions(
                 formOptions.formasPago.map(item => ({
@@ -518,6 +532,7 @@
             document.getElementById("order-date").value = order.date || today;
             document.getElementById("order-status").value = order.status || "Cargado";
             document.getElementById("order-client").value = order.clientId || "";
+            renderClientOptions(order.clientId || "");
             document.getElementById("payment-method").value = order.formaPagoId || "";
             document.getElementById("order-seller").value = order.vendedorId || "";
             document.getElementById("order-delivery").value = order.delivery || today;
@@ -541,6 +556,10 @@
         proofInput.addEventListener("change", function () {
             const file = proofInput.files[0];
             setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "");
+        });
+
+        clientSearchInput.addEventListener("input", function () {
+            renderClientOptions();
         });
 
         document.getElementById("paid-amount").addEventListener("input", function (event) {

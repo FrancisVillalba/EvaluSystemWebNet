@@ -164,6 +164,11 @@ body {
   grid-column: 4;
 }
 
+.client-search-input {
+  background: #f7fbfc !important;
+  border-color: #d4e3ea !important;
+}
+
 .payment-proof-control {
   min-width: 0;
 }
