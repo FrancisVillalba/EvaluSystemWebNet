@@ -192,6 +192,18 @@
             return items.find(item => String(item.nombre || "").toLowerCase().includes(normalized))?.id || "";
         }
 
+        function paymentStatusIdByAmount(amount, total) {
+            if (amount <= 0) {
+                return findOptionId(formOptions.estadosPago, "pendiente");
+            }
+
+            if (total > 0 && amount >= total) {
+                return findOptionId(formOptions.estadosPago, "pagado");
+            }
+
+            return findOptionId(formOptions.estadosPago, "parcial");
+        }
+
         function stateById(id) {
             return formOptions.estadosVenta.find(item => String(item.id) === String(id));
         }
@@ -264,6 +276,17 @@
         function updateEstimatedTotal() {
             const total = details.reduce((sum, detail) => sum + detailTotal(detail), 0);
             estimatedTotal.textContent = `Gs. ${total.toLocaleString("es-PY")}`;
+            updatePaymentStatusFromAmount();
+        }
+
+        function updatePaymentStatusFromAmount() {
+            const statusId = paymentStatusIdByAmount(
+                numberValue(document.getElementById("paid-amount").value),
+                details.reduce((sum, detail) => sum + detailTotal(detail), 0));
+
+            if (statusId) {
+                paymentStatusSelect.value = statusId;
+            }
         }
 
         function setPaymentProof(name, url = "") {
@@ -522,6 +545,7 @@
 
         document.getElementById("paid-amount").addEventListener("input", function (event) {
             event.target.value = formatNumber(event.target.value);
+            updatePaymentStatusFromAmount();
         });
 
         async function saveOrder() {
