@@ -305,6 +305,66 @@ body {
   display: none;
 }
 
+.entry-header-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  min-width: min(100%, 620px);
+}
+
+.order-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.order-action-button {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: #0f2735;
+  cursor: pointer;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(15, 39, 53, 0.08);
+}
+
+.order-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.order-action-back {
+  color: #075f72;
+  background: #dff6ff;
+  border-color: #abddea;
+}
+
+.order-action-save {
+  color: #665100;
+  background: #fff4a8;
+  border-color: #ead45c;
+}
+
+.order-action-next {
+  color: #0a5d33;
+  background: #dbf7e4;
+  border-color: #9bd9af;
+}
+
+.order-action-delete {
+  color: #fff;
+  background: #df3f3f;
+  border-color: #c93232;
+}
+
+.order-action-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 39, 53, 0.12);
+}
+
 .entry-fields .state-field {
   background: #eef9f7;
   border: 1px solid #b8e3dd;
@@ -340,6 +400,13 @@ body {
     grid-column: 1 / -1;
   }
 
+  .entry-header-actions {
+    justify-items: stretch;
+  }
+
+  .order-state-actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (width <= 720px) {
@@ -359,6 +426,15 @@ body {
 
   .payment-proof-control .file-control-download {
     width: 34px;
+  }
+
+  .order-state-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .order-action-button {
+    width: 100%;
   }
 }
 
@@ -778,7 +854,7 @@ body {
 .state-action-footer {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 14px 18px;
   padding: 8px 0 2px;
 }
@@ -786,12 +862,12 @@ body {
 .state-action-button {
   min-width: 150px;
   min-height: 48px;
-  border: 2px solid #0f2735;
+  border: 1px solid transparent;
   border-radius: 8px;
   color: #071c28;
   cursor: pointer;
   font-weight: 900;
-  box-shadow: 0 4px 0 #0f2735;
+  box-shadow: 0 8px 18px rgba(15, 39, 53, 0.08);
 }
 
 .state-action-button:disabled {

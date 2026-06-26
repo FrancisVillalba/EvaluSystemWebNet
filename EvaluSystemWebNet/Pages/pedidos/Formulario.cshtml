@@ -13,7 +13,15 @@
                     <h1 id="order-form-title">Nuevo pedido</h1>
                     <p>Registra la venta y sus detalles para enviarla a produccion.</p>
                 </div>
-                <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
+                <div class="entry-header-actions">
+                    <div class="order-state-actions" aria-label="Acciones del pedido">
+                        <button id="state-back-action" class="order-action-button order-action-back" type="button">Devolver</button>
+                        <button id="state-save-action" class="order-action-button order-action-save" type="button">Guardar</button>
+                        <button id="state-next-action" class="order-action-button order-action-next" type="button">Siguiente</button>
+                        <button id="state-delete-action" class="order-action-button order-action-delete" type="button">Eliminar</button>
+                    </div>
+                    <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
+                </div>
             </header>
 
             <form id="order-form" class="entry-form">
@@ -116,7 +124,6 @@
                         <span>Total estimado</span>
                         <strong id="estimated-total">Gs. 0</strong>
                     </div>
-                    <button class="save-button" type="submit">Guardar</button>
                 </footer>
             </form>
 </section>
@@ -161,6 +168,10 @@
         const sellerSelect = document.getElementById("order-seller");
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
+        const stateBackAction = document.getElementById("state-back-action");
+        const stateSaveAction = document.getElementById("state-save-action");
+        const stateNextAction = document.getElementById("state-next-action");
+        const stateDeleteAction = document.getElementById("state-delete-action");
         let loadedSaleStateId = "";
         let paymentProofFileName = "";
         let proofUrl = "";
@@ -288,6 +299,55 @@
             return stateById(loadedSaleStateId || saleStatusSelect.value) || initialSaleState();
         }
 
+        function previousSaleState() {
+            const flow = Number(currentSaleState()?.numeroFlujo);
+            return flow === 2 ? stateByFlow(1) : null;
+        }
+
+        function nextSaleState() {
+            const flow = Number(currentSaleState()?.numeroFlujo);
+
+            if (flow === 1) {
+                return stateByFlow(2);
+            }
+
+            if (flow === 2) {
+                return stateByFlow(3);
+            }
+
+            if (flow === 3) {
+                return stateByFlow(4);
+            }
+
+            return null;
+        }
+
+        function deleteSaleState() {
+            return stateByFlow(5);
+        }
+
+        function ensureSaleStatusOption(state) {
+            if (!state?.id || Array.from(saleStatusSelect.options).some(option => option.value === String(state.id))) {
+                return;
+            }
+
+            const option = document.createElement("option");
+            option.value = state.id;
+            option.textContent = state.nombre || state.id;
+            saleStatusSelect.appendChild(option);
+        }
+
+        function setSaleStatusValue(state) {
+            if (!state?.id) {
+                return false;
+            }
+
+            ensureSaleStatusOption(state);
+            saleStatusSelect.value = state.id;
+            updateStateActionButtons();
+            return true;
+        }
+
         function isMovingFromCargaToImpresion(destinationStateId = saleStatusSelect.value) {
             const current = currentSaleState();
             const destination = stateById(destinationStateId);
@@ -331,6 +391,23 @@
                 "Seleccionar estado"
             );
             saleStatusSelect.disabled = !orderId;
+            updateStateActionButtons();
+        }
+
+        function updateStateActionButtons() {
+            const previous = previousSaleState();
+            const next = nextSaleState();
+            const deleteState = deleteSaleState();
+            const currentFlow = Number(currentSaleState()?.numeroFlujo);
+            const hasOrder = Boolean(orderId);
+
+            stateBackAction.disabled = !hasOrder || !previous;
+            stateNextAction.disabled = !hasOrder || !next;
+            stateDeleteAction.disabled = !hasOrder || !deleteState || currentFlow >= 4;
+            stateSaveAction.disabled = false;
+
+            stateBackAction.textContent = previous ? `Devolver a ${previous.nombre || previous.id}` : "Devolver";
+            stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
         }
 
         function createDetail(seed = {}) {
@@ -644,8 +721,13 @@
             updatePaymentStatusFromAmount();
         });
 
-        async function saveOrder() {
+        async function saveOrder(targetStateId = null) {
             const previousStateId = saleStatusSelect.value;
+            if (targetStateId) {
+                const targetState = stateById(targetStateId);
+                ensureSaleStatusOption(targetState);
+                saleStatusSelect.value = targetStateId;
+            }
 
             const payload = {
                 clienteId: Number(clientSelect.value),
@@ -724,6 +806,43 @@
                 window.location.href = "/pedidos";
             }, 700);
         }
+
+        async function saveWithTargetState(state) {
+            if (!setSaleStatusValue(state)) {
+                showToast("No se encontro el estado solicitado.", "error");
+                return;
+            }
+
+            await saveOrder(state.id);
+        }
+
+        stateBackAction.addEventListener("click", async function () {
+            await saveWithTargetState(previousSaleState());
+        });
+
+        stateSaveAction.addEventListener("click", async function () {
+            await saveOrder();
+        });
+
+        stateNextAction.addEventListener("click", async function () {
+            await saveWithTargetState(nextSaleState());
+        });
+
+        stateDeleteAction.addEventListener("click", async function () {
+            const deleteState = deleteSaleState();
+            if (!deleteState) {
+                showToast("No se encontro el estado eliminado.", "error");
+                return;
+            }
+
+            if (!window.confirm("Desea marcar este pedido como eliminado?")) {
+                return;
+            }
+
+            await saveWithTargetState(deleteState);
+        });
+
+        saleStatusSelect.addEventListener("change", updateStateActionButtons);
 
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
