@@ -21,15 +21,88 @@
                 <input type="hidden" id="order-date" />
                 <input type="hidden" id="order-status" />
 
-                <section class="entry-section order-actions-section" aria-label="Acciones del pedido">
-                    <div class="section-title">Acciones del pedido</div>
+                <div class="entry-top-row">
+                    <section class="entry-section" aria-label="Carga de ventas impresiones">
+                        <div class="section-title">Carga de ventas impresiones</div>
 
-                    <div class="entry-fields order-actions-row">
-                        <div class="order-actions-context">
-                            <span>Flujo de estado</span>
-                            <strong id="order-action-current-state">Carga</strong>
-                            <p id="order-action-help">Seleccione una accion para guardar, avanzar, devolver o eliminar el pedido.</p>
+                        <div class="entry-fields">
+                            <label class="field client-field" for="order-client">
+                                Cliente
+                                <select id="order-client" class="select2-hidden-select">
+                                    <option value="">Seleccionar cliente</option>
+                                </select>
+                                <div id="client-select2" class="client-select2">
+                                    <button id="client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                        <span id="client-select2-label">Seleccionar cliente</span>
+                                    </button>
+                                    <div id="client-select2-dropdown" class="client-select2-dropdown" hidden>
+                                        <input id="client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                                        <div id="client-select2-options" class="client-select2-options" role="listbox"></div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="field" for="payment-method">
+                                Forma Pago
+                                <select id="payment-method">
+                                    <option value="">Seleccionar forma de pago</option>
+                                </select>
+                            </label>
+
+                            <label class="field" for="order-seller">
+                                Vendedor
+                                <select id="order-seller" required>
+                                    <option value="">Seleccionar vendedor</option>
+                                </select>
+                            </label>
+
+                            <label class="field" for="order-delivery">
+                                Fecha Entrega
+                                <input id="order-delivery" required type="date" />
+                            </label>
+
+                            <label class="field" for="paid-amount">
+                                Monto pagado
+                                <input id="paid-amount" inputmode="numeric" placeholder="0" />
+                            </label>
+
+                            <label class="field" for="payment-status">
+                                Estado de pago
+                                <select id="payment-status">
+                                    <option value="">Seleccionar estado de pago</option>
+                                </select>
+                            </label>
+
+                            <label class="field state-field" for="order-sale-status">
+                                Estado
+                                <select id="order-sale-status">
+                                    <option value="">Seleccionar estado</option>
+                                </select>
+                            </label>
+
+                            <div class="field payment-proof-field compact-proof-field">
+                                <label for="payment-proof">Comprobante de pago</label>
+                                <div class="file-control payment-proof-control">
+                                    <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
+                                    <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
+                                    <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
+                                    <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                            <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <label class="field notes-field" for="order-notes">
+                                Observacion
+                                <textarea id="order-notes" rows="2" placeholder="Notas del pedido"></textarea>
+                            </label>
                         </div>
+                    </section>
+
+                    <section class="entry-section order-actions-section" aria-label="Acciones del pedido">
+                        <div class="section-title">Acciones del pedido</div>
 
                         <div class="order-state-actions" aria-label="Acciones del pedido">
                             <button id="state-back-action" class="order-action-button order-action-back" type="button">Devolver</button>
@@ -37,87 +110,8 @@
                             <button id="state-next-action" class="order-action-button order-action-next" type="button">Siguiente</button>
                             <button id="state-delete-action" class="order-action-button order-action-delete" type="button">Eliminar</button>
                         </div>
-                    </div>
-                </section>
-
-                <section class="entry-section" aria-label="Carga de ventas impresiones">
-                    <div class="section-title">Carga de ventas impresiones</div>
-
-                    <div class="entry-fields">
-                        <label class="field client-field" for="order-client">
-                            Cliente
-                            <select id="order-client" class="select2-hidden-select">
-                                <option value="">Seleccionar cliente</option>
-                            </select>
-                            <div id="client-select2" class="client-select2">
-                                <button id="client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
-                                    <span id="client-select2-label">Seleccionar cliente</span>
-                                </button>
-                                <div id="client-select2-dropdown" class="client-select2-dropdown" hidden>
-                                    <input id="client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
-                                    <div id="client-select2-options" class="client-select2-options" role="listbox"></div>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="field" for="payment-method">
-                            Forma Pago
-                            <select id="payment-method">
-                                <option value="">Seleccionar forma de pago</option>
-                            </select>
-                        </label>
-
-                        <label class="field" for="order-seller">
-                            Vendedor
-                            <select id="order-seller" required>
-                                <option value="">Seleccionar vendedor</option>
-                            </select>
-                        </label>
-
-                        <label class="field" for="order-delivery">
-                            Fecha Entrega
-                            <input id="order-delivery" required type="date" />
-                        </label>
-
-                        <label class="field" for="paid-amount">
-                            Monto pagado
-                            <input id="paid-amount" inputmode="numeric" placeholder="0" />
-                        </label>
-
-                        <label class="field" for="payment-status">
-                            Estado de pago
-                            <select id="payment-status">
-                                <option value="">Seleccionar estado de pago</option>
-                            </select>
-                        </label>
-
-                        <label class="field state-field" for="order-sale-status">
-                            Estado
-                            <select id="order-sale-status">
-                                <option value="">Seleccionar estado</option>
-                            </select>
-                        </label>
-
-                        <div class="field payment-proof-field compact-proof-field">
-                            <label for="payment-proof">Comprobante de pago</label>
-                            <div class="file-control payment-proof-control">
-                                <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
-                                <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
-                                <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
-                                <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
-                                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                                        <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-
-                        <label class="field notes-field" for="order-notes">
-                            Observacion
-                            <textarea id="order-notes" rows="2" placeholder="Notas del pedido"></textarea>
-                        </label>
-                    </div>
-                </section>
+                    </section>
+                </div>
 
                 <section class="entry-section" aria-label="Detalle de productos y disenos">
                     <div class="section-title detail-title">
@@ -183,8 +177,6 @@
         const stateSaveAction = document.getElementById("state-save-action");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
-        const orderActionCurrentState = document.getElementById("order-action-current-state");
-        const orderActionHelp = document.getElementById("order-action-help");
         let loadedSaleStateId = "";
         let paymentProofFileName = "";
         let proofUrl = "";
@@ -411,7 +403,6 @@
             const previous = previousSaleState();
             const next = nextSaleState();
             const deleteState = deleteSaleState();
-            const current = currentSaleState();
             const currentFlow = Number(currentSaleState()?.numeroFlujo);
             const hasOrder = Boolean(orderId);
 
@@ -422,10 +413,6 @@
 
             stateBackAction.textContent = previous ? `Devolver a ${previous.nombre || previous.id}` : "Devolver";
             stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
-            orderActionCurrentState.textContent = current?.nombre || current?.id || "Carga";
-            orderActionHelp.textContent = hasOrder
-                ? "Los botones guardan el pedido aplicando el cambio de estado seleccionado."
-                : "El pedido nuevo queda fijo en estado de carga hasta guardar por primera vez.";
         }
 
         function createDetail(seed = {}) {

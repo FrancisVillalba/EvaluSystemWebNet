@@ -305,49 +305,18 @@ body {
   display: none;
 }
 
+.entry-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 210px);
+  align-items: stretch;
+  gap: 16px;
+}
+
 .order-state-actions {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
-  width: 100%;
-}
-
-.order-actions-row {
-  align-items: stretch;
-}
-
-.order-actions-context {
-  grid-column: span 3;
-  display: grid;
-  align-content: center;
-  gap: 6px;
-  min-height: 168px;
-  border: 1px solid #dfe8ed;
-  border-radius: 8px;
-  background: #f8fbfc;
-  padding: 16px;
-}
-
-.order-actions-context span {
-  color: #607381;
-  font-size: 0.78rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.order-actions-context strong {
-  color: #0f2735;
-  font-size: 1.45rem;
-}
-
-.order-actions-context p {
-  margin: 0;
-  color: #4f6575;
-  font-weight: 700;
-}
-
-.order-actions-row .order-state-actions {
-  grid-column: span 1;
+  padding: 18px;
 }
 
 .order-action-button {
@@ -432,12 +401,8 @@ body {
     grid-column: 1 / -1;
   }
 
-  .order-actions-context {
-    grid-column: 1 / -1;
-  }
-
-  .order-actions-row .order-state-actions {
-    grid-column: 1 / -1;
+  .entry-top-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -458,10 +423,6 @@ body {
 
   .payment-proof-control .file-control-download {
     width: 34px;
-  }
-
-  .order-actions-context {
-    min-height: auto;
   }
 
   .order-action-button {
