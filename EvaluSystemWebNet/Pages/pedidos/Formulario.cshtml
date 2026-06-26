@@ -13,21 +13,32 @@
                     <h1 id="order-form-title">Nuevo pedido</h1>
                     <p>Registra la venta y sus detalles para enviarla a produccion.</p>
                 </div>
-                <div class="entry-header-actions">
-                    <div class="order-state-actions" aria-label="Acciones del pedido">
-                        <button id="state-back-action" class="order-action-button order-action-back" type="button">Devolver</button>
-                        <button id="state-save-action" class="order-action-button order-action-save" type="button">Guardar</button>
-                        <button id="state-next-action" class="order-action-button order-action-next" type="button">Siguiente</button>
-                        <button id="state-delete-action" class="order-action-button order-action-delete" type="button">Eliminar</button>
-                    </div>
-                    <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
-                </div>
+                <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
             </header>
 
             <form id="order-form" class="entry-form">
                 <input type="hidden" id="order-id" />
                 <input type="hidden" id="order-date" />
                 <input type="hidden" id="order-status" />
+
+                <section class="entry-section order-actions-section" aria-label="Acciones del pedido">
+                    <div class="section-title">Acciones del pedido</div>
+
+                    <div class="entry-fields order-actions-row">
+                        <div class="order-actions-context">
+                            <span>Flujo de estado</span>
+                            <strong id="order-action-current-state">Carga</strong>
+                            <p id="order-action-help">Seleccione una accion para guardar, avanzar, devolver o eliminar el pedido.</p>
+                        </div>
+
+                        <div class="order-state-actions" aria-label="Acciones del pedido">
+                            <button id="state-back-action" class="order-action-button order-action-back" type="button">Devolver</button>
+                            <button id="state-save-action" class="order-action-button order-action-save" type="button">Guardar</button>
+                            <button id="state-next-action" class="order-action-button order-action-next" type="button">Siguiente</button>
+                            <button id="state-delete-action" class="order-action-button order-action-delete" type="button">Eliminar</button>
+                        </div>
+                    </div>
+                </section>
 
                 <section class="entry-section" aria-label="Carga de ventas impresiones">
                     <div class="section-title">Carga de ventas impresiones</div>
@@ -172,6 +183,8 @@
         const stateSaveAction = document.getElementById("state-save-action");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
+        const orderActionCurrentState = document.getElementById("order-action-current-state");
+        const orderActionHelp = document.getElementById("order-action-help");
         let loadedSaleStateId = "";
         let paymentProofFileName = "";
         let proofUrl = "";
@@ -398,6 +411,7 @@
             const previous = previousSaleState();
             const next = nextSaleState();
             const deleteState = deleteSaleState();
+            const current = currentSaleState();
             const currentFlow = Number(currentSaleState()?.numeroFlujo);
             const hasOrder = Boolean(orderId);
 
@@ -408,6 +422,10 @@
 
             stateBackAction.textContent = previous ? `Devolver a ${previous.nombre || previous.id}` : "Devolver";
             stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
+            orderActionCurrentState.textContent = current?.nombre || current?.id || "Carga";
+            orderActionHelp.textContent = hasOrder
+                ? "Los botones guardan el pedido aplicando el cambio de estado seleccionado."
+                : "El pedido nuevo queda fijo en estado de carga hasta guardar por primera vez.";
         }
 
         function createDetail(seed = {}) {
