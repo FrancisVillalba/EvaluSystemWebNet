@@ -380,6 +380,13 @@ body {
   font-weight: 800;
 }
 
+.entry-fields .state-field select:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  background: #eef9f7;
+  color: #0b5961;
+}
+
 .orders-main {
   padding-top: 22px;
 }

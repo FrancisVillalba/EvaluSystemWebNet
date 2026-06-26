@@ -395,7 +395,7 @@
                 selectedValue,
                 "Seleccionar estado"
             );
-            saleStatusSelect.disabled = !orderId;
+            saleStatusSelect.disabled = true;
             updateStateActionButtons();
         }
 
@@ -846,8 +846,6 @@
 
             await saveWithTargetState(deleteState);
         });
-
-        saleStatusSelect.addEventListener("change", updateStateActionButtons);
 
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
