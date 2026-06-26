@@ -288,6 +288,16 @@
             return stateById(loadedSaleStateId || saleStatusSelect.value) || initialSaleState();
         }
 
+        function isMovingFromCargaToImpresion(destinationStateId = saleStatusSelect.value) {
+            const current = currentSaleState();
+            const destination = stateById(destinationStateId);
+            return Number(current?.numeroFlujo) === 1 && Number(destination?.numeroFlujo) === 2;
+        }
+
+        function isPaidStatusSelected(statusId = paymentStatusSelect.value) {
+            return String(statusId || "") === String(findOptionId(formOptions.estadosPago, "pagado") || "");
+        }
+
         function workflowStateOptions() {
             const current = currentSaleState();
             const flow = Number(current?.numeroFlujo);
@@ -672,6 +682,18 @@
             if (!payload.detalles.length || payload.detalles.some(detail => !detail.productoId || !detail.tipoMaquinaId || detail.cantidad <= 0)) {
                 saleStatusSelect.value = previousStateId;
                 showToast("Complete producto, maquina y cantidad en todos los detalles.", "error");
+                return;
+            }
+
+            if (isMovingFromCargaToImpresion(payload.estadoVentaId) && details.some(detail => !detail.designName)) {
+                saleStatusSelect.value = previousStateId;
+                showToast("Para enviar a impresion debe adjuntar el diseno en todos los detalles.", "error");
+                return;
+            }
+
+            if (isPaidStatusSelected(payload.estadoPagadoId) && !paymentProofFileName) {
+                saleStatusSelect.value = previousStateId;
+                showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
                 return;
             }
 
