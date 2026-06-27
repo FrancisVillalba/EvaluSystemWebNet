@@ -21,7 +21,7 @@ public record DashboardMachineDto(string Nombre, int Cantidad);
 
 public record DashboardMoneyDto(string Nombre, decimal Monto);
 
-public record DashboardSellerDto(string Nombre, int Cantidad);
+public record DashboardSellerDto(string Nombre, decimal Monto);
 
 public record LoginRequest(string Usuario, string Pass);
 
@@ -81,6 +81,8 @@ public record PedidoFormOptionsDto(
     IEnumerable<TipoMaquinaDto> Maquinas,
     int? UsuarioActualId,
     bool PuedeVerTodosPedidos);
+
+public record ExcelFileDto(string FileName, string ContentType, string Bytes);
 
 public record VentaImpresionCompletaRequest(
     int ClienteId,

@@ -544,6 +544,27 @@ body.is-app-loading {
   padding-top: 16px;
 }
 
+.orders-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  height: 38px;
+  color: #0c5f72;
+  cursor: pointer;
+  background: #e7f5f3;
+  border: 1px solid #cbe6e1;
+  border-radius: 7px;
+  padding: 0 14px;
+  font-weight: 850;
+  box-shadow: 0 6px 14px rgba(12, 95, 114, 0.08);
+}
+
+.orders-export:hover {
+  background: #d8eeeb;
+  border-color: #b8dad4;
+}
+
 .orders-filters {
   grid-template-columns: repeat(5, minmax(150px, 1fr));
 }
@@ -750,7 +771,7 @@ body.is-app-loading {
 
 .dashboard-analytics-grid {
   display: grid;
-  grid-template-columns: minmax(340px, 0.86fr) minmax(440px, 1.14fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -879,17 +900,17 @@ body.is-app-loading {
   box-shadow: 0 12px 28px rgba(15, 39, 53, 0.16);
 }
 
-.summary-tile p,
-.summary-tile span {
+.summary-tile p {
   margin: 0;
   color: rgba(255, 255, 255, 0.94);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
+  font-weight: 900;
   line-height: 1.35;
 }
 
 .summary-tile strong {
   display: block;
-  margin: 7px 0;
+  margin: 8px 0 0;
   color: #fff;
   font-size: clamp(2rem, 3.6vw, 2.65rem);
   line-height: 0.95;
@@ -927,27 +948,27 @@ body.is-app-loading {
   display: grid;
   gap: 13px;
   margin-top: 20px;
+  width: 100%;
 }
 
 .bar-row {
   display: grid;
-  grid-template-columns: minmax(150px, 210px) minmax(140px, 1fr) minmax(92px, auto);
+  grid-template-columns: minmax(0, 1.25fr) minmax(120px, 1fr) minmax(92px, auto);
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   color: #07145a;
 }
 
 .bar-row span {
-  overflow: hidden;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 700;
+  text-align: left;
+  white-space: normal;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
 .bar-row strong {
   color: #07145a;
-  font-weight: 900;
+  font-weight: 650;
 }
 
 .bar-track {

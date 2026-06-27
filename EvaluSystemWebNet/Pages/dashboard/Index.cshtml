@@ -37,9 +37,8 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos cargados hoy</p>
+                    <p>PEDIDOS CARGADOS HOY</p>
                     <strong id="metric-loaded-today">0</strong>
-                    <span>Pedidos del dia listos para iniciar diseno o produccion</span>
                 </div>
             </article>
 
@@ -52,9 +51,8 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos impresos hoy</p>
+                    <p>PEDIDOS IMPRESOS</p>
                     <strong id="metric-printed">0</strong>
-                    <span>Pedidos del dia que ya pasaron por impresion</span>
                 </div>
             </article>
 
@@ -67,9 +65,8 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos pendientes de impresion hoy</p>
+                    <p>PEDIDOS PENDIENTES DE IMPRESIÓN</p>
                     <strong id="metric-missing-print">0</strong>
-                    <span>Pedidos del dia en espera de entrar a impresion</span>
                 </div>
             </article>
 
@@ -84,12 +81,19 @@
                     </svg>
                 </span>
                 <div>
-                    <p>Cantidad de pedidos entregados hoy</p>
+                    <p>PEDIDOS PENDIENTES DE ENVIO</p>
                     <strong id="metric-delivered">0/0</strong>
-                    <span>Pedidos entregados del total cargado hoy</span>
                 </div>
             </article>
         </section>
+
+        <article class="analytics-card bar-card">
+            <header>
+                <h2>Mejor vendedor del mes</h2>
+            </header>
+            <div class="bar-chart seller-chart" id="seller-bars"></div>
+            <p class="chart-axis-label">Monto vendido</p>
+        </article>
 
         <article class="analytics-card bar-card">
             <header>
@@ -97,14 +101,6 @@
             </header>
             <div class="bar-chart" id="payment-bars"></div>
             <p class="chart-axis-label">Monto pendiente</p>
-        </article>
-
-        <article class="analytics-card bar-card">
-            <header>
-                <h2>Mejor vendedor del mes</h2>
-            </header>
-            <div class="bar-chart seller-chart" id="seller-bars"></div>
-            <p class="chart-axis-label">Cantidad de pedidos</p>
         </article>
     </section>
 </section>
@@ -163,7 +159,7 @@
                 const width = Math.max((value / max) * 100, 3);
                 return `
                     <div class="bar-row">
-                        <span>${item.nombre}</span>
+                        <span title="${item.nombre}">${item.nombre}</span>
                         <div class="bar-track">
                             <i style="width:${width}%; background:${chartColors[index % chartColors.length]}"></i>
                         </div>
@@ -193,7 +189,7 @@
 
             renderDonut(machines, totalMachines);
             renderBars("payment-bars", dashboard.pendientesPago || [], "monto", formatMoney);
-            renderBars("seller-bars", dashboard.mejoresVendedores || [], "cantidad", formatInteger);
+            renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto", formatMoney);
         }
 
         loadDashboard();

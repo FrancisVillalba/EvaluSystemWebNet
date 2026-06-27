@@ -22,6 +22,9 @@
                         <h2>Pedidos cargados</h2>
                         <p id="order-count">0 pedidos encontrados</p>
                     </div>
+                    <button id="download-orders-excel" class="orders-export" type="button">
+                       Excel
+                    </button>
                 </div>
 
                 <section class="orders-filters" aria-label="Filtros de pedidos">
@@ -145,6 +148,7 @@
         const prevPageButton = document.getElementById("order-prev-page");
         const nextPageButton = document.getElementById("order-next-page");
         const pageSizeSelect = document.getElementById("order-page-size");
+        const downloadOrdersExcelButton = document.getElementById("download-orders-excel");
 
         function statusClass(status) {
             return String(status || "")
@@ -179,12 +183,8 @@
             return total ? `${total} m` : "0 m";
         }
 
-        function buildOrderParams(page, size) {
-            const params = new URLSearchParams({
-                page: page,
-                pageSize: size
-            });
-
+        function buildFilterParams() {
+            const params = new URLSearchParams();
             if (dateFrom.value) {
                 params.set("dateFrom", dateFrom.value);
             }
@@ -205,6 +205,13 @@
                 params.set("vendedorId", sellerFilter.value);
             }
 
+            return params;
+        }
+
+        function buildOrderParams(page, size) {
+            const params = buildFilterParams();
+            params.set("page", page);
+            params.set("pageSize", size);
             return params;
         }
 
@@ -349,6 +356,25 @@
             });
         }
 
+        async function downloadFilteredOrdersExcel() {
+            await withAppLoading("Preparando Excel...", async function () {
+                const response = await fetch(`/api/pedidos/exportar-excel?${buildFilterParams().toString()}`);
+                if (!response.ok) {
+                    showToast("No se pudo preparar el Excel de pedidos.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `pedidos-${localDateValue()}.xls`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
         prevPageButton.addEventListener("click", function () {
             if (currentPage <= 1) {
                 return;
@@ -372,6 +398,8 @@
             currentPage = 1;
             loadOrders();
         });
+
+        downloadOrdersExcelButton.addEventListener("click", downloadFilteredOrdersExcel);
 
         filterClientSelect2Button.addEventListener("click", function () {
             setFilterClientSelect2Open(filterClientSelect2Dropdown.hidden);

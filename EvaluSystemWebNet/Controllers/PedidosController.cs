@@ -98,6 +98,29 @@ public class PedidosController : ControllerBase
             : Ok(options);
     }
 
+    [HttpGet("exportar-excel")]
+    public async Task<IActionResult> ExportExcel(
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] int? clienteId = null,
+        [FromQuery] string? estadoVentaId = null,
+        [FromQuery] int? vendedorId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var filters = BuildFilterQuery(dateFrom, dateTo, clienteId, estadoVentaId, vendedorId);
+        var excel = await _backendApiClient.GetAsync<ExcelFileDto>(
+            $"api/VentasImpresion/exportar-excel?{filters}",
+            cancellationToken);
+
+        if (excel is null || string.IsNullOrWhiteSpace(excel.Bytes))
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo exportar pedidos desde EvaluSystemBack." });
+        }
+
+        var bytes = Convert.FromBase64String(excel.Bytes);
+        return File(bytes, excel.ContentType, excel.FileName);
+    }
+
     [HttpPost]
     public async Task<ActionResult<VentaImpresionCabDto>> Create(
         [FromBody] VentaImpresionCompletaRequest request,
@@ -185,6 +208,43 @@ public class PedidosController : ControllerBase
             pedido.ComprobantePagoNombre ?? string.Empty,
             pedido.Observacion ?? string.Empty,
             pedido.Detalles.Select(ToDetailView).ToList());
+    }
+
+    private static string BuildFilterQuery(
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        int? clienteId,
+        string? estadoVentaId,
+        int? vendedorId)
+    {
+        var filters = new List<string>();
+
+        if (dateFrom.HasValue)
+        {
+            filters.Add($"dateFrom={Uri.EscapeDataString(dateFrom.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (dateTo.HasValue)
+        {
+            filters.Add($"dateTo={Uri.EscapeDataString(dateTo.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (clienteId.HasValue)
+        {
+            filters.Add($"clienteId={clienteId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoVentaId))
+        {
+            filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
+        }
+
+        if (vendedorId.HasValue)
+        {
+            filters.Add($"vendedorId={vendedorId.Value}");
+        }
+
+        return string.Join("&", filters);
     }
 
     private static PedidoDetalleView ToDetailView(VentaImpresionDetDto detalle)
