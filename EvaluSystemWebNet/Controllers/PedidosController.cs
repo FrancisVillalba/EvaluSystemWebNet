@@ -22,6 +22,7 @@ public class PedidosController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? clienteId = null,
         [FromQuery] string? estadoVentaId = null,
+        [FromQuery] int? vendedorId = null,
         CancellationToken cancellationToken = default)
     {
         var filters = new List<string>
@@ -50,17 +51,31 @@ public class PedidosController : ControllerBase
             filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
         }
 
-        var pedidos = await _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
+        if (vendedorId.HasValue)
+        {
+            filters.Add($"vendedorId={vendedorId.Value}");
+        }
+
+        var pedidosTask = _backendApiClient.GetAsync<PagedResponse<VentaImpresionCabDto>>(
             $"api/VentasImpresion?{string.Join("&", filters)}",
             cancellationToken);
+        var opcionesTask = _backendApiClient.GetAsync<PedidoFormOptionsDto>("api/VentasImpresion/opciones", cancellationToken);
+
+        await Task.WhenAll(pedidosTask, opcionesTask);
+
+        var pedidos = await pedidosTask;
 
         if (pedidos is null)
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo obtener pedidos desde EvaluSystemBack." });
         }
 
+        var vendedores = (await opcionesTask)?.Vendedores
+            .ToDictionary(x => x.Id, x => x.Persona ?? x.NombreUsuario ?? $"Usuario {x.Id}")
+            ?? new Dictionary<int, string>();
+
         return Ok(new PagedView<PedidoView>(
-            pedidos.Items.Select(ToView),
+            pedidos.Items.Select(pedido => ToView(pedido, vendedores)),
             pedidos.Page,
             pedidos.PageSize,
             pedidos.TotalItems,
@@ -77,31 +92,10 @@ public class PedidosController : ControllerBase
     [HttpGet("opciones")]
     public async Task<ActionResult<PedidoFormOptionsDto>> GetOptions(CancellationToken cancellationToken)
     {
-        var clientesTask = _backendApiClient.GetAsync<PagedResponse<ClienteDto>>("api/Clientes?page=1&pageSize=100", cancellationToken);
-        var formasPagoTask = _backendApiClient.GetAsync<IEnumerable<CatalogStringDto>>("api/FormasPago", cancellationToken);
-        var vendedoresTask = _backendApiClient.GetAsync<IEnumerable<UsuarioDto>>("api/Usuarios", cancellationToken);
-        var estadosPagoTask = _backendApiClient.GetAsync<IEnumerable<CatalogStringDto>>("api/EstadosPago", cancellationToken);
-        var estadosVentaTask = _backendApiClient.GetAsync<IEnumerable<EstadoVentaOptionDto>>("api/EstadosVenta", cancellationToken);
-        var productosTask = _backendApiClient.GetAsync<IEnumerable<ProductoDto>>("api/Productos", cancellationToken);
-        var maquinasTask = _backendApiClient.GetAsync<IEnumerable<TipoMaquinaDto>>("api/TiposMaquina", cancellationToken);
-
-        await Task.WhenAll(clientesTask, formasPagoTask, vendedoresTask, estadosPagoTask, estadosVentaTask, productosTask, maquinasTask);
-
-        var clientes = (await clientesTask)?.Items ?? [];
-        var usuarioActualId = HttpContext.Session.GetInt32("BackendUserId");
-
-        return Ok(new PedidoFormOptionsDto(
-            clientes.Where(x => x.Estado != false),
-            (await formasPagoTask ?? []).Where(x => x.Estado != false),
-            (await vendedoresTask ?? []).Where(x => x.Estado != false),
-            (await estadosPagoTask ?? []).Where(x => x.Estado != false),
-            (await estadosVentaTask ?? [])
-                .Where(x => string.Equals(x.Estado, "A", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(x => x.NumeroFlujo ?? int.MaxValue)
-                .ThenBy(x => x.Nombre),
-            (await productosTask ?? []).Where(x => x.Estado),
-            (await maquinasTask ?? []).Where(x => x.Estado),
-            usuarioActualId));
+        var options = await _backendApiClient.GetAsync<PedidoFormOptionsDto>("api/VentasImpresion/opciones", cancellationToken);
+        return options is null
+            ? StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudieron obtener opciones de pedidos desde EvaluSystemBack." })
+            : Ok(options);
     }
 
     [HttpPost]
@@ -142,16 +136,36 @@ public class PedidosController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        int id,
+        [FromBody] EliminarPedidoRequest request,
+        CancellationToken cancellationToken)
     {
-        var deleted = await _backendApiClient.DeleteAsync($"api/VentasImpresion/{id}", cancellationToken);
-        return deleted ? NoContent() : StatusCode(StatusCodes.Status502BadGateway);
+        if (string.IsNullOrWhiteSpace(request.Observacion))
+        {
+            return BadRequest(new { message = "Debe agregar un comentario para eliminar el pedido." });
+        }
+
+        var result = await _backendApiClient.PutResultAsync<VentaImpresionCabDto>(
+            $"api/VentasImpresion/{id}/marcar-eliminado",
+            request,
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Value);
     }
 
-    private static PedidoView ToView(VentaImpresionCabDto pedido)
+    private static PedidoView ToView(VentaImpresionCabDto pedido, IReadOnlyDictionary<int, string>? vendedores = null)
     {
         var date = pedido.FechaCreacion?.ToString("yyyy-MM-dd") ?? string.Empty;
         var delivery = pedido.FechaEntrega?.ToString("yyyy-MM-dd") ?? string.Empty;
+        var vendedor = !string.IsNullOrWhiteSpace(pedido.Vendedor)
+            ? pedido.Vendedor
+            : vendedores?.GetValueOrDefault(pedido.VendedorId) ?? $"Usuario {pedido.VendedorId}";
 
         return new PedidoView(
             pedido.Id.ToString(),
@@ -162,7 +176,7 @@ public class PedidosController : ControllerBase
             pedido.EstadoPagadoId,
             date,
             pedido.Cliente ?? string.Empty,
-            pedido.VendedorId.ToString(),
+            vendedor,
             pedido.EstadoVenta ?? pedido.EstadoVentaId,
             delivery,
             pedido.FormaPago ?? pedido.FormaPagoId,

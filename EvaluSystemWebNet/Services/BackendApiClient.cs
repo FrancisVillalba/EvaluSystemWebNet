@@ -42,7 +42,7 @@ public class BackendApiClient : IBackendApiClient
     public async Task<T?> PostAsync<T>(string path, object body, CancellationToken cancellationToken = default)
     {
         using var request = CreateRequest(HttpMethod.Post, path);
-        request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
+        request.Content = JsonContent(body);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResponseAsync<T>(response, cancellationToken);
@@ -51,7 +51,7 @@ public class BackendApiClient : IBackendApiClient
     public async Task<BackendApiResult<T>> PostResultAsync<T>(string path, object body, CancellationToken cancellationToken = default)
     {
         using var request = CreateRequest(HttpMethod.Post, path);
-        request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
+        request.Content = JsonContent(body);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResultAsync<T>(response, cancellationToken);
@@ -60,7 +60,7 @@ public class BackendApiClient : IBackendApiClient
     public async Task<T?> PutAsync<T>(string path, object body, CancellationToken cancellationToken = default)
     {
         using var request = CreateRequest(HttpMethod.Put, path);
-        request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
+        request.Content = JsonContent(body);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResponseAsync<T>(response, cancellationToken);
@@ -69,7 +69,7 @@ public class BackendApiClient : IBackendApiClient
     public async Task<BackendApiResult<T>> PutResultAsync<T>(string path, object body, CancellationToken cancellationToken = default)
     {
         using var request = CreateRequest(HttpMethod.Put, path);
-        request.Content = new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
+        request.Content = JsonContent(body);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResultAsync<T>(response, cancellationToken);
@@ -93,6 +93,11 @@ public class BackendApiClient : IBackendApiClient
         }
 
         return request;
+    }
+
+    private StringContent JsonContent(object body)
+    {
+        return new StringContent(JsonSerializer.Serialize(body, _jsonOptions), Encoding.UTF8, "application/json");
     }
 
     private async Task<T?> ReadResponseAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)

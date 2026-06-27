@@ -65,7 +65,7 @@ public record CatalogStringDto(string Id, string? Nombre, bool? Estado);
 
 public record EstadoVentaOptionDto(string Id, string? Nombre, string? Estado, int? NumeroFlujo);
 
-public record UsuarioDto(int Id, string? NombreUsuario, int? PersonaId, string? Persona, bool? Estado);
+public record UsuarioDto(int Id, string? NombreUsuario, int? PersonaId, string? Persona, int? PerfilId, string? Perfil, bool? Estado);
 
 public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal? Comision, int? MaquinaId, string? Maquina, bool Estado);
 
@@ -79,7 +79,8 @@ public record PedidoFormOptionsDto(
     IEnumerable<EstadoVentaOptionDto> EstadosVenta,
     IEnumerable<ProductoDto> Productos,
     IEnumerable<TipoMaquinaDto> Maquinas,
-    int? UsuarioActualId);
+    int? UsuarioActualId,
+    bool PuedeVerTodosPedidos);
 
 public record VentaImpresionCompletaRequest(
     int ClienteId,
@@ -119,6 +120,8 @@ public record VentaImpresionCompletaUpdateRequest(
     string? EstadoVentaId,
     IEnumerable<VentaImpresionDetalleUpdateRequest> Detalles);
 
+public record EliminarPedidoRequest(string Observacion);
+
 public record VentaImpresionDetalleUpdateRequest(
     int? Id,
     int ProductoId,
@@ -142,6 +145,7 @@ public record VentaImpresionCabDto(
     string EstadoVentaId,
     string? EstadoVenta,
     int VendedorId,
+    string? Vendedor,
     decimal? MontoPagado,
     string? EstadoPagadoId,
     string? EstadoPagado,

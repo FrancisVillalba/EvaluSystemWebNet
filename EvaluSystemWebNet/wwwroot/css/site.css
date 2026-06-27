@@ -98,6 +98,147 @@ body {
   line-height: 1.35;
 }
 
+body.is-app-loading {
+  cursor: progress;
+}
+
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(238, 243, 245, 0.62);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.app-loading-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.app-loading-card {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+}
+
+.app-loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid transparent;
+  border-top-color: #0c5f72;
+  border-radius: 999px;
+  animation: app-loading-spin 0.75s linear infinite;
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.app-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(7, 25, 34, 0.46);
+  opacity: 1;
+  transition: opacity 0.16s ease;
+}
+
+.app-confirm-overlay.is-leaving {
+  opacity: 0;
+}
+
+.app-confirm-dialog {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 14px 16px;
+  width: min(420px, 100%);
+  padding: 20px;
+  border: 1px solid #dfe8ed;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(15, 39, 53, 0.24);
+  transform: translateY(0) scale(1);
+  transition: transform 0.16s ease;
+}
+
+.app-confirm-overlay.is-leaving .app-confirm-dialog {
+  transform: translateY(8px) scale(0.98);
+}
+
+.app-confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  color: #fff;
+  background: #cf3f3f;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.app-confirm-content h2 {
+  margin: 0 0 7px;
+  color: #0f2735;
+  font-size: 1.18rem;
+  line-height: 1.18;
+}
+
+.app-confirm-content p {
+  margin: 0;
+  color: #5a6f7d;
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.app-confirm-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.app-confirm-actions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.app-confirm-cancel {
+  color: #0c5f72;
+  background: #e7f5f3;
+}
+
+.app-confirm-cancel:hover {
+  background: #d8eeeb;
+}
+
+.app-confirm-accept {
+  color: #fff;
+  background: #cf3f3f;
+}
+
+.app-confirm-accept:hover {
+  background: #b33131;
+}
+
 .orders-pagination {
   display: flex;
   align-items: center;
@@ -403,6 +544,127 @@ body {
   padding-top: 16px;
 }
 
+.orders-filters {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+}
+
+.orders-table tbody tr {
+  transition: background 0.16s ease;
+}
+
+.orders-table tbody tr:hover {
+  background: #f8fbfc;
+}
+
+.orders-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: right;
+}
+
+.orders-edit,
+.orders-delete {
+  min-width: 96px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.orders-edit {
+  color: #075f72;
+  background: #e7f5f3;
+  border-color: #cbe6e1;
+  box-shadow: 0 6px 14px rgba(12, 95, 114, 0.08);
+}
+
+.orders-edit:hover {
+  background: #d8eeeb;
+  border-color: #b8dad4;
+}
+
+.orders-delete {
+  min-width: 86px;
+  color: #b33131;
+  background: #fdecec;
+  border-color: #efaaaa;
+  box-shadow: 0 6px 14px rgba(207, 63, 63, 0.08);
+}
+
+.orders-delete:hover {
+  color: #fff;
+  background: #cf3f3f;
+  border-color: #b33131;
+}
+
+.orders-status {
+  border: 1px solid transparent;
+  min-width: 92px;
+  justify-content: center;
+}
+
+.orders-status.cargado,
+.orders-status.carga,
+.orders-status.nuevo {
+  color: #075f72;
+  background: #e5f7fb;
+  border-color: #a9dfea;
+}
+
+.orders-status.pendiente,
+.orders-status.pendiente-de-impresion,
+.orders-status.pendiente-impresion,
+.orders-status.en-espera {
+  color: #8a5a07;
+  background: #fff4dc;
+  border-color: #f1ce83;
+}
+
+.orders-status.en-impresion,
+.orders-status.impresion,
+.orders-status.imprimiendo,
+.orders-status.en-produccion,
+.orders-status.produccion {
+  color: #19599f;
+  background: #e5f0ff;
+  border-color: #a9cff7;
+}
+
+.orders-status.pendiente-de-pago,
+.orders-status.pago-pendiente {
+  color: #6f3aa5;
+  background: #f3e9ff;
+  border-color: #d6b4f5;
+}
+
+.orders-status.en-envio,
+.orders-status.envio,
+.orders-status.despachado,
+.orders-status.despacho {
+  color: #92510b;
+  background: #fff0df;
+  border-color: #efbd81;
+}
+
+.orders-status.entregado,
+.orders-status.finalizado,
+.orders-status.completado {
+  color: #0c6a43;
+  background: #e7f7ee;
+  border-color: #9fdcbc;
+}
+
+.orders-status.cancelado,
+.orders-status.anulado,
+.orders-status.eliminar,
+.orders-status.eliminado {
+  color: #9f2f2f;
+  background: #fdecec;
+  border-color: #efaaaa;
+}
+
 @media (width <= 1080px) {
   .entry-fields .compact-proof-field {
     grid-column: 1 / -1;
@@ -443,6 +705,18 @@ body {
     right: 12px;
     left: 12px;
     width: auto;
+  }
+
+  .app-confirm-dialog {
+    grid-template-columns: 1fr;
+  }
+
+  .app-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-confirm-actions button {
+    width: 100%;
   }
 
   .orders-pagination,

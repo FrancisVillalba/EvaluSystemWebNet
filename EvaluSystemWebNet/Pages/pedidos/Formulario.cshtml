@@ -402,13 +402,11 @@
         function updateStateActionButtons() {
             const previous = previousSaleState();
             const next = nextSaleState();
-            const deleteState = deleteSaleState();
-            const currentFlow = Number(currentSaleState()?.numeroFlujo);
             const hasOrder = Boolean(orderId);
 
             stateBackAction.disabled = !hasOrder || !previous;
             stateNextAction.disabled = !hasOrder || !next;
-            stateDeleteAction.disabled = !hasOrder || !deleteState || currentFlow >= 4;
+            stateDeleteAction.disabled = !hasOrder;
             stateSaveAction.disabled = false;
 
             stateBackAction.textContent = previous ? `Devolver a ${previous.nombre || previous.id}` : "Devolver";
@@ -641,16 +639,18 @@
         }
 
         async function loadFormOptions() {
-            const response = await fetch("/api/pedidos/opciones");
+            return await withAppLoading("Cargando datos...", async function () {
+                const response = await fetch("/api/pedidos/opciones");
 
-            if (!response.ok) {
-                showToast("No se pudieron cargar los datos del formulario desde el back.", "error");
-                return false;
-            }
+                if (!response.ok) {
+                    showToast("No se pudieron cargar los datos del formulario desde el back.", "error");
+                    return false;
+                }
 
-            formOptions = await response.json();
-            populateHeaderOptions();
-            return true;
+                formOptions = await response.json();
+                populateHeaderOptions();
+                return true;
+            });
         }
 
         function applyDefaults() {
@@ -784,13 +784,15 @@
                 return;
             }
 
-            const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
-            const response = await fetch(saveUrl, {
-                method: orderId ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
+            const response = await withAppLoading("Guardando pedido...", async function () {
+                const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
+                return await fetch(saveUrl, {
+                    method: orderId ? "PUT" : "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
             });
 
             if (!response.ok) {
@@ -834,17 +836,45 @@
         });
 
         stateDeleteAction.addEventListener("click", async function () {
-            const deleteState = deleteSaleState();
-            if (!deleteState) {
-                showToast("No se encontro el estado eliminado.", "error");
+            const deleteComment = document.getElementById("order-notes").value.trim();
+            if (!deleteComment) {
+                showToast("Agregue un comentario en Observacion antes de eliminar el pedido.", "error");
+                document.getElementById("order-notes").focus();
                 return;
             }
 
-            if (!window.confirm("Desea marcar este pedido como eliminado?")) {
+            const confirmed = await showConfirmDialog({
+                title: "Eliminar pedido",
+                message: `Seguro que desea eliminar el pedido ${orderId}? Esta accion no se puede deshacer.`,
+                confirmText: "Eliminar pedido",
+                cancelText: "Conservar"
+            });
+
+            if (!confirmed) {
                 return;
             }
 
-            await saveWithTargetState(deleteState);
+            const response = await withAppLoading("Eliminando pedido...", async function () {
+                return await fetch(`/api/pedidos/${orderId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        observacion: deleteComment
+                    })
+                });
+            });
+
+            if (!response.ok) {
+                showToast("No se pudo eliminar el pedido.", "error");
+                return;
+            }
+
+            showToast("Pedido eliminado correctamente.", "success");
+            window.setTimeout(() => {
+                window.location.href = "/pedidos";
+            }, 700);
         });
 
         form.addEventListener("submit", async function (event) {
@@ -865,7 +895,9 @@
                 return;
             }
 
-            const response = await fetch(`/api/pedidos/${orderId}`);
+            const response = await withAppLoading("Cargando pedido...", async function () {
+                return await fetch(`/api/pedidos/${orderId}`);
+            });
             if (!response.ok) {
                 loadOrder({ date: today });
                 return;

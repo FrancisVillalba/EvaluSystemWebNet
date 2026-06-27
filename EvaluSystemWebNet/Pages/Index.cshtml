@@ -75,15 +75,17 @@
             let response;
 
             try {
-                response = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        usuario: document.getElementById("email").value,
-                        pass: document.getElementById("password").value
-                    })
+                response = await withAppLoading("Iniciando sesion...", async function () {
+                    return await fetch("/api/auth/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            usuario: document.getElementById("email").value,
+                            pass: document.getElementById("password").value
+                        })
+                    });
                 });
             } catch {
                 showToast("No se pudo conectar con el back. Verifique que la API este abierta.", "error");
