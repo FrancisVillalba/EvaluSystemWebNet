@@ -98,6 +98,60 @@ public record ClienteOptionsDto(
     IEnumerable<DepartamentoDto> Departamentos,
     IEnumerable<CiudadDto> Ciudades);
 
+public record PerfilDto(int Id, string Nombre, string? Descripcion, bool Estado);
+
+public record PersonaDto(
+    int Id,
+    int? PerfilId,
+    string? Perfil,
+    string? PrimerNombre,
+    string? SegundoNombre,
+    string? PrimerApellido,
+    string? SegundoApellido,
+    DateTime? FechaCumpleanios,
+    string? TipoDocumentoId,
+    string? Documento,
+    bool? Estado);
+
+public record FormularioDto(
+    int Id,
+    string Nombre,
+    string? Descripcion,
+    string? Ruta,
+    string? Icono,
+    int Orden,
+    bool Estado);
+
+public record PerfilFormularioPermisoDto(
+    int Id,
+    int PerfilId,
+    string? Perfil,
+    int FormularioId,
+    string Formulario,
+    string? Descripcion,
+    string? Ruta,
+    string? Icono,
+    int Orden,
+    bool PuedeVer,
+    bool PuedeCrear,
+    bool PuedeEditar,
+    bool PuedeEliminar);
+
+public record PerfilFormularioPermisoRequest(
+    int PerfilId,
+    int FormularioId,
+    bool PuedeVer,
+    bool PuedeCrear,
+    bool PuedeEditar,
+    bool PuedeEliminar);
+
+public record AdminOptionsDto(
+    IEnumerable<PerfilDto> Perfiles,
+    IEnumerable<PersonaDto> Personas,
+    IEnumerable<TipoMaquinaDto> Maquinas,
+    IEnumerable<DepartamentoDto> Departamentos,
+    IEnumerable<CatalogStringDto> TiposDocumento);
+
 public record EstadoVentaOptionDto(string Id, string? Nombre, string? Estado, int? NumeroFlujo);
 
 public record UsuarioDto(int Id, string? NombreUsuario, int? PersonaId, string? Persona, int? PerfilId, string? Perfil, bool? Estado);

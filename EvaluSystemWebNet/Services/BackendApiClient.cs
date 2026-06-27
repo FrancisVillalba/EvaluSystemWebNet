@@ -126,6 +126,11 @@ public class BackendApiClient : IBackendApiClient
 
         if (response.IsSuccessStatusCode)
         {
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                return new BackendApiResult<T>(true, default, null, statusCode);
+            }
+
             try
             {
                 var value = await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, cancellationToken);

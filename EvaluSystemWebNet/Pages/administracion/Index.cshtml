@@ -1,0 +1,546 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Administracion";
+    ViewData["ActiveMenu"] = "administracion";
+    ViewData["ShellClass"] = "admin-shell";
+}
+
+<section class="admin-main">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Administracion</p>
+            <h1>Administracion del sistema</h1>
+            <p>Gestiona usuarios, perfiles, catalogos, transportadoras y accesos.</p>
+        </div>
+    </header>
+
+    <div class="admin-workspace">
+        <aside class="admin-modules" aria-label="Modulos de administracion">
+            <button class="active" type="button" data-module="usuarios">Usuarios</button>
+            <button type="button" data-module="personas">Personas</button>
+            <button type="button" data-module="perfiles">Perfiles</button>
+            <button type="button" data-module="accesos">Accesos</button>
+            <button type="button" data-module="transportadoras">Transportadoras</button>
+            <button type="button" data-module="productos">Productos</button>
+            <button type="button" data-module="maquinas">Tipos de maquina</button>
+            <button type="button" data-module="formasPago">Formas de pago</button>
+            <button type="button" data-module="estadosPago">Estados de pago</button>
+            <button type="button" data-module="estadosVenta">Estados de venta</button>
+            <button type="button" data-module="tiposDocumento">Tipos documento</button>
+            <button type="button" data-module="tiposCliente">Tipos cliente</button>
+            <button type="button" data-module="configuraciones">Configuraciones</button>
+            <button type="button" data-module="departamentos">Departamentos</button>
+            <button type="button" data-module="ciudades">Ciudades</button>
+        </aside>
+
+        <section id="crud-panel" class="admin-panel">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 id="module-title">Usuarios</h2>
+                    <p id="module-help">Crea y mantiene los usuarios del sistema.</p>
+                </div>
+                <button id="new-record-button" class="admin-primary" type="button">Nuevo</button>
+            </div>
+
+            <div id="admin-form" class="admin-form"></div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead id="admin-table-head"></thead>
+                    <tbody id="admin-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="access-panel" class="admin-panel" hidden>
+            <div class="admin-panel-header">
+                <div>
+                    <h2>Accesos por perfil</h2>
+                    <p>Selecciona un perfil y marca que formularios puede usar.</p>
+                </div>
+            </div>
+
+            <div class="admin-access-filter">
+                <label for="access-profile">
+                    Perfil
+                    <select id="access-profile"></select>
+                </label>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Formulario</th>
+                            <th>Ver</th>
+                            <th>Crear</th>
+                            <th>Editar</th>
+                            <th>Eliminar</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="access-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        const modules = {
+            usuarios: {
+                title: "Usuarios",
+                help: "Crea y mantiene los usuarios del sistema.",
+                id: "id",
+                columns: [
+                    ["nombreUsuario", "Usuario"],
+                    ["persona", "Persona"],
+                    ["perfil", "Perfil"],
+                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+                ],
+                fields: [
+                    { name: "nombreUsuario", label: "Usuario", required: true },
+                    { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
+                    { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            personas: {
+                title: "Personas",
+                help: "Datos base de personas vinculadas a usuarios y perfiles.",
+                id: "id",
+                columns: [
+                    ["primerNombre", "Nombre"],
+                    ["primerApellido", "Apellido"],
+                    ["perfil", "Perfil"],
+                    ["documento", "Documento"],
+                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+                ],
+                fields: [
+                    { name: "primerNombre", label: "Primer nombre" },
+                    { name: "segundoNombre", label: "Segundo nombre" },
+                    { name: "primerApellido", label: "Primer apellido" },
+                    { name: "segundoApellido", label: "Segundo apellido" },
+                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre" },
+                    { name: "tipoDocumentoId", label: "Tipo documento", type: "select", source: "tiposDocumento", value: "id", text: "nombre" },
+                    { name: "documento", label: "Documento" },
+                    { name: "fechaCumpleanios", label: "Fecha cumpleanos", type: "date" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            perfiles: {
+                title: "Perfiles",
+                help: "Define los perfiles de trabajo.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["descripcion", "Descripcion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "descripcion", label: "Descripcion" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            transportadoras: {
+                title: "Transportadoras",
+                help: "Empresas de transporte para datos de envio.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "telefono", label: "Telefono" },
+                    { name: "direccion", label: "Direccion" },
+                    { name: "observacion", label: "Observacion", type: "textarea" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            productos: {
+                title: "Productos",
+                help: "Productos disponibles para los pedidos.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["comision", "Comision"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "precioBase", label: "Precio base", type: "number", defaultValue: 0 },
+                    { name: "comision", label: "Comision", type: "number" },
+                    { name: "maquinaId", label: "Maquina", type: "select", source: "maquinas", value: "id", text: "nombre" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            maquinas: simpleNumberModule("Tipos de maquina", "Maquinas o procesos productivos."),
+            formasPago: simpleStringModule("Formas de pago", "Catalogo de formas de pago."),
+            estadosPago: simpleStringModule("Estados de pago", "Catalogo de estados de pago."),
+            tiposDocumento: simpleStringModule("Tipos documento", "Catalogo de tipos de documento."),
+            tiposCliente: simpleStringModule("Tipos cliente", "Catalogo de tipos de cliente."),
+            estadosVenta: {
+                title: "Estados de venta",
+                help: "Flujo de estados del pedido.",
+                id: "id",
+                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado"], ["numeroFlujo", "Orden"]],
+                fields: [
+                    { name: "id", label: "Codigo", required: true },
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Estado" },
+                    { name: "numeroFlujo", label: "Orden", type: "number" }
+                ]
+            },
+            configuraciones: {
+                title: "Configuraciones",
+                help: "Valores parametrizables del sistema.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["nroConfiguracion", "Numero"], ["valor", "Valor"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "nroConfiguracion", label: "Numero", type: "number", defaultValue: 1 },
+                    { name: "valor", label: "Valor", required: true }
+                ]
+            },
+            departamentos: readonlyModule("Departamentos", "Listado de departamentos disponibles.", [["id", "Id"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]]),
+            ciudades: readonlyModule("Ciudades", "Listado de ciudades disponibles.", [["id", "Id"], ["departamento", "Departamento"], ["nombre", "Ciudad"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]])
+        };
+
+        const state = {
+            module: "usuarios",
+            records: [],
+            editing: null,
+            options: { perfiles: [], personas: [], maquinas: [], departamentos: [], tiposDocumento: [] },
+            formularios: [],
+            permisos: []
+        };
+
+        const crudPanel = document.getElementById("crud-panel");
+        const accessPanel = document.getElementById("access-panel");
+        const moduleTitle = document.getElementById("module-title");
+        const moduleHelp = document.getElementById("module-help");
+        const formHost = document.getElementById("admin-form");
+        const tableHead = document.getElementById("admin-table-head");
+        const tableBody = document.getElementById("admin-table-body");
+        const newButton = document.getElementById("new-record-button");
+        const accessProfile = document.getElementById("access-profile");
+        const accessTableBody = document.getElementById("access-table-body");
+
+        function simpleStringModule(title, help) {
+            return {
+                title,
+                help,
+                id: "id",
+                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]],
+                fields: [
+                    { name: "id", label: "Codigo", required: true },
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            };
+        }
+
+        function simpleNumberModule(title, help) {
+            return {
+                title,
+                help,
+                id: "id",
+                columns: [["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            };
+        }
+
+        function readonlyModule(title, help, columns) {
+            return { title, help, id: "id", columns, fields: [], readonly: true };
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function fieldValue(record, key) {
+            return key.split(".").reduce((value, part) => value?.[part], record);
+        }
+
+        function formatValue(record, column) {
+            const [key, , formatter] = column;
+            const value = fieldValue(record, key);
+            return formatter ? formatter(value, record) : value;
+        }
+
+        function optionText(item, field) {
+            return typeof field.text === "function" ? field.text(item) : item[field.text || "nombre"];
+        }
+
+        function renderModule() {
+            const config = modules[state.module];
+            moduleTitle.textContent = config.title;
+            moduleHelp.textContent = config.help;
+            newButton.hidden = Boolean(config.readonly);
+            renderForm();
+            renderTable();
+        }
+
+        function renderForm() {
+            const config = modules[state.module];
+            if (config.readonly) {
+                formHost.innerHTML = "";
+                return;
+            }
+
+            const record = state.editing || {};
+            formHost.innerHTML = `
+                ${config.fields.map(field => renderField(field, record)).join("")}
+                <div class="admin-form-actions">
+                    <button class="admin-secondary" type="button" id="cancel-record-button">Cancelar</button>
+                    <button class="admin-primary" type="button" id="save-record-button">${state.editing ? "Guardar" : "Crear"}</button>
+                </div>`;
+
+            document.getElementById("cancel-record-button").addEventListener("click", () => {
+                state.editing = null;
+                renderForm();
+            });
+            document.getElementById("save-record-button").addEventListener("click", saveRecord);
+        }
+
+        function renderField(field, record) {
+            const value = record[field.name] ?? field.defaultValue ?? "";
+            if (field.type === "checkbox") {
+                const checked = value === true || value === "true" || value === "";
+                return `<label class="admin-check"><input data-field="${field.name}" type="checkbox" ${checked ? "checked" : ""} />${escapeHtml(field.label)}</label>`;
+            }
+
+            if (field.type === "select") {
+                const items = state.options[field.source] || [];
+                return `
+                    <label>${escapeHtml(field.label)}
+                        <select data-field="${field.name}" ${field.required ? "required" : ""}>
+                            <option value="">Seleccionar</option>
+                            ${items.map(item => `<option value="${escapeHtml(item[field.value])}" ${String(item[field.value]) === String(value) ? "selected" : ""}>${escapeHtml(optionText(item, field))}</option>`).join("")}
+                        </select>
+                    </label>`;
+            }
+
+            if (field.type === "textarea") {
+                return `<label>${escapeHtml(field.label)}<textarea data-field="${field.name}" rows="2">${escapeHtml(value)}</textarea></label>`;
+            }
+
+            const hint = field.createOnlyHint ? `<span>${escapeHtml(field.createOnlyHint)}</span>` : "";
+            return `<label>${escapeHtml(field.label)}${hint}<input data-field="${field.name}" type="${field.type || "text"}" value="${escapeHtml(value)}" ${field.required ? "required" : ""} /></label>`;
+        }
+
+        function renderTable() {
+            const config = modules[state.module];
+            tableHead.innerHTML = `<tr>${config.columns.map(([, label]) => `<th>${escapeHtml(label)}</th>`).join("")}<th>Acciones</th></tr>`;
+            tableBody.innerHTML = state.records.map(record => `
+                <tr>
+                    ${config.columns.map(column => `<td>${escapeHtml(formatValue(record, column))}</td>`).join("")}
+                    <td>
+                        <div class="admin-row-actions">
+                            ${config.readonly ? "" : `<button type="button" onclick="editRecord('${escapeHtml(record[config.id])}')">Editar</button><button class="danger" type="button" onclick="deleteRecord('${escapeHtml(record[config.id])}')">Eliminar</button>`}
+                        </div>
+                    </td>
+                </tr>`).join("");
+        }
+
+        function collectPayload() {
+            const config = modules[state.module];
+            const payload = {};
+            for (const field of config.fields) {
+                const input = formHost.querySelector(`[data-field="${field.name}"]`);
+                if (!input) {
+                    continue;
+                }
+
+                if (field.type === "checkbox") {
+                    payload[field.name] = input.checked;
+                } else if (field.type === "number") {
+                    payload[field.name] = input.value === "" ? null : Number(input.value);
+                } else if (field.type === "select") {
+                    payload[field.name] = input.value === "" ? null : coerceOptionValue(input.value);
+                } else {
+                    payload[field.name] = input.value.trim() || null;
+                }
+            }
+
+            return payload;
+        }
+
+        function coerceOptionValue(value) {
+            return /^-?\d+$/.test(value) ? Number(value) : value;
+        }
+
+        async function loadRecords() {
+            if (state.module === "accesos") {
+                await loadAccess();
+                return;
+            }
+
+            await withAppLoading("Cargando datos...", async function () {
+                const response = await fetch(`/api/administracion/${state.module}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo cargar el modulo.", "error");
+                    return;
+                }
+
+                state.records = await response.json();
+                state.editing = null;
+                renderModule();
+            });
+        }
+
+        async function saveRecord() {
+            const config = modules[state.module];
+            const payload = collectPayload();
+            const id = state.editing?.[config.id];
+            const response = await withAppLoading("Guardando...", async function () {
+                return await fetch(id ? `/api/administracion/${state.module}/${encodeURIComponent(id)}` : `/api/administracion/${state.module}`, {
+                    method: id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo guardar.", "error");
+                return;
+            }
+
+            showToast("Registro guardado correctamente.", "success");
+            await refreshOptions();
+            await loadRecords();
+        }
+
+        window.editRecord = function (id) {
+            const config = modules[state.module];
+            state.editing = state.records.find(record => String(record[config.id]) === String(id)) || null;
+            renderForm();
+        };
+
+        window.deleteRecord = async function (id) {
+            const confirmed = await showConfirmDialog({
+                title: "Eliminar registro",
+                message: "Seguro que desea eliminar este registro?",
+                confirmText: "Eliminar",
+                cancelText: "Cancelar",
+                tone: "danger"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            const response = await withAppLoading("Eliminando...", async function () {
+                return await fetch(`/api/administracion/${state.module}/${encodeURIComponent(id)}`, { method: "DELETE" });
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo eliminar.", "error");
+                return;
+            }
+
+            showToast("Registro eliminado correctamente.", "success");
+            await refreshOptions();
+            await loadRecords();
+        };
+
+        async function refreshOptions() {
+            const response = await fetch("/api/administracion/opciones");
+            if (response.ok) {
+                state.options = await response.json();
+            }
+        }
+
+        async function loadAccess() {
+            crudPanel.hidden = true;
+            accessPanel.hidden = false;
+            await refreshOptions();
+            accessProfile.innerHTML = `<option value="">Seleccionar</option>` + state.options.perfiles.map(profile => `<option value="${profile.id}">${escapeHtml(profile.nombre)}</option>`).join("");
+            accessTableBody.innerHTML = "";
+        }
+
+        async function loadAccessTables() {
+            const profileId = Number(accessProfile.value);
+            if (!profileId) {
+                accessTableBody.innerHTML = "";
+                return;
+            }
+
+            await withAppLoading("Cargando accesos...", async function () {
+                const [formsResponse, permissionsResponse] = await Promise.all([
+                    fetch("/api/administracion/permisos/formularios"),
+                    fetch(`/api/administracion/permisos/perfil/${profileId}`)
+                ]);
+
+                state.formularios = formsResponse.ok ? await formsResponse.json() : [];
+                state.permisos = permissionsResponse.ok ? await permissionsResponse.json() : [];
+                renderAccessTable(profileId);
+            });
+        }
+
+        function renderAccessTable(profileId) {
+            accessTableBody.innerHTML = state.formularios.map(form => {
+                const permission = state.permisos.find(item => item.formularioId === form.id) || {};
+                return `
+                    <tr data-form="${form.id}">
+                        <td>${escapeHtml(form.nombre)}</td>
+                        ${["puedeVer", "puedeCrear", "puedeEditar", "puedeEliminar"].map(key => `<td><input type="checkbox" data-permission="${key}" ${permission[key] ? "checked" : ""}></td>`).join("")}
+                        <td><button type="button" onclick="saveAccess(${profileId}, ${form.id})">Guardar</button></td>
+                    </tr>`;
+            }).join("");
+        }
+
+        window.saveAccess = async function (profileId, formularioId) {
+            const row = accessTableBody.querySelector(`[data-form="${formularioId}"]`);
+            const payload = {
+                perfilId: profileId,
+                formularioId,
+                puedeVer: row.querySelector('[data-permission="puedeVer"]').checked,
+                puedeCrear: row.querySelector('[data-permission="puedeCrear"]').checked,
+                puedeEditar: row.querySelector('[data-permission="puedeEditar"]').checked,
+                puedeEliminar: row.querySelector('[data-permission="puedeEliminar"]').checked
+            };
+
+            const response = await withAppLoading("Guardando acceso...", async function () {
+                return await fetch("/api/administracion/permisos/perfil-formulario", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo guardar el acceso.", "error");
+                return;
+            }
+
+            showToast("Acceso guardado correctamente.", "success");
+            await loadAccessTables();
+        };
+
+        document.querySelectorAll(".admin-modules button").forEach(button => {
+            button.addEventListener("click", async function () {
+                document.querySelectorAll(".admin-modules button").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                state.module = button.dataset.module;
+                crudPanel.hidden = state.module === "accesos";
+                accessPanel.hidden = state.module !== "accesos";
+                await loadRecords();
+            });
+        });
+
+        newButton.addEventListener("click", () => {
+            state.editing = null;
+            renderForm();
+        });
+        accessProfile.addEventListener("change", loadAccessTables);
+
+        refreshOptions().then(loadRecords);
+    </script>
+}
