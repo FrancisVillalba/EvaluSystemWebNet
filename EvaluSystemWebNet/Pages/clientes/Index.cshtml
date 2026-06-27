@@ -34,9 +34,13 @@
                         Ciudad
                         <select id="filter-city">
                             <option value="">Todas</option>
-                            <option>Asuncion</option>
-                            <option>San Lorenzo</option>
-                            <option>Luque</option>
+                        </select>
+                    </label>
+
+                    <label for="filter-carrier">
+                        Transportadora
+                        <select id="filter-carrier">
+                            <option value="">Todas</option>
                         </select>
                     </label>
 
@@ -44,8 +48,8 @@
                         Estado
                         <select id="filter-status">
                             <option value="">Todos</option>
-                            <option>Activo</option>
-                            <option>Inactivo</option>
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
                         </select>
                     </label>
                 </section>
@@ -96,11 +100,14 @@
         let currentPage = 1;
         let pageSize = 10;
         let totalPages = 1;
+        let totalItems = 0;
+        let requestId = 0;
 
         const count = document.getElementById("client-count");
         const body = document.getElementById("clients-body");
         const searchFilter = document.getElementById("filter-search");
         const cityFilter = document.getElementById("filter-city");
+        const carrierFilter = document.getElementById("filter-carrier");
         const statusFilter = document.getElementById("filter-status");
         const paginationSummary = document.getElementById("client-pagination-summary");
         const currentPageLabel = document.getElementById("client-current-page");
@@ -108,41 +115,63 @@
         const nextPageButton = document.getElementById("client-next-page");
         const pageSizeSelect = document.getElementById("client-page-size");
 
-        function filteredClients() {
-            const search = searchFilter.value.trim().toLowerCase();
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
 
-            return clients.filter(client => {
-                const matchesSearch = !search
-                    || client.name.toLowerCase().includes(search)
-                    || client.document.toLowerCase().includes(search)
-                    || client.email.toLowerCase().includes(search);
-                const matchesCity = !cityFilter.value || client.city === cityFilter.value;
-                const matchesStatus = !statusFilter.value || client.status === statusFilter.value;
-                return matchesSearch && matchesCity && matchesStatus;
+        function optionMarkup(items, valueKey = "id", labelKey = "nombre") {
+            return `<option value="">Todas</option>` + items.map(item => `<option value="${escapeHtml(item[valueKey])}">${escapeHtml(item[labelKey] || item[valueKey])}</option>`).join("");
+        }
+
+        function buildClientParams() {
+            const params = new URLSearchParams({
+                page: currentPage,
+                pageSize: pageSize
             });
+
+            if (searchFilter.value.trim()) {
+                params.set("search", searchFilter.value.trim());
+            }
+
+            if (cityFilter.value) {
+                params.set("ciudadId", cityFilter.value);
+            }
+
+            if (carrierFilter.value) {
+                params.set("transportadoraId", carrierFilter.value);
+            }
+
+            if (statusFilter.value) {
+                params.set("estado", statusFilter.value);
+            }
+
+            return params;
         }
 
         function renderClients() {
-            const visibleClients = filteredClients();
-
-            body.innerHTML = visibleClients.map(client => `
+            body.innerHTML = clients.map(client => `
                 <tr>
-                    <td>${client.name}</td>
-                    <td>${client.document}</td>
-                    <td>${client.phone}</td>
-                    <td>${client.email}</td>
-                    <td>${client.city}</td>
-                    <td><span class="carrier-status ${client.carrier ? "yes" : ""}">${client.carrier ? "Si" : "No"}</span></td>
+                    <td>${escapeHtml(client.name)}</td>
+                    <td>${escapeHtml(client.document)}</td>
+                    <td>${escapeHtml(client.phone)}</td>
+                    <td>${escapeHtml(client.email)}</td>
+                    <td>${escapeHtml(client.city)}</td>
+                    <td><span class="carrier-status ${client.carrier ? "yes" : ""}">${escapeHtml(client.transportadora || "Sin datos")}</span></td>
                     <td><span class="client-status ${client.status.toLowerCase()}">${client.status}</span></td>
                     <td>
                         <div class="client-row-actions">
-                            <button type="button" onclick="window.location.href='/clientes/formulario?id=${client.id}'">Editar</button>
-                            <button class="delete-client" type="button" onclick="deleteClient(${client.id})">Eliminar</button>
+                            <button type="button" onclick="window.location.href='/clientes/formulario?id=${client.id}'">Ver</button>
                         </div>
                     </td>
                 </tr>
             `).join("");
-            count.textContent = `${visibleClients.length} clientes encontrados`;
+            count.textContent = `${totalItems} clientes encontrados`;
             paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
             currentPageLabel.textContent = currentPage;
             prevPageButton.disabled = currentPage <= 1;
@@ -150,12 +179,20 @@
         }
 
         async function deleteClient(id) {
-            if (!confirm("Desea eliminar este cliente?")) {
+            const confirmed = await showAppConfirm({
+                title: "Eliminar cliente",
+                message: "Seguro que desea eliminar este cliente?",
+                confirmText: "Eliminar",
+                cancelText: "Cancelar",
+                danger: true
+            });
+
+            if (!confirmed) {
                 return;
             }
 
-            const response = await fetch(`/api/clientes/${id}`, {
-                method: "DELETE"
+            const response = await withAppLoading("Eliminando cliente...", async function () {
+                return await fetch(`/api/clientes/${id}`, { method: "DELETE" });
             });
 
             if (!response.ok) {
@@ -168,16 +205,45 @@
         }
 
         async function loadClients() {
-            const response = await fetch(`/api/clientes?page=${currentPage}&pageSize=${pageSize}`);
+            const currentRequest = ++requestId;
+
+            await withAppLoading("Cargando clientes...", async function () {
+                const response = await fetch(`/api/clientes?${buildClientParams().toString()}`);
+                if (!response.ok) {
+                    let message = "No se pudo cargar clientes. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.";
+                    try {
+                        const error = await response.json();
+                        message = error.message || message;
+                    } catch {
+                        // Keep the default message when the response is not JSON.
+                    }
+
+                    showToast(message, "error");
+                    return;
+                }
+                const result = await response.json();
+                if (currentRequest !== requestId) {
+                    return;
+                }
+
+                clients = result.items || [];
+                currentPage = result.page || currentPage;
+                totalPages = Math.max(result.totalPages || 1, 1);
+                totalItems = result.totalItems || clients.length;
+                renderClients();
+            });
+        }
+
+        async function loadFilterOptions() {
+            const response = await fetch("/api/clientes/opciones");
             if (!response.ok) {
-                showToast("No se pudo cargar clientes. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
+                showToast("No se pudieron cargar los filtros de clientes.", "error");
                 return;
             }
-            const result = await response.json();
-            clients = result.items || [];
-            currentPage = result.page || currentPage;
-            totalPages = Math.max(result.totalPages || 1, 1);
-            renderClients();
+
+            const options = await response.json();
+            cityFilter.innerHTML = optionMarkup(options.ciudades || [], "id", "nombre");
+            carrierFilter.innerHTML = optionMarkup(options.transportadoras || [], "id", "nombre");
         }
 
         prevPageButton.addEventListener("click", function () {
@@ -204,11 +270,17 @@
             loadClients();
         });
 
-        [searchFilter, cityFilter, statusFilter].forEach(filter => {
-            filter.addEventListener("input", renderClients);
-            filter.addEventListener("change", renderClients);
+        [searchFilter, cityFilter, carrierFilter, statusFilter].forEach(filter => {
+            filter.addEventListener("input", function () {
+                currentPage = 1;
+                loadClients();
+            });
+            filter.addEventListener("change", function () {
+                currentPage = 1;
+                loadClients();
+            });
         });
 
-        loadClients();
+        loadFilterOptions().then(loadClients);
     </script>
 }

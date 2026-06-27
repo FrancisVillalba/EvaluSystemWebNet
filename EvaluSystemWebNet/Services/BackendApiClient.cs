@@ -7,6 +7,7 @@ namespace EvaluSystemWebNet.Services;
 public interface IBackendApiClient
 {
     Task<T?> GetAsync<T>(string path, CancellationToken cancellationToken = default);
+    Task<BackendApiResult<T>> GetResultAsync<T>(string path, CancellationToken cancellationToken = default);
     Task<T?> PostAsync<T>(string path, object body, CancellationToken cancellationToken = default);
     Task<BackendApiResult<T>> PostResultAsync<T>(string path, object body, CancellationToken cancellationToken = default);
     Task<T?> PutAsync<T>(string path, object body, CancellationToken cancellationToken = default);
@@ -37,6 +38,13 @@ public class BackendApiClient : IBackendApiClient
         using var request = CreateRequest(HttpMethod.Get, path);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResponseAsync<T>(response, cancellationToken);
+    }
+
+    public async Task<BackendApiResult<T>> GetResultAsync<T>(string path, CancellationToken cancellationToken = default)
+    {
+        using var request = CreateRequest(HttpMethod.Get, path);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await ReadResultAsync<T>(response, cancellationToken);
     }
 
     public async Task<T?> PostAsync<T>(string path, object body, CancellationToken cancellationToken = default)
@@ -118,8 +126,15 @@ public class BackendApiClient : IBackendApiClient
 
         if (response.IsSuccessStatusCode)
         {
-            var value = await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, cancellationToken);
-            return new BackendApiResult<T>(true, value, null, statusCode);
+            try
+            {
+                var value = await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, cancellationToken);
+                return new BackendApiResult<T>(true, value, null, statusCode);
+            }
+            catch (Exception ex)
+            {
+                return new BackendApiResult<T>(false, default, $"No se pudo leer la respuesta de EvaluSystemBack: {ex.Message}", statusCode);
+            }
         }
 
         string? message = null;

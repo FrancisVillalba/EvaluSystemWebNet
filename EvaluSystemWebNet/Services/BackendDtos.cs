@@ -61,7 +61,42 @@ public record ClienteDatosEnvioDto(
     string? Observacion,
     bool Estado);
 
+public record ClienteRequest(
+    string? Nombre,
+    string? Documento,
+    string TipoDocumentoId,
+    string TipoClienteId,
+    string? Email,
+    string? NroTelefono,
+    string? Direccion,
+    bool? Estado);
+
+public record ClienteDatosEnvioRequest(
+    int ClienteId,
+    int TransportadoraId,
+    string NombreReceptor,
+    string DocumentoReceptor,
+    string TelefonoReceptor,
+    int DepartamentoId,
+    int CiudadId,
+    string Direccion,
+    string? Observacion,
+    bool Estado);
+
 public record CatalogStringDto(string Id, string? Nombre, bool? Estado);
+
+public record DepartamentoDto(int Id, string Nombre, bool Estado);
+
+public record CiudadDto(int Id, int DepartamentoId, string? Departamento, int CodigoDistrito, string Nombre, bool Estado);
+
+public record TransportadoraDto(int Id, string Nombre, string? Telefono, string? Direccion, string? Observacion, bool Estado);
+
+public record ClienteOptionsDto(
+    IEnumerable<CatalogStringDto> TiposDocumento,
+    IEnumerable<CatalogStringDto> TiposCliente,
+    IEnumerable<TransportadoraDto> Transportadoras,
+    IEnumerable<DepartamentoDto> Departamentos,
+    IEnumerable<CiudadDto> Ciudades);
 
 public record EstadoVentaOptionDto(string Id, string? Nombre, string? Estado, int? NumeroFlujo);
 

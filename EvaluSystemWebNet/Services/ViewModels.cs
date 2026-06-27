@@ -13,7 +13,10 @@ public record ClienteView(
     string Document,
     string Phone,
     string Email,
+    int? CityId,
     string City,
+    int? TransportadoraId,
+    string Transportadora,
     bool Carrier,
     string Status);
 

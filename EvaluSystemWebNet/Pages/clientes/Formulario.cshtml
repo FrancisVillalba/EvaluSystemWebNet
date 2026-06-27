@@ -16,12 +16,12 @@
         <button class="back-list-button" type="button" onclick="window.location.href='/clientes'">Volver a la lista</button>
     </header>
 
-    <section class="client-entry-card" aria-label="Formulario de cliente">
-        <div class="client-entry-card-header">
-            <h2 id="client-form-title">Nuevo cliente</h2>
-        </div>
+    <form id="client-form" class="client-entry-form">
+        <section class="client-entry-card" aria-label="Datos del cliente">
+            <div class="client-entry-card-header">
+                <h2 id="client-form-title">Nuevo cliente</h2>
+            </div>
 
-        <form id="client-form">
             <div class="client-entry-grid">
                 <input type="hidden" id="client-id" />
 
@@ -32,12 +32,22 @@
 
                 <label for="client-document">
                     RUC / documento
-                    <input id="client-document" required placeholder="80012345-1" />
+                    <input id="client-document" placeholder="80012345-1" />
+                </label>
+
+                <label for="client-document-type">
+                    Tipo documento
+                    <select id="client-document-type"></select>
+                </label>
+
+                <label for="client-type">
+                    Tipo cliente
+                    <select id="client-type" required></select>
                 </label>
 
                 <label for="client-phone">
                     Telefono
-                    <input id="client-phone" placeholder="0981 220 440" />
+                    <input id="client-phone" required placeholder="0981 220 440" />
                 </label>
 
                 <label for="client-email">
@@ -45,31 +55,85 @@
                     <input id="client-email" type="email" placeholder="ventas@empresa.com" />
                 </label>
 
-                <label for="client-city">
-                    Ciudad
-                    <input id="client-city" placeholder="Asuncion" />
+                <label class="client-address-field" for="client-address">
+                    Direccion
+                    <input id="client-address" placeholder="Direccion comercial" />
                 </label>
 
                 <label for="client-status">
                     Estado
                     <select id="client-status">
-                        <option>Activo</option>
-                        <option>Inactivo</option>
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
                     </select>
                 </label>
+            </div>
+        </section>
 
-                <label class="client-entry-check" for="client-carrier">
-                    <input id="client-carrier" type="checkbox" />
-                    Es transportadora
+        <section class="client-entry-card" aria-label="Datos de envio">
+            <div class="client-entry-card-header client-entry-card-header-inline">
+                <div>
+                    <h2>Datos de transportadora</h2>
+                    <p>Opcional para clientes con entrega por transporte.</p>
+                </div>
+                <div class="client-shipping-tools">
+                    <label class="client-entry-check" for="shipping-enabled">
+                        <input id="shipping-enabled" type="checkbox" />
+                        Agregar envio
+                    </label>
+                    <button id="copy-client-data" class="client-copy-button" type="button">Copiar datos del cliente</button>
+                    <button id="delete-shipping-data" class="client-delete-shipping-button" type="button" hidden>Eliminar envio</button>
+                </div>
+            </div>
+
+            <div id="shipping-fields" class="client-entry-grid is-disabled">
+                <label for="shipping-carrier">
+                    Transportadora
+                    <select id="shipping-carrier"></select>
+                </label>
+
+                <label for="shipping-recipient">
+                    Nombre receptor
+                    <input id="shipping-recipient" placeholder="Persona que recibe" />
+                </label>
+
+                <label for="shipping-document">
+                    Documento receptor
+                    <input id="shipping-document" placeholder="Documento" />
+                </label>
+
+                <label for="shipping-phone">
+                    Telefono receptor
+                    <input id="shipping-phone" placeholder="0981 220 440" />
+                </label>
+
+                <label for="shipping-department">
+                    Departamento
+                    <select id="shipping-department"></select>
+                </label>
+
+                <label for="shipping-city">
+                    Ciudad
+                    <select id="shipping-city"></select>
+                </label>
+
+                <label class="client-address-field" for="shipping-address">
+                    Direccion de envio
+                    <input id="shipping-address" placeholder="Direccion de entrega" />
+                </label>
+
+                <label class="client-address-field" for="shipping-notes">
+                    Observacion
+                    <textarea id="shipping-notes" rows="2" placeholder="Indicaciones para el envio"></textarea>
                 </label>
             </div>
+        </section>
 
-            <div class="client-entry-actions">
-                <button class="client-entry-secondary" type="button" onclick="window.location.href='/clientes'">Cancelar</button>
-                <button class="client-entry-primary" type="submit">Guardar cliente</button>
-            </div>
-        </form>
-    </section>
+        <div class="client-entry-actions">
+            <button class="client-entry-secondary" type="button" onclick="window.location.href='/clientes'">Cancelar</button>
+            <button class="client-entry-primary" type="submit">Guardar cliente</button>
+        </div>
+    </form>
 </section>
 
 @section Scripts {
@@ -77,39 +141,283 @@
         const form = document.getElementById("client-form");
         const heading = document.getElementById("client-form-heading");
         const title = document.getElementById("client-form-title");
+        const shippingEnabled = document.getElementById("shipping-enabled");
+        const shippingFields = document.getElementById("shipping-fields");
+        const documentTypeSelect = document.getElementById("client-document-type");
+        const clientTypeSelect = document.getElementById("client-type");
+        const carrierSelect = document.getElementById("shipping-carrier");
+        const departmentSelect = document.getElementById("shipping-department");
+        const citySelect = document.getElementById("shipping-city");
+        const deleteShippingButton = document.getElementById("delete-shipping-data");
+        let options = { tiposDocumento: [], tiposCliente: [], transportadoras: [], departamentos: [], ciudades: [] };
+        let currentShippingId = null;
+
+        function normalizedText(value) {
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase();
+        }
+
+        function optionMarkup(items, valueKey = "id", labelKey = "nombre", emptyText = "Seleccionar") {
+            return `<option value="">${emptyText}</option>` + items.map(item => `<option value="${item[valueKey]}">${item[labelKey] || item[valueKey]}</option>`).join("");
+        }
+
+        function findOptionValue(items, preferredId, preferredName) {
+            const byId = items.find(item => String(item.id).toLowerCase() === preferredId.toLowerCase());
+            if (byId) {
+                return byId.id;
+            }
+
+            const byName = items.find(item => normalizedText(item.nombre).includes(preferredName));
+            return byName?.id || "";
+        }
+
+        function setShippingEnabled(enabled) {
+            shippingEnabled.checked = enabled;
+            shippingFields.classList.toggle("is-disabled", !enabled);
+            shippingFields.querySelectorAll("input, select, textarea").forEach(input => {
+                input.disabled = !enabled;
+                input.required = enabled;
+            });
+            document.getElementById("shipping-notes").required = false;
+            document.getElementById("copy-client-data").disabled = !enabled;
+        }
+
+        function updateDeleteShippingButton() {
+            deleteShippingButton.hidden = !currentShippingId;
+        }
+
+        function clearShippingFields() {
+            carrierSelect.value = "";
+            document.getElementById("shipping-recipient").value = "";
+            document.getElementById("shipping-document").value = "";
+            document.getElementById("shipping-phone").value = "";
+            departmentSelect.value = "";
+            renderCities();
+            document.getElementById("shipping-address").value = "";
+            document.getElementById("shipping-notes").value = "";
+        }
+
+        function renderCities(selectedValue = "") {
+            const departmentId = Number(departmentSelect.value);
+            const cities = options.ciudades.filter(city => !departmentId || Number(city.departamentoId) === departmentId);
+            citySelect.innerHTML = optionMarkup(cities, "id", "nombre");
+            citySelect.value = selectedValue ? String(selectedValue) : "";
+        }
 
         function loadClient(client) {
+            const envio = client.datosEnvio || null;
+            currentShippingId = envio?.id || (envio ? "loaded" : null);
             document.getElementById("client-id").value = client.id || "";
-            document.getElementById("client-name").value = client.name || "";
-            document.getElementById("client-document").value = client.document || "";
-            document.getElementById("client-phone").value = client.phone || "";
+            document.getElementById("client-name").value = client.nombre || "";
+            document.getElementById("client-document").value = client.documento || "";
+            documentTypeSelect.value = client.tipoDocumentoId || findOptionValue(options.tiposDocumento || [], "CI", "cedula");
+            clientTypeSelect.value = client.tipoClienteId || findOptionValue(options.tiposCliente || [], "P", "persona");
+            document.getElementById("client-phone").value = client.nroTelefono || "";
             document.getElementById("client-email").value = client.email || "";
-            document.getElementById("client-city").value = client.city || "";
-            document.getElementById("client-status").value = client.status || "Activo";
-            document.getElementById("client-carrier").checked = !!client.carrier;
+            document.getElementById("client-address").value = client.direccion || "";
+            document.getElementById("client-status").value = client.estado === false ? "false" : "true";
+            setShippingEnabled(Boolean(envio));
 
-            heading.textContent = client.id ? `Editar cliente ${client.name}` : "Nuevo cliente";
+            if (envio) {
+                carrierSelect.value = String(envio.transportadoraId || "");
+                document.getElementById("shipping-recipient").value = envio.nombreReceptor || "";
+                document.getElementById("shipping-document").value = envio.documentoReceptor || "";
+                document.getElementById("shipping-phone").value = envio.telefonoReceptor || "";
+                departmentSelect.value = String(envio.departamentoId || "");
+                renderCities(envio.ciudadId);
+                document.getElementById("shipping-address").value = envio.direccion || "";
+                document.getElementById("shipping-notes").value = envio.observacion || "";
+            } else {
+                clearShippingFields();
+            }
+
+            updateDeleteShippingButton();
+
+            heading.textContent = client.id ? `Editar cliente ${client.nombre || ""}` : "Nuevo cliente";
             title.textContent = client.id ? "Editar cliente" : "Nuevo cliente";
         }
 
-        async function loadInitialClient() {
-            const clientId = new URLSearchParams(window.location.search).get("id");
-            if (!clientId) {
-                loadClient({});
+        async function loadOptions() {
+            const response = await fetch("/api/clientes/opciones");
+            if (!response.ok) {
+                showToast("No se pudieron cargar los datos del formulario.", "error");
                 return;
             }
 
-            const response = await fetch("/api/clientes");
-            const clients = await response.json();
-            const client = clients.find(item => String(item.id) === clientId);
-            loadClient(client || {});
+            options = await response.json();
+            documentTypeSelect.innerHTML = optionMarkup(options.tiposDocumento || []);
+            clientTypeSelect.innerHTML = optionMarkup(options.tiposCliente || []);
+            carrierSelect.innerHTML = optionMarkup(options.transportadoras || [], "id", "nombre", "No hay transportadoras cargadas");
+            departmentSelect.innerHTML = optionMarkup(options.departamentos || []);
+            renderCities();
+            documentTypeSelect.value = findOptionValue(options.tiposDocumento || [], "CI", "cedula");
+            clientTypeSelect.value = findOptionValue(options.tiposCliente || [], "P", "persona");
         }
 
-        form.addEventListener("submit", function (event) {
+        async function loadInitialClient() {
+            await withAppLoading("Cargando cliente...", async function () {
+                await loadOptions();
+                const clientId = new URLSearchParams(window.location.search).get("id");
+                if (!clientId) {
+                    loadClient({});
+                    return;
+                }
+
+                const response = await fetch(`/api/clientes/${clientId}`);
+                if (!response.ok) {
+                    showToast("No se pudo cargar el cliente.", "error");
+                    loadClient({});
+                    return;
+                }
+
+                loadClient(await response.json());
+            });
+        }
+
+        function buildPayload() {
+            const clientId = document.getElementById("client-id").value;
+            const cliente = {
+                nombre: document.getElementById("client-name").value.trim(),
+                documento: document.getElementById("client-document").value.trim() || null,
+                tipoDocumentoId: documentTypeSelect.value || findOptionValue(options.tiposDocumento || [], "CI", "cedula"),
+                tipoClienteId: clientTypeSelect.value,
+                email: document.getElementById("client-email").value.trim() || null,
+                nroTelefono: document.getElementById("client-phone").value.trim(),
+                direccion: document.getElementById("client-address").value.trim() || null,
+                estado: document.getElementById("client-status").value === "true"
+            };
+
+            let datosEnvio = null;
+            if (shippingEnabled.checked) {
+                datosEnvio = {
+                    clienteId: Number(clientId || 0),
+                    transportadoraId: Number(carrierSelect.value),
+                    nombreReceptor: document.getElementById("shipping-recipient").value.trim(),
+                    documentoReceptor: document.getElementById("shipping-document").value.trim(),
+                    telefonoReceptor: document.getElementById("shipping-phone").value.trim(),
+                    departamentoId: Number(departmentSelect.value),
+                    ciudadId: Number(citySelect.value),
+                    direccion: document.getElementById("shipping-address").value.trim(),
+                    observacion: document.getElementById("shipping-notes").value.trim() || null,
+                    estado: true
+                };
+            }
+
+            return { cliente, datosEnvio };
+        }
+
+        shippingEnabled.addEventListener("change", () => setShippingEnabled(shippingEnabled.checked));
+        departmentSelect.addEventListener("change", () => renderCities());
+        document.getElementById("copy-client-data").addEventListener("click", function () {
+            document.getElementById("shipping-recipient").value = document.getElementById("client-name").value.trim();
+            document.getElementById("shipping-document").value = document.getElementById("client-document").value.trim();
+            document.getElementById("shipping-phone").value = document.getElementById("client-phone").value.trim();
+            document.getElementById("shipping-address").value = document.getElementById("client-address").value.trim();
+        });
+
+        deleteShippingButton.addEventListener("click", async function () {
+            const clientId = document.getElementById("client-id").value;
+            if (!clientId) {
+                showToast("Guarde el cliente antes de eliminar datos de envio.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirmDialog({
+                title: "Eliminar envio",
+                message: "Seguro que desea eliminar los datos de envio por transportadora?",
+                confirmText: "Eliminar envio",
+                cancelText: "Cancelar",
+                tone: "danger"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            const response = await withAppLoading("Eliminando envio...", async function () {
+                return await fetch(`/api/clientes/${clientId}/datos-envio`, { method: "DELETE" });
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo eliminar el envio.", "error");
+                return;
+            }
+
+            currentShippingId = null;
+            clearShippingFields();
+            setShippingEnabled(false);
+            updateDeleteShippingButton();
+            showToast("Envio eliminado correctamente.", "success");
+        });
+
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
+            const clientId = document.getElementById("client-id").value;
+            const payload = buildPayload();
+
+            if (!payload.cliente.nombre) {
+                showToast("El nombre del cliente es obligatorio.", "error");
+                return;
+            }
+
+            if (!payload.cliente.nroTelefono) {
+                showToast("El telefono del cliente es obligatorio.", "error");
+                return;
+            }
+
+            if (payload.cliente.documento && !documentTypeSelect.value) {
+                showToast("Seleccione el tipo de documento.", "error");
+                return;
+            }
+
+            if (payload.cliente.documento && documentTypeSelect.value === "RUC" && !payload.cliente.documento.includes("-")) {
+                showToast("El RUC debe incluir guion. Ejemplo: 80012345-1.", "error");
+                return;
+            }
+
+            if (shippingEnabled.checked) {
+                const envio = payload.datosEnvio;
+                const missingShippingData = !envio.transportadoraId ||
+                    !envio.nombreReceptor ||
+                    !envio.documentoReceptor ||
+                    !envio.telefonoReceptor ||
+                    !envio.departamentoId ||
+                    !envio.ciudadId ||
+                    !envio.direccion;
+
+                if (missingShippingData) {
+                    showToast("Complete todos los datos de transportadora para guardar el cliente.", "error");
+                    return;
+                }
+            }
+
+            if (!form.reportValidity()) {
+                return;
+            }
+
+            const response = await withAppLoading("Guardando cliente...", async function () {
+                return await fetch(clientId ? `/api/clientes/${clientId}` : "/api/clientes", {
+                    method: clientId ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo guardar el cliente.", "error");
+                return;
+            }
+
+            showToast("Cliente guardado correctamente.", "success");
             window.location.href = "/clientes";
         });
 
+        setShippingEnabled(false);
+        updateDeleteShippingButton();
         loadInitialClient();
     </script>
 }
