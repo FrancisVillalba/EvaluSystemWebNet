@@ -6,18 +6,8 @@ namespace EvaluSystemWebNet.Pages.impresiones;
 
 public class IndexModel : PageModel
 {
-    private readonly IBackendApiClient _backendApiClient;
-
-    public IndexModel(IBackendApiClient backendApiClient)
+    public IActionResult OnGet()
     {
-        _backendApiClient = backendApiClient;
-    }
-
-    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
-    {
-        var result = await _backendApiClient.GetResultAsync<IEnumerable<ImpresionArchivoDto>>("api/Impresiones", cancellationToken);
-        return result.StatusCode is 401 or 403
-            ? StatusCode(StatusCodes.Status403Forbidden)
-            : Page();
+        return Page();
     }
 }

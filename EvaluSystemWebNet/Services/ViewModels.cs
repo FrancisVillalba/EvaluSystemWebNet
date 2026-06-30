@@ -39,6 +39,7 @@ public record PedidoView(
     string PaymentMethod,
     string PaymentStatus,
     string PaidAmount,
+    string ProofPath,
     string ProofName,
     string Notes,
     List<PedidoDetalleView> Details);
@@ -52,6 +53,7 @@ public record PedidoDetalleView(
     string Quantity,
     string UnitPrice,
     string ExtraPrice,
+    string DesignPath,
     string DesignName);
 
 public record DashboardView(

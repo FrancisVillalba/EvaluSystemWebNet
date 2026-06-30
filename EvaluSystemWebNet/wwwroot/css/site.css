@@ -1819,6 +1819,10 @@ body.modal-page-body {
 }
 
 .reports-modules button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   border: 0;
   border-radius: 6px;
   padding: 10px 12px;
@@ -1833,6 +1837,66 @@ body.modal-page-body {
 .reports-modules button:hover {
   color: #075f72;
   background: #e7f5f3;
+}
+
+.print-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #075f72;
+  background: #dcefeb;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.reports-modules button.active .print-count-badge,
+.reports-modules button:hover .print-count-badge {
+  color: #fff;
+  background: #075f72;
+}
+
+.print-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.print-row-actions button {
+  min-width: 110px;
+}
+
+.print-row-actions .print-icon-button {
+  width: 42px;
+  min-width: 42px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.print-icon-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.print-row-actions .print-mark-button {
+  min-width: 126px;
+}
+
+.print-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .reports-panel {

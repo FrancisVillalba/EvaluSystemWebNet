@@ -217,6 +217,7 @@
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
         let loadedSaleStateId = "";
+        let paymentProofPath = "";
         let paymentProofFileName = "";
         let proofUrl = "";
 
@@ -481,9 +482,10 @@
                 quantity: seed.quantity || "",
                 unitPrice: seed.unitPrice || "",
                 extraPrice: seed.extraPrice || "",
+                designPath: seed.designPath || "",
                 designName: seed.designName || "",
                 designUrl: seed.designUrl || "",
-                designData: seed.designData || ""
+                designFile: seed.designFile || null
             };
         }
 
@@ -507,12 +509,26 @@
             }
         }
 
-        function setPaymentProof(name, url = "") {
-            if (proofUrl) {
+        function downloadUrl(path, name) {
+            if (!path) {
+                return "";
+            }
+
+            let url = `/api/archivos/download?ruta=${encodeURIComponent(path)}`;
+            if (name) {
+                url += `&nombreDescarga=${encodeURIComponent(name)}`;
+            }
+
+            return url;
+        }
+
+        function setPaymentProof(name, url = "", path = "") {
+            if (proofUrl && proofUrl.startsWith("blob:")) {
                 URL.revokeObjectURL(proofUrl);
             }
 
             proofUrl = url;
+            paymentProofPath = path || "";
             paymentProofFileName = name || "";
             proofName.textContent = name || "Sin comprobante adjunto";
             proofName.title = name || "";
@@ -580,7 +596,7 @@
                                 <label class="file-control-picker" for="design-file-${detail.id}">Seleccionar archivo</label>
                                 <span class="file-control-name">${detail.designName || "Sin diseno adjunto"}</span>
                                 ${detail.designName ? `
-                                    <a class="file-control-download" href="${detail.designUrl || "#"}" download="${detail.designName}" title="Descargar diseno" aria-label="Descargar diseno">
+                                    <a class="file-control-download" href="${detail.designUrl || downloadUrl(detail.designPath, detail.designName) || "#"}" download="${detail.designName}" title="Descargar diseno" aria-label="Descargar diseno">
                                         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                                             <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
                                         </svg>
@@ -605,15 +621,6 @@
             updateEstimatedTotal();
         }
 
-        function readFileAsDataUrl(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result || ""));
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
         async function updateDetailFromInput(event) {
             const input = event.target;
             const id = Number(input.dataset.id);
@@ -628,20 +635,16 @@
             const selectedUrl = selectedFile
                 ? URL.createObjectURL(selectedFile)
                 : "";
-            const selectedData = selectedFile
-                ? await readFileAsDataUrl(selectedFile)
-                : "";
-
             details = details.map(detail => {
                 if (detail.id !== id) {
                     return detail;
                 }
 
                 if (field === "designName") {
-                    if (detail.designUrl) {
+                    if (detail.designUrl && detail.designUrl.startsWith("blob:")) {
                         URL.revokeObjectURL(detail.designUrl);
                     }
-                    return { ...detail, designName: value, designUrl: selectedUrl, designData: selectedData };
+                    return { ...detail, designName: value, designUrl: selectedUrl, designPath: "", designFile: selectedFile };
                 }
 
                 if (field === "productId") {
@@ -757,7 +760,7 @@
             loadedSaleStateId = order.estadoVentaId || saleStatusSelect.value || initialSaleState()?.id || "";
             renderSaleStatusOptions(order.estadoVentaId || loadedSaleStateId);
             document.getElementById("order-notes").value = order.notes || "";
-            setPaymentProof(order.proofName || "");
+            setPaymentProof(order.proofName || "", downloadUrl(order.proofPath, order.proofName), order.proofPath || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
             renderDetails();
@@ -770,7 +773,7 @@
 
         proofInput.addEventListener("change", function () {
             const file = proofInput.files[0];
-            setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "");
+            setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "", "");
         });
 
         clientSelect2Button.addEventListener("click", function () {
@@ -807,6 +810,51 @@
             updatePaymentStatusFromAmount();
         });
 
+        async function uploadFile(file, folder) {
+            const formData = new FormData();
+            formData.append("archivo", file);
+            formData.append("carpeta", folder);
+
+            const response = await fetch("/api/archivos/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                throw new Error(error?.message || "No se pudo subir el archivo al servidor.");
+            }
+
+            return await response.json();
+        }
+
+        async function prepareFilesForSave(payload) {
+            const proofFile = proofInput.files[0];
+            if (proofFile) {
+                const uploaded = await uploadFile(proofFile, "comprobantes-pago");
+                paymentProofPath = uploaded.ruta || "";
+                paymentProofFileName = uploaded.nombreDescarga || uploaded.nombreOriginal || proofFile.name;
+                payload.comprobantePago = paymentProofPath || null;
+                payload.comprobantePagoNombre = paymentProofFileName || null;
+            }
+
+            for (let index = 0; index < details.length; index++) {
+                const detail = details[index];
+                if (!detail.designFile) {
+                    payload.detalles[index].archivoDisenio = detail.designPath || null;
+                    payload.detalles[index].archivoDisenioNombre = detail.designName || null;
+                    continue;
+                }
+
+                const uploaded = await uploadFile(detail.designFile, "disenos-pedidos");
+                detail.designPath = uploaded.ruta || "";
+                detail.designName = uploaded.nombreDescarga || uploaded.nombreOriginal || detail.designFile.name;
+                detail.designFile = null;
+                payload.detalles[index].archivoDisenio = detail.designPath || null;
+                payload.detalles[index].archivoDisenioNombre = detail.designName || null;
+            }
+        }
+
         async function saveOrder(targetStateId = null) {
             const previousStateId = saleStatusSelect.value;
             if (targetStateId) {
@@ -822,7 +870,7 @@
                 montoPagado: numberValue(document.getElementById("paid-amount").value),
                 estadoPagadoId: paymentStatusSelect.value || null,
                 fechaEntrega: document.getElementById("order-delivery").value || null,
-                comprobantePago: paymentProofFileName || null,
+                comprobantePago: paymentProofPath || null,
                 comprobantePagoNombre: paymentProofFileName || null,
                 observacion: document.getElementById("order-notes").value || null,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
@@ -834,7 +882,7 @@
                     cantidad: numberValue(detail.quantity),
                     precioUnitario: numberValue(detail.unitPrice),
                     precioExtra: numberValue(detail.extraPrice),
-                    archivoDisenio: detail.designData || detail.designName || null,
+                    archivoDisenio: detail.designPath || null,
                     archivoDisenioNombre: detail.designName || null,
                     observacion: null,
                     estadoItem: null,
@@ -866,16 +914,24 @@
                 return;
             }
 
-            const response = await withAppLoading("Guardando pedido...", async function () {
-                const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
-                return await fetch(saveUrl, {
-                    method: orderId ? "PUT" : "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
+            let response;
+            try {
+                response = await withAppLoading("Guardando pedido...", async function () {
+                    await prepareFilesForSave(payload);
+                    const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
+                    return await fetch(saveUrl, {
+                        method: orderId ? "PUT" : "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
                 });
-            });
+            } catch (error) {
+                saleStatusSelect.value = previousStateId;
+                showToast(error?.message || "No se pudo subir el archivo al servidor.", "error");
+                return;
+            }
 
             if (!response.ok) {
                 saleStatusSelect.value = previousStateId;

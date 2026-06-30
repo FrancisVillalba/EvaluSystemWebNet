@@ -189,6 +189,20 @@ public record PedidoFormOptionsDto(
 
 public record ExcelFileDto(string FileName, string ContentType, string Bytes);
 
+public record ArchivoUploadResponse(
+    bool Guardado,
+    string NombreOriginal,
+    string NombreDescarga,
+    string NombreGuardado,
+    string Ruta,
+    long TamanioBytes);
+
+public record ArchivoBase64Response(
+    string NombreArchivo,
+    string ContentType,
+    string Base64,
+    long TamanioBytes);
+
 public record DeliveryPedidoDto(
     int Id,
     DateTime FechaCreacion,
@@ -390,3 +404,11 @@ public record ImpresionArchivoDto(
     string? ArchivoDisenioNombre,
     string EstadoVenta,
     bool Impreso);
+
+public record ImpresionMarcarDto(
+    int DetalleId,
+    int PedidoId,
+    bool DetalleImpreso,
+    bool PedidoCompleto,
+    string EstadoVentaId,
+    string? EstadoVenta);

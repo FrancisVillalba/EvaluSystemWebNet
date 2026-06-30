@@ -22,8 +22,8 @@ public class AdministracionController : ControllerBase
         ["tiposDocumento"] = new("api/TiposDocumento", true, true, true),
         ["tiposCliente"] = new("api/TiposCliente", true, true, true),
         ["configuraciones"] = new("api/Configuraciones", true, true, true),
-        ["departamentos"] = new("api/Departamentos", false, false, false),
-        ["ciudades"] = new("api/Ciudades", false, false, false)
+        ["departamentos"] = new("api/Departamentos", true, true, true),
+        ["ciudades"] = new("api/Ciudades", true, true, true)
     };
 
     private readonly IBackendApiClient _backendApiClient;

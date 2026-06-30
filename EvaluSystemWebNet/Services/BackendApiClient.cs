@@ -12,6 +12,7 @@ public interface IBackendApiClient
     Task<BackendApiResult<T>> PostResultAsync<T>(string path, object body, CancellationToken cancellationToken = default);
     Task<T?> PutAsync<T>(string path, object body, CancellationToken cancellationToken = default);
     Task<BackendApiResult<T>> PutResultAsync<T>(string path, object body, CancellationToken cancellationToken = default);
+    Task<BackendApiResult<T>> PostFileResultAsync<T>(string path, IFormFile file, IReadOnlyDictionary<string, string?>? fields = null, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string path, CancellationToken cancellationToken = default);
 }
 
@@ -79,6 +80,35 @@ public class BackendApiClient : IBackendApiClient
         using var request = CreateRequest(HttpMethod.Put, path);
         request.Content = JsonContent(body);
 
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await ReadResultAsync<T>(response, cancellationToken);
+    }
+
+    public async Task<BackendApiResult<T>> PostFileResultAsync<T>(string path, IFormFile file, IReadOnlyDictionary<string, string?>? fields = null, CancellationToken cancellationToken = default)
+    {
+        using var request = CreateRequest(HttpMethod.Post, path);
+        using var content = new MultipartFormDataContent();
+        await using var stream = file.OpenReadStream();
+
+        var fileContent = new StreamContent(stream);
+        if (!string.IsNullOrWhiteSpace(file.ContentType))
+        {
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        }
+
+        content.Add(fileContent, "archivo", file.FileName);
+        if (fields is not null)
+        {
+            foreach (var field in fields)
+            {
+                if (!string.IsNullOrWhiteSpace(field.Value))
+                {
+                    content.Add(new StringContent(field.Value), field.Key);
+                }
+            }
+        }
+
+        request.Content = content;
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadResultAsync<T>(response, cancellationToken);
     }

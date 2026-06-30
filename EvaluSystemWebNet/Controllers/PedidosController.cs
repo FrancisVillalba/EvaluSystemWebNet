@@ -202,13 +202,14 @@ public class PedidosController : ControllerBase
             vendedor,
             pedido.EstadoVenta ?? pedido.EstadoVentaId,
             delivery,
-            string.IsNullOrWhiteSpace(pedido.MetodoEntrega) ? "DELIVERY" : pedido.MetodoEntrega,
+            pedido.MetodoEntrega ?? string.Empty,
             MetodoEntregaLabel(pedido.MetodoEntrega),
             pedido.DeliveryUsuario ?? string.Empty,
             pedido.FechaTomaDelivery?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
             pedido.FormaPago ?? pedido.FormaPagoId,
             pedido.EstadoPagado ?? pedido.EstadoPagadoId ?? "Pendiente",
             pedido.MontoPagado?.ToString("N0") ?? "0",
+            pedido.ComprobantePago ?? string.Empty,
             pedido.ComprobantePagoNombre ?? string.Empty,
             pedido.Observacion ?? string.Empty,
             pedido.Detalles.Select(ToDetailView).ToList());
@@ -216,6 +217,11 @@ public class PedidosController : ControllerBase
 
     private static string MetodoEntregaLabel(string? metodoEntrega)
     {
+        if (string.IsNullOrWhiteSpace(metodoEntrega))
+        {
+            return "Sin metodo";
+        }
+
         return (metodoEntrega ?? "DELIVERY").ToUpperInvariant() switch
         {
             "DELIVERY" => "Delivery",
@@ -275,6 +281,7 @@ public class PedidosController : ControllerBase
             detalle.Cantidad.ToString("N2"),
             detalle.PrecioUnitario.ToString("N0"),
             detalle.PrecioExtra?.ToString("N0") ?? string.Empty,
+            detalle.ArchivoDisenio ?? string.Empty,
             detalle.ArchivoDisenioNombre ?? string.Empty);
     }
 }

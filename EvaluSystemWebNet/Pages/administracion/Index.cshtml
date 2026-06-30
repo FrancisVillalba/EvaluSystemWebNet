@@ -196,8 +196,29 @@
                     { name: "valor", label: "Valor", required: true }
                 ]
             },
-            departamentos: readonlyModule("Departamentos", "Listado de departamentos disponibles.", [["id", "Id"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]]),
-            ciudades: readonlyModule("Ciudades", "Listado de ciudades disponibles.", [["id", "Id"], ["departamento", "Departamento"], ["nombre", "Ciudad"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]])
+            departamentos: {
+                title: "Departamentos",
+                help: "Crea y mantiene los departamentos disponibles para clientes y envios.",
+                id: "id",
+                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "id", label: "Codigo", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            ciudades: {
+                title: "Ciudades",
+                help: "Crea y mantiene las ciudades por departamento.",
+                id: "id",
+                columns: [["id", "Id"], ["departamento", "Departamento"], ["codigoDistrito", "Codigo distrito"], ["nombre", "Ciudad"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "departamentoId", label: "Departamento", type: "select", source: "departamentos", value: "id", text: "nombre", required: true },
+                    { name: "codigoDistrito", label: "Codigo distrito", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
+                    { name: "nombre", label: "Ciudad", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            }
         };
 
         const state = {
@@ -245,10 +266,6 @@
                     { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
                 ]
             };
-        }
-
-        function readonlyModule(title, help, columns) {
-            return { title, help, id: "id", columns, fields: [], readonly: true };
         }
 
         function escapeHtml(value) {

@@ -191,11 +191,13 @@
         }
 
         function orderTypeFromDetails(orderDetails) {
+            orderDetails = Array.isArray(orderDetails) ? orderDetails : [];
             const product = orderDetails[0]?.product || "DTF Textil";
             return product.includes("UV") ? "UV DTF" : "DTF Textil";
         }
 
         function metersFromDetails(orderDetails) {
+            orderDetails = Array.isArray(orderDetails) ? orderDetails : [];
             const total = orderDetails.reduce((sum, detail) => sum + numberValue(detail.quantity), 0);
             return total ? `${total} m` : "0 m";
         }
@@ -233,23 +235,31 @@
         }
 
         function renderOrders() {
-            body.innerHTML = orders.map(order => `
+            if (!orders.length) {
+                body.innerHTML = `<tr><td colspan="11">No hay pedidos para los filtros seleccionados.</td></tr>`;
+            } else {
+                body.innerHTML = orders.map(order => {
+                    const details = Array.isArray(order.details) ? order.details : [];
+                    const deliveryMethod = order.deliveryMethod || "Sin metodo";
+                    return `
                 <tr>
-                    <td>${order.id}</td>
-                    <td>${order.date}</td>
+                    <td>${escapeHtml(order.id)}</td>
+                    <td>${escapeHtml(order.date)}</td>
                     <td class="orders-strong">${escapeHtml(order.client)}</td>
                     <td class="orders-strong">${escapeHtml(shortPersonName(order.seller) || order.seller)}</td>
-                    <td>${orderTypeFromDetails(order.details)}</td>
-                    <td>${metersFromDetails(order.details)}</td>
-                    <td><span class="orders-status ${statusClass(order.status)}">${order.status}</span></td>
-                    <td><span class="orders-status delivery-method ${statusClass(order.deliveryMethod)}">${escapeHtml(order.deliveryMethod)}</span></td>
+                    <td>${escapeHtml(orderTypeFromDetails(details))}</td>
+                    <td>${escapeHtml(metersFromDetails(details))}</td>
+                    <td><span class="orders-status ${statusClass(order.status)}">${escapeHtml(order.status)}</span></td>
+                    <td><span class="orders-status delivery-method ${statusClass(deliveryMethod)}">${escapeHtml(deliveryMethod)}</span></td>
                     <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
-                    <td>${order.delivery}</td>
+                    <td>${escapeHtml(order.delivery)}</td>
                     <td class="orders-actions">
-                        <button class="orders-edit" type="button" onclick="openOrder('${order.id}')">Ver</button>
+                        <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
                     </td>
                 </tr>
-            `).join("");
+                    `;
+                }).join("");
+            }
 
             count.textContent = `${totalItems} pedidos encontrados`;
             paginationSummary.textContent = `Pagina ${currentPage} de ${totalPages}`;
@@ -396,6 +406,12 @@
                 currentPage = result.page || currentPage;
                 totalPages = Math.max(result.totalPages || 1, 1);
                 totalItems = result.totalItems || orders.length;
+                if (!orders.length && totalItems > 0 && currentPage > totalPages) {
+                    currentPage = totalPages;
+                    await loadOrders();
+                    return;
+                }
+
                 renderOrders();
             });
         }

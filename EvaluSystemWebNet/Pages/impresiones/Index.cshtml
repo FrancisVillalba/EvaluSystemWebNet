@@ -23,7 +23,7 @@
         <section class="reports-panel">
             <div class="reports-panel-header">
                 <div>
-                    <h2 id="machine-title">Todas las maquinas</h2>
+                    <h2 id="machine-title">Maquina</h2>
                     <p id="machine-help">Archivos cargados para impresion.</p>
                 </div>
                 <span id="machine-count" class="delivery-route-count">0 archivos</span>
@@ -50,7 +50,6 @@
                             <th>Producto</th>
                             <th>Cantidad</th>
                             <th>Archivo</th>
-                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -98,11 +97,7 @@
             return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
         }
 
-        function filteredFiles() {
-            return files.filter(item => !selectedMachine || String(item.tipoMaquinaId) === selectedMachine);
-        }
-
-        function renderMachineMenu() {
+        function getMachineGroups() {
             const groups = new Map();
             files.forEach(item => {
                 const key = String(item.tipoMaquinaId);
@@ -111,24 +106,44 @@
                 groups.set(key, current);
             });
 
-            const machines = Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
-            const total = files.length;
-            machineMenu.innerHTML = `
-                <button class="${selectedMachine === "" ? "active" : ""}" type="button" data-machine="">
-                    Todas <strong>${total}</strong>
-                </button>
-                ${machines.map(machine => `
+            return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function ensureSelectedMachine(machines) {
+            if (!machines.length) {
+                selectedMachine = "";
+                return;
+            }
+
+            if (!selectedMachine || !machines.some(machine => machine.id === selectedMachine)) {
+                selectedMachine = machines[0].id;
+            }
+        }
+
+        function filteredFiles() {
+            return selectedMachine
+                ? files.filter(item => String(item.tipoMaquinaId) === selectedMachine)
+                : [];
+        }
+
+        function renderMachineMenu() {
+            const machines = getMachineGroups();
+            ensureSelectedMachine(machines);
+
+            machineMenu.innerHTML = machines.length
+                ? machines.map(machine => `
                     <button class="${selectedMachine === machine.id ? "active" : ""}" type="button" data-machine="${machine.id}">
-                        ${escapeHtml(machine.name)} <strong>${machine.count}</strong>
+                        <span>${escapeHtml(machine.name)}</span><strong class="print-count-badge">${machine.count}</strong>
                     </button>
-                `).join("")}`;
+                `).join("")
+                : `<div class="empty-state">No hay maquinas con archivos.</div>`;
         }
 
         function renderTable() {
             const rows = filteredFiles();
             const title = selectedMachine
                 ? rows[0]?.tipoMaquina || "Maquina"
-                : "Todas las maquinas";
+                : "Maquina";
             machineTitle.textContent = title;
             machineCount.textContent = `${rows.length} archivos`;
             tableBody.innerHTML = rows.length
@@ -140,11 +155,21 @@
                         <td>${escapeHtml(item.producto)}</td>
                         <td>${formatQuantity(item.cantidad)}</td>
                         <td>${escapeHtml(item.archivoDisenioNombre || "Archivo de diseno")}</td>
-                        <td><span class="orders-status ${item.impreso ? "enviado" : "pendiente-envio"}">${item.impreso ? "Impreso" : escapeHtml(item.estadoVenta)}</span></td>
-                        <td><button class="admin-secondary" type="button" data-download="${item.detalleId}">Descargar</button></td>
+                        <td>
+                            <div class="print-row-actions">
+                                <button class="admin-secondary print-icon-button" type="button" data-download="${item.detalleId}" title="Descargar" aria-label="Descargar">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3v12"></path>
+                                        <path d="m7 10 5 5 5-5"></path>
+                                        <path d="M5 21h14"></path>
+                                    </svg>
+                                </button>
+                                <button class="admin-primary print-mark-button" type="button" data-print="${item.detalleId}" ${item.impreso ? "disabled" : ""}>${item.impreso ? "Impreso" : "Marcar impreso"}</button>
+                            </div>
+                        </td>
                     </tr>
                 `).join("")
-                : `<tr><td colspan="8">No hay archivos para los filtros seleccionados.</td></tr>`;
+                : `<tr><td colspan="7">No hay archivos para los filtros seleccionados.</td></tr>`;
         }
 
         async function loadFiles() {
@@ -165,11 +190,8 @@
                     return;
                 }
 
-                files = await response.json() || [];
-                if (selectedMachine && !files.some(item => String(item.tipoMaquinaId) === selectedMachine)) {
-                    selectedMachine = "";
-                }
-
+                const result = await response.json() || [];
+                files = result.filter(item => item.impreso !== true);
                 renderMachineMenu();
                 renderTable();
             });
@@ -198,6 +220,23 @@
             });
         }
 
+        async function markPrinted(id) {
+            await withAppLoading("Marcando impresion...", async function () {
+                const response = await fetch(`/api/impresiones/${id}/marcar-impreso`, { method: "PUT" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo marcar como impreso.", "error");
+                    return;
+                }
+
+                const result = await response.json();
+                showToast(result.pedidoCompleto
+                    ? "Detalle impreso. El pedido paso a Pendiente envio."
+                    : "Detalle marcado como impreso.", "success");
+                await loadFiles();
+            });
+        }
+
         machineMenu.addEventListener("click", event => {
             const button = event.target.closest("[data-machine]");
             if (!button) {
@@ -213,6 +252,12 @@
             const button = event.target.closest("[data-download]");
             if (button) {
                 downloadFile(button.dataset.download);
+                return;
+            }
+
+            const printButton = event.target.closest("[data-print]");
+            if (printButton) {
+                markPrinted(printButton.dataset.print);
             }
         });
 

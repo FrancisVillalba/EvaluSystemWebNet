@@ -53,4 +53,17 @@ public class ImpresionesController : ControllerBase
 
         return File(Convert.FromBase64String(file.Bytes), file.ContentType, file.FileName);
     }
+
+    [HttpPut("{detalleId:int}/marcar-impreso")]
+    public async Task<ActionResult<ImpresionMarcarDto>> MarcarImpreso(int detalleId, CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.PutResultAsync<ImpresionMarcarDto>(
+            $"api/Impresiones/{detalleId}/marcar-impreso",
+            new { },
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+    }
 }
