@@ -1,5 +1,29 @@
 @{
     var activeMenu = ViewData["ActiveMenu"]?.ToString() ?? "";
+    var permissionsJson = Context.Session.GetString("BackendPermissions");
+    var allowedModules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    if (!string.IsNullOrWhiteSpace(permissionsJson))
+    {
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(permissionsJson);
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                var hasCanView = item.TryGetProperty("puedeVer", out var canView) || item.TryGetProperty("PuedeVer", out canView);
+                var hasForm = item.TryGetProperty("formulario", out var form) || item.TryGetProperty("Formulario", out form);
+                if (hasCanView && canView.GetBoolean() && hasForm)
+                {
+                    allowedModules.Add(form.GetString() ?? string.Empty);
+                }
+            }
+        }
+        catch
+        {
+            allowedModules.Clear();
+        }
+    }
+
+    bool CanSee(string name) => allowedModules.Count == 0 || allowedModules.Contains(name);
 }
 
 <aside class="app-sidebar">
@@ -17,12 +41,14 @@
     </div>
 
     <nav aria-label="Menu principal">
-        <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">Tablero</button>
-        <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button>
-        <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">Clientes</button>
-        <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">Administracion</button>
-        <button class="@(activeMenu == "produccion" ? "active" : "")" type="button">Produccion</button>
-        <button class="@(activeMenu == "reportes" ? "active" : "")" type="button">Reportes</button>
+        @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">Tablero</button> }
+        @if (CanSee("Pedidos")) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button> }
+        @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">Clientes</button> }
+        @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">Impresiones</button> }
+        @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">Envio</button> }
+        @if (CanSee("Reportes")) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">Reportes</button> }
+        @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">Administracion</button> }
+
     </nav>
 
     <a class="app-sidebar-logout" href="/">Cerrar sesion</a>

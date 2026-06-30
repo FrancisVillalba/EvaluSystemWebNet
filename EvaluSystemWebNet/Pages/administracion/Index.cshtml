@@ -97,13 +97,14 @@
                 columns: [
                     ["nombreUsuario", "Usuario"],
                     ["persona", "Persona"],
-                    ["perfil", "Perfil"],
+                    ["perfiles", "Perfiles"],
                     ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
                 ],
                 fields: [
                     { name: "nombreUsuario", label: "Usuario", required: true },
                     { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
                     { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
+                    { name: "perfilIds", label: "Perfiles", type: "multiselect", source: "perfiles", value: "id", text: "nombre" },
                     { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
                 ]
             },
@@ -323,6 +324,21 @@
                     </label>`;
             }
 
+            if (field.type === "multiselect") {
+                const items = state.options[field.source] || [];
+                const selected = new Set((record[field.name] || []).map(value => String(value)));
+                return `
+                    <fieldset class="admin-multi-field">
+                        <legend>${escapeHtml(field.label)}</legend>
+                        <div class="admin-multi-options">
+                            ${items.map(item => {
+                                const value = item[field.value];
+                                return `<label><input data-field="${field.name}" type="checkbox" value="${escapeHtml(value)}" ${selected.has(String(value)) ? "checked" : ""}>${escapeHtml(optionText(item, field))}</label>`;
+                            }).join("")}
+                        </div>
+                    </fieldset>`;
+            }
+
             if (field.type === "textarea") {
                 return `<label>${escapeHtml(field.label)}<textarea data-field="${field.name}" rows="2">${escapeHtml(value)}</textarea></label>`;
             }
@@ -349,6 +365,12 @@
             const config = modules[state.module];
             const payload = {};
             for (const field of config.fields) {
+                if (field.type === "multiselect") {
+                    payload[field.name] = Array.from(formHost.querySelectorAll(`[data-field="${field.name}"]:checked`))
+                        .map(item => coerceOptionValue(item.value));
+                    continue;
+                }
+
                 const input = formHost.querySelector(`[data-field="${field.name}"]`);
                 if (!input) {
                     continue;

@@ -1,19 +1,20 @@
 @page
 @{
-    Layout = "_AppLayout";
+    var embedded = string.Equals(Request.Query["embedded"], "1", StringComparison.OrdinalIgnoreCase);
+    Layout = embedded ? "_ModalLayout" : "_AppLayout";
     ViewData["Title"] = "Crear pedido";
     ViewData["ActiveMenu"] = "pedidos";
-    ViewData["ShellClass"] = "entry-shell";
+    ViewData["ShellClass"] = embedded ? "entry-shell embedded-entry-shell" : "entry-shell";
 }
 
-<section class="entry-main">
+<section class="entry-main @(embedded ? "entry-main-embedded" : "")">
             <header class="entry-header">
                 <div>
                     <p class="eyebrow">Carga de ventas impresiones</p>
                     <h1 id="order-form-title">Nuevo pedido</h1>
                     <p>Registra la venta y sus detalles para enviarla a produccion.</p>
                 </div>
-                <button class="back-list-button" type="button" onclick="window.location.href='/pedidos'">Volver a la lista</button>
+                <button class="back-list-button" type="button" onclick="closeEmbeddedForm()">Volver a la lista</button>
             </header>
 
             <form id="order-form" class="entry-form">
@@ -43,7 +44,7 @@
                             </label>
 
                             <label class="field" for="payment-method">
-                                Forma Pago
+                                Forma de pago
                                 <select id="payment-method">
                                     <option value="">Seleccionar forma de pago</option>
                                 </select>
@@ -57,7 +58,7 @@
                             </label>
 
                             <label class="field" for="order-delivery">
-                                Fecha Entrega
+                                Fecha entrega
                                 <input id="order-delivery" required type="date" />
                             </label>
 
@@ -71,6 +72,22 @@
                                 <select id="payment-status">
                                     <option value="">Seleccionar estado de pago</option>
                                 </select>
+                            </label>
+
+                            <label class="field" for="delivery-method">
+                                Forma de entrega
+                                <select id="delivery-method">
+                                    <option value="DELIVERY">Delivery</option>
+                                    <option value="RETIRO_LOCAL">Retiro en local</option>
+                                    <option value="MOTOBOLT">Motobolt</option>
+                                    <option value="TRANSPORTADORA">Transportadora</option>
+                                    <option value="OTRO">Otro</option>
+                                </select>
+                            </label>
+
+                            <label class="field" for="delivery-user">
+                                Usuario entrega pedido
+                                <input id="delivery-user" readonly placeholder="Sin tomar" />
                             </label>
 
                             <label class="field state-field" for="order-sale-status">
@@ -135,6 +152,26 @@
 
 @section Scripts {
     <script>
+        const isEmbedded = @(embedded ? "true" : "false");
+
+        function closeEmbeddedForm() {
+            if (isEmbedded && window.parent) {
+                window.parent.postMessage({ type: "order-modal-close" }, window.location.origin);
+                return;
+            }
+
+            window.location.href = "/pedidos";
+        }
+
+        function notifyEmbeddedSaved() {
+            if (isEmbedded && window.parent) {
+                window.parent.postMessage({ type: "order-modal-saved" }, window.location.origin);
+                return true;
+            }
+
+            return false;
+        }
+
         function localDateValue(date = new Date()) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -171,6 +208,8 @@
         const clientSelect2Options = document.getElementById("client-select2-options");
         const paymentMethodSelect = document.getElementById("payment-method");
         const sellerSelect = document.getElementById("order-seller");
+        const deliveryMethodSelect = document.getElementById("delivery-method");
+        const deliveryUserInput = document.getElementById("delivery-user");
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
         const stateBackAction = document.getElementById("state-back-action");
@@ -196,6 +235,20 @@
                 .replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
                 .replaceAll('"', "&quot;");
+        }
+
+        function shortPersonName(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0] || "";
+        }
+
+        function sellerShortName(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 3) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+
+            return parts.length > 1 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
         }
 
         function selectOptions(items, selectedValue = "", placeholder = "Seleccionar") {
@@ -233,6 +286,12 @@
         function updateClientSelect2Label() {
             const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
             clientSelect2Label.textContent = selectedClient ? clientOptionLabel(selectedClient) : "Seleccionar cliente";
+        }
+
+        function applyDeliveryMethodFromClient() {
+            const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
+            const hasCarrierShipping = Boolean(selectedClient?.datosEnvio || selectedClient?.transportadoraId || selectedClient?.transportadora);
+            deliveryMethodSelect.value = hasCarrierShipping ? "TRANSPORTADORA" : "DELIVERY";
         }
 
         function renderClientSelect2Options() {
@@ -423,7 +482,8 @@
                 unitPrice: seed.unitPrice || "",
                 extraPrice: seed.extraPrice || "",
                 designName: seed.designName || "",
-                designUrl: seed.designUrl || ""
+                designUrl: seed.designUrl || "",
+                designData: seed.designData || ""
             };
         }
 
@@ -545,18 +605,31 @@
             updateEstimatedTotal();
         }
 
-        function updateDetailFromInput(event) {
+        function readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ""));
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function updateDetailFromInput(event) {
             const input = event.target;
             const id = Number(input.dataset.id);
             const field = input.dataset.field;
+            const selectedFile = input.type === "file" ? input.files[0] : null;
             const value = input.type === "file"
-                ? input.files[0]?.name || ""
+                ? selectedFile?.name || ""
                 : field === "unitPrice" || field === "extraPrice"
                     ? formatNumber(input.value)
                     : input.value;
 
-            const selectedUrl = input.type === "file" && input.files[0]
-                ? URL.createObjectURL(input.files[0])
+            const selectedUrl = selectedFile
+                ? URL.createObjectURL(selectedFile)
+                : "";
+            const selectedData = selectedFile
+                ? await readFileAsDataUrl(selectedFile)
                 : "";
 
             details = details.map(detail => {
@@ -568,7 +641,7 @@
                     if (detail.designUrl) {
                         URL.revokeObjectURL(detail.designUrl);
                     }
-                    return { ...detail, designName: value, designUrl: selectedUrl };
+                    return { ...detail, designName: value, designUrl: selectedUrl, designData: selectedData };
                 }
 
                 if (field === "productId") {
@@ -620,7 +693,7 @@
             sellerSelect.innerHTML = selectOptions(
                 formOptions.vendedores.map(item => ({
                     value: item.id,
-                    label: item.persona || item.nombreUsuario || `Usuario ${item.id}`
+                    label: sellerShortName(item.persona) || item.nombreUsuario || `Usuario ${item.id}`
                 })),
                 sellerSelect.value,
                 "Seleccionar vendedor"
@@ -656,6 +729,7 @@
         function applyDefaults() {
             paymentMethodSelect.value = findOptionId(formOptions.formasPago, "transferencia") || paymentMethodSelect.value;
             paymentStatusSelect.value = findOptionId(formOptions.estadosPago, "pendiente") || paymentStatusSelect.value;
+            deliveryMethodSelect.value = "DELIVERY";
             saleStatusSelect.value = initialSaleState()?.id || findOptionId(formOptions.estadosVenta, "cargado") || findOptionId(formOptions.estadosVenta, "pendiente") || saleStatusSelect.value;
 
             if (formOptions.usuarioActualId) {
@@ -675,6 +749,8 @@
             document.getElementById("payment-method").value = order.formaPagoId || "";
             document.getElementById("order-seller").value = order.vendedorId || "";
             document.getElementById("order-delivery").value = order.delivery || today;
+            deliveryMethodSelect.value = order.deliveryMethodId || "DELIVERY";
+            deliveryUserInput.value = order.deliveryUser ? shortPersonName(order.deliveryUser) : "Sin tomar";
             document.getElementById("paid-amount").value = formatNumber(order.paidAmount || "0");
             document.getElementById("payment-status").value = order.estadoPagadoId || "";
             document.getElementById("order-sale-status").value = order.estadoVentaId || "";
@@ -702,6 +778,10 @@
         });
 
         clientSelect2Search.addEventListener("input", renderClientSelect2Options);
+        clientSelect.addEventListener("change", function () {
+            updateClientSelect2Label();
+            applyDeliveryMethodFromClient();
+        });
 
         clientSelect2Options.addEventListener("click", function (event) {
             const option = event.target.closest("[data-value]");
@@ -711,6 +791,7 @@
 
             clientSelect.value = option.dataset.value;
             updateClientSelect2Label();
+            applyDeliveryMethodFromClient();
             renderClientSelect2Options();
             setClientSelect2Open(false);
         });
@@ -744,6 +825,7 @@
                 comprobantePago: paymentProofFileName || null,
                 comprobantePagoNombre: paymentProofFileName || null,
                 observacion: document.getElementById("order-notes").value || null,
+                metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
                 estadoVentaId: saleStatusSelect.value || null,
                 detalles: details.map(detail => ({
                     id: detail.detailId,
@@ -752,7 +834,7 @@
                     cantidad: numberValue(detail.quantity),
                     precioUnitario: numberValue(detail.unitPrice),
                     precioExtra: numberValue(detail.extraPrice),
-                    archivoDisenio: detail.designName || null,
+                    archivoDisenio: detail.designData || detail.designName || null,
                     archivoDisenioNombre: detail.designName || null,
                     observacion: null,
                     estadoItem: null,
@@ -810,7 +892,9 @@
 
             showToast("Venta guardada correctamente.", "success");
             window.setTimeout(() => {
-                window.location.href = "/pedidos";
+                if (!notifyEmbeddedSaved()) {
+                    window.location.href = "/pedidos";
+                }
             }, 700);
         }
 
@@ -873,7 +957,9 @@
 
             showToast("Pedido eliminado correctamente.", "success");
             window.setTimeout(() => {
-                window.location.href = "/pedidos";
+                if (!notifyEmbeddedSaved()) {
+                    window.location.href = "/pedidos";
+                }
             }, 700);
         });
 

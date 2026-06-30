@@ -13,7 +13,7 @@
                     <h1>Pedidos</h1>
                     <p>Pedidos cargados, con filtros por fecha de carga, cliente y estado.</p>
                 </div>
-                <button class="orders-primary" type="button" onclick="window.location.href='/pedidos/formulario'">Cargar pedido</button>
+                <button class="orders-primary" type="button" onclick="openOrder()">Cargar pedido</button>
             </header>
 
             <section class="orders-panel">
@@ -80,6 +80,8 @@
                                 <th>Tipo</th>
                                 <th>Metros</th>
                                 <th>Estado</th>
+                                <th>Metodo entrega</th>
+                                <th>Usuario entrega</th>
                                 <th>Entrega</th>
                                 <th>Acciones</th>
                             </tr>
@@ -109,6 +111,17 @@
                 </div>
             </section>
 </section>
+
+<div id="order-form-modal" class="order-form-modal" hidden>
+    <div class="order-form-modal-backdrop" data-order-modal-close></div>
+    <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-form-modal-title">
+        <header class="order-form-modal-header">
+            <h2 id="order-form-modal-title">Pedido</h2>
+            <button id="order-form-modal-close" type="button" aria-label="Cerrar formulario">×</button>
+        </header>
+        <iframe id="order-form-frame" title="Formulario de pedido"></iframe>
+    </section>
+</div>
 
 @section Scripts {
     <script>
@@ -149,6 +162,10 @@
         const nextPageButton = document.getElementById("order-next-page");
         const pageSizeSelect = document.getElementById("order-page-size");
         const downloadOrdersExcelButton = document.getElementById("download-orders-excel");
+        const orderFormModal = document.getElementById("order-form-modal");
+        const orderFormFrame = document.getElementById("order-form-frame");
+        const orderFormModalTitle = document.getElementById("order-form-modal-title");
+        const orderFormModalClose = document.getElementById("order-form-modal-close");
 
         function statusClass(status) {
             return String(status || "")
@@ -220,11 +237,13 @@
                 <tr>
                     <td>${order.id}</td>
                     <td>${order.date}</td>
-                    <td>${order.client}</td>
-                    <td>${order.seller}</td>
+                    <td class="orders-strong">${escapeHtml(order.client)}</td>
+                    <td class="orders-strong">${escapeHtml(shortPersonName(order.seller) || order.seller)}</td>
                     <td>${orderTypeFromDetails(order.details)}</td>
                     <td>${metersFromDetails(order.details)}</td>
                     <td><span class="orders-status ${statusClass(order.status)}">${order.status}</span></td>
+                    <td><span class="orders-status delivery-method ${statusClass(order.deliveryMethod)}">${escapeHtml(order.deliveryMethod)}</span></td>
+                    <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
                     <td>${order.delivery}</td>
                     <td class="orders-actions">
                         <button class="orders-edit" type="button" onclick="openOrder('${order.id}')">Ver</button>
@@ -239,9 +258,25 @@
             nextPageButton.disabled = currentPage >= totalPages;
         }
 
-        function openOrder(id) {
-            showAppLoading("Abriendo pedido...");
-            window.location.href = `/pedidos/formulario?id=${id}`;
+        function openOrder(id = "") {
+            const hasId = Boolean(id);
+            orderFormModalTitle.textContent = hasId ? `Pedido ${id}` : "Nuevo pedido";
+            orderFormFrame.src = hasId
+                ? `/pedidos/formulario?id=${encodeURIComponent(id)}&embedded=1`
+                : "/pedidos/formulario?embedded=1";
+            orderFormModal.hidden = false;
+            document.body.classList.add("is-order-modal-open");
+            orderFormModalClose.focus();
+        }
+
+        function closeOrderModal(shouldRefresh = false) {
+            orderFormModal.hidden = true;
+            orderFormFrame.src = "about:blank";
+            document.body.classList.remove("is-order-modal-open");
+
+            if (shouldRefresh) {
+                loadOrders();
+            }
         }
 
         function optionMarkup(items, valueKey, labelKey) {
@@ -260,6 +295,15 @@
 
         function sellerOptionLabel(seller) {
             return seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`;
+        }
+
+        function shortPersonName(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 3) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+
+            return parts.length > 1 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
         }
 
         function sellerOptionMarkup(items) {
@@ -400,6 +444,32 @@
         });
 
         downloadOrdersExcelButton.addEventListener("click", downloadFilteredOrdersExcel);
+        orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        orderFormModal.addEventListener("click", function (event) {
+            if (event.target.closest("[data-order-modal-close]")) {
+                closeOrderModal();
+            }
+        });
+
+        window.addEventListener("message", function (event) {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            if (event.data?.type === "order-modal-close") {
+                closeOrderModal();
+            }
+
+            if (event.data?.type === "order-modal-saved") {
+                closeOrderModal(true);
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !orderFormModal.hidden) {
+                closeOrderModal();
+            }
+        });
 
         filterClientSelect2Button.addEventListener("click", function () {
             setFilterClientSelect2Open(filterClientSelect2Dropdown.hidden);

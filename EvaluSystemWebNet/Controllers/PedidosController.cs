@@ -202,12 +202,29 @@ public class PedidosController : ControllerBase
             vendedor,
             pedido.EstadoVenta ?? pedido.EstadoVentaId,
             delivery,
+            string.IsNullOrWhiteSpace(pedido.MetodoEntrega) ? "DELIVERY" : pedido.MetodoEntrega,
+            MetodoEntregaLabel(pedido.MetodoEntrega),
+            pedido.DeliveryUsuario ?? string.Empty,
+            pedido.FechaTomaDelivery?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
             pedido.FormaPago ?? pedido.FormaPagoId,
             pedido.EstadoPagado ?? pedido.EstadoPagadoId ?? "Pendiente",
             pedido.MontoPagado?.ToString("N0") ?? "0",
             pedido.ComprobantePagoNombre ?? string.Empty,
             pedido.Observacion ?? string.Empty,
             pedido.Detalles.Select(ToDetailView).ToList());
+    }
+
+    private static string MetodoEntregaLabel(string? metodoEntrega)
+    {
+        return (metodoEntrega ?? "DELIVERY").ToUpperInvariant() switch
+        {
+            "DELIVERY" => "Delivery",
+            "RETIRO_LOCAL" => "Retiro en local",
+            "MOTOBOLT" => "Motobolt",
+            "TRANSPORTADORA" => "Transportadora",
+            "OTRO" => "Otro",
+            _ => metodoEntrega ?? "Delivery"
+        };
     }
 
     private static string BuildFilterQuery(

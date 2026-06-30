@@ -1,0 +1,605 @@
+@page
+@model EvaluSystemWebNet.Pages.delivery.IndexModel
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Envio";
+    ViewData["ActiveMenu"] = "delivery";
+    ViewData["ShellClass"] = "delivery-shell";
+}
+
+<section class="delivery-main">
+    <header class="delivery-header">
+        <div>
+            <p class="eyebrow">Envio</p>
+            <h1>Pedidos para envio</h1>
+            <p>Gestiona los pedidos pendientes por metodo de envio.</p>
+        </div>
+        <div class="delivery-header-actions">
+            <button id="refresh-delivery" class="delivery-refresh" type="button">Actualizar</button>
+        </div>
+    </header>
+
+    <section class="delivery-filters" aria-label="Filtros de envio">
+        <label for="filter-date-from">
+            Fecha desde
+            <input id="filter-date-from" type="date" />
+        </label>
+
+        <label for="filter-date-to">
+            Fecha hasta
+            <input id="filter-date-to" type="date" />
+        </label>
+
+        <label for="filter-client">
+            Cliente
+            <select id="filter-client" class="select2-hidden-select">
+                <option value="">Todos</option>
+            </select>
+            <div id="filter-client-select2" class="client-select2">
+                <button id="filter-client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="filter-client-select2-label">Todos</span>
+                </button>
+                <div id="filter-client-select2-dropdown" class="client-select2-dropdown" hidden>
+                    <input id="filter-client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                    <div id="filter-client-select2-options" class="client-select2-options" role="listbox"></div>
+                </div>
+            </div>
+        </label>
+
+        <label for="filter-method">
+            Metodo de envio
+            <select id="filter-method">
+                <option value="">Todos</option>
+                <option value="delivery">Delivery</option>
+                <option value="transportadora">Transportadora</option>
+                <option value="motobolt">Motobolt</option>
+                <option value="retiro">Retiro del local</option>
+            </select>
+        </label>
+    </section>
+
+    <div class="delivery-view-tabs" aria-label="Vistas de envio">
+        <button class="active" type="button" data-delivery-view="pending">Pendientes</button>
+        <button type="button" data-delivery-view="assigned">Mis entregas</button>
+    </div>
+
+    <section id="assigned-panel" class="delivery-panel delivery-extra-panel" hidden>
+        <div class="delivery-panel-header">
+            <div>
+                <h2>Mis entregas</h2>
+                <p>Pedidos asignados o entregados por usuario en el rango seleccionado.</p>
+            </div>
+            <div class="delivery-assigned-actions">
+                <button id="download-route" class="delivery-refresh" type="button">PDF ruta</button>
+            </div>
+        </div>
+        <div class="delivery-assigned-table-wrap">
+            <table class="delivery-assigned-table">
+                <thead>
+                    <tr>
+                        <th>Pedido</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Metodo</th>
+                        <th>Telefono</th>
+                        <th>Ciudad</th>
+                        <th>Usuario entrega</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="assigned-list"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="delivery-tabs" aria-label="Tipos de envio">
+        <button class="active" type="button" data-delivery-tab="delivery">Delivery <strong data-tab-count="delivery">0</strong></button>
+        <button type="button" data-delivery-tab="transportadora">Transportadora <strong data-tab-count="transportadora">0</strong></button>
+        <button type="button" data-delivery-tab="motobolt">Motobolt <strong data-tab-count="motobolt">0</strong></button>
+        <button type="button" data-delivery-tab="retiro">Retiro del local <strong data-tab-count="retiro">0</strong></button>
+    </div>
+
+    <div id="pending-panel" class="delivery-workspace">
+        <aside id="city-menu" class="delivery-cities" aria-label="Ciudades con pedidos para envio"></aside>
+
+        <section class="delivery-panel">
+            <div class="delivery-panel-header">
+                <div>
+                    <h2 id="selected-city-title">Delivery</h2>
+                    <p id="delivery-panel-help">Pedidos disponibles para tomar.</p>
+                </div>
+                <span id="route-count" class="delivery-route-count">0 pedidos</span>
+            </div>
+
+            <div id="available-list" class="delivery-list"></div>
+        </section>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        const methods = {
+            delivery: {
+                label: "Delivery",
+                endpoint: "/api/delivery/disponibles",
+                action: "take",
+                actionText: "Tomar pedido",
+                empty: "No hay pedidos pendientes para delivery.",
+                help: "Pedidos disponibles para tomar."
+            },
+            transportadora: {
+                label: "Transportadora",
+                endpoint: "/api/delivery/transportadora",
+                action: "take",
+                actionText: "Tomar pedido",
+                empty: "No hay pedidos pendientes para transportadora.",
+                help: "Pedidos para llevar a la transportadora."
+            },
+            motobolt: {
+                label: "Motobolt",
+                endpoint: "/api/delivery/motobolt",
+                action: "send",
+                actionText: "Marcar enviado",
+                empty: "No hay pedidos pendientes para Motobolt.",
+                help: "Pedidos para entregar al Motobolt."
+            },
+            retiro: {
+                label: "Retiro del local",
+                endpoint: "/api/delivery/retiro-local",
+                action: "send",
+                actionText: "Marcar enviado",
+                empty: "No hay pedidos pendientes para retiro del local.",
+                help: "Pedidos que el cliente retira en el local."
+            }
+        };
+
+        const availableList = document.getElementById("available-list");
+        const pendingPanel = document.getElementById("pending-panel");
+        const assignedPanel = document.getElementById("assigned-panel");
+        const assignedList = document.getElementById("assigned-list");
+        const cityMenu = document.getElementById("city-menu");
+        const selectedCityTitle = document.getElementById("selected-city-title");
+        const deliveryPanelHelp = document.getElementById("delivery-panel-help");
+        const routeCount = document.getElementById("route-count");
+        const dateFrom = document.getElementById("filter-date-from");
+        const dateTo = document.getElementById("filter-date-to");
+        const methodFilter = document.getElementById("filter-method");
+        const clientFilter = document.getElementById("filter-client");
+        const filterClientSelect2 = document.getElementById("filter-client-select2");
+        const filterClientSelect2Button = document.getElementById("filter-client-select2-button");
+        const filterClientSelect2Label = document.getElementById("filter-client-select2-label");
+        const filterClientSelect2Dropdown = document.getElementById("filter-client-select2-dropdown");
+        const filterClientSelect2Search = document.getElementById("filter-client-select2-search");
+        const filterClientSelect2Options = document.getElementById("filter-client-select2-options");
+
+        let ordersByMethod = {
+            delivery: [],
+            transportadora: [],
+            motobolt: [],
+            retiro: []
+        };
+        let myOrders = [];
+        let selectedCity = "";
+        let activeTab = "delivery";
+        let activeView = "pending";
+        let filterClients = [];
+
+        function localDateValue(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function formatDate(value) {
+            return value ? new Date(value).toLocaleDateString("es-PY") : "Sin fecha";
+        }
+
+        function dateValue(value) {
+            return value ? new Date(value).toISOString().slice(0, 10) : "";
+        }
+
+        function cityName(order) {
+            return order.ciudad || "Sin ciudad";
+        }
+
+        function clientOptionLabel(client) {
+            return client.name || "Sin cliente";
+        }
+
+        function localDateTimeFileValue(date = new Date()) {
+            const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return offsetDate.toISOString().slice(0, 16).replaceAll("-", "").replace("T", "").replace(":", "");
+        }
+
+        function currentMethod() {
+            return methods[activeTab] || methods.delivery;
+        }
+
+        function allOrders() {
+            return Object.values(ordersByMethod).flat();
+        }
+
+        function allKnownOrders() {
+            return [...allOrders(), ...myOrders];
+        }
+
+        function buildClientOptions() {
+            const clients = new Map();
+            allKnownOrders().forEach(order => {
+                const key = order.cliente || "Sin cliente";
+                clients.set(key, { id: key, name: key });
+            });
+
+            filterClients = Array.from(clients.values()).sort((a, b) => a.name.localeCompare(b.name));
+            clientFilter.innerHTML = `<option value="">Todos</option>` + filterClients
+                .map(client => `<option value="${escapeHtml(client.id)}">${escapeHtml(client.name)}</option>`)
+                .join("");
+            updateFilterClientSelect2Label();
+            renderFilterClientSelect2Options();
+        }
+
+        function updateFilterClientSelect2Label() {
+            const selected = filterClients.find(client => client.id === clientFilter.value);
+            filterClientSelect2Label.textContent = selected ? clientOptionLabel(selected) : "Todos";
+        }
+
+        function renderFilterClientSelect2Options() {
+            const search = filterClientSelect2Search.value.trim().toLowerCase();
+            const selected = clientFilter.value || "";
+            const clients = filterClients.filter(client => !search || client.name.toLowerCase().includes(search));
+            const allOption = `<button class="client-select2-option${selected ? "" : " is-selected"}" type="button" role="option" data-value="">Todos</button>`;
+            const options = clients.map(client => {
+                const isSelected = client.id === selected ? " is-selected" : "";
+                return `<button class="client-select2-option${isSelected}" type="button" role="option" data-value="${escapeHtml(client.id)}">${escapeHtml(clientOptionLabel(client))}</button>`;
+            }).join("");
+
+            filterClientSelect2Options.innerHTML = options || !search
+                ? allOption + options
+                : `<div class="client-select2-empty">Sin resultados</div>`;
+        }
+
+        function setFilterClientSelect2Open(isOpen) {
+            filterClientSelect2Dropdown.hidden = !isOpen;
+            filterClientSelect2Button.setAttribute("aria-expanded", String(isOpen));
+            if (isOpen) {
+                filterClientSelect2Search.value = "";
+                filterClientSelect2Search.focus();
+                renderFilterClientSelect2Options();
+            }
+        }
+
+        function matchesFilters(order, includeCity = true) {
+                const orderDate = dateValue(order.fechaEntrega || order.fechaCreacion);
+                const matchesClient = !clientFilter.value || String(order.cliente || "") === clientFilter.value;
+                const matchesFrom = !dateFrom.value || orderDate >= dateFrom.value;
+                const matchesTo = !dateTo.value || orderDate <= dateTo.value;
+                const matchesCity = !includeCity || !selectedCity || cityName(order) === selectedCity;
+                return matchesClient && matchesFrom && matchesTo && matchesCity;
+        }
+
+        function filteredOrdersForActiveTab() {
+            const methodOrders = ordersByMethod[activeTab] || [];
+            return methodOrders.filter(order => matchesFilters(order));
+        }
+
+        function ordersForMenu() {
+            return (ordersByMethod[activeTab] || []).filter(order => matchesFilters(order, false));
+        }
+
+        function updateTabCounts() {
+            Object.keys(methods).forEach(key => {
+                const count = (ordersByMethod[key] || []).filter(order => matchesFilters(order, false)).length;
+                const badge = document.querySelector(`[data-tab-count="${key}"]`);
+                if (badge) {
+                    badge.textContent = count;
+                }
+            });
+        }
+
+        function renderCityMenu() {
+            const groups = new Map();
+            ordersForMenu().forEach(order => {
+                const city = cityName(order);
+                groups.set(city, (groups.get(city) || 0) + 1);
+            });
+
+            if (selectedCity && !groups.has(selectedCity)) {
+                selectedCity = "";
+            }
+
+            const total = Array.from(groups.values()).reduce((sum, value) => sum + value, 0);
+            const cities = Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+            cityMenu.innerHTML = `
+                <button class="${selectedCity === "" ? "active" : ""}" type="button" data-city="">
+                    <span>Todas</span><strong>${total}</strong>
+                </button>
+                ${cities.map(([city, count]) => `
+                    <button class="${selectedCity === city ? "active" : ""}" type="button" data-city="${escapeHtml(city)}">
+                        <span>${escapeHtml(city)}</span><strong>${count}</strong>
+                    </button>
+                `).join("")}`;
+        }
+
+        function renderCard(order) {
+            const method = currentMethod();
+            return `
+                <article class="delivery-card">
+                    <div class="delivery-card-head">
+                        <strong>#${order.id}</strong>
+                        <span>${escapeHtml(order.estadoVenta || order.estadoVentaId)}</span>
+                    </div>
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <div class="delivery-card-body">
+                        <dl>
+                            <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
+                            <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
+                            <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                        </dl>
+                        <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
+                            ${method.actionText}
+                        </button>
+                    </div>
+                </article>`;
+        }
+
+        function renderAssignedRow(order) {
+            const isTransportadora = String(order.metodoEntregaId || "").toUpperCase() === "TRANSPORTADORA";
+            return `
+                <tr>
+                    <td>#${order.id}</td>
+                    <td>${formatDate(order.fechaEntrega)}</td>
+                    <td><strong>${escapeHtml(order.cliente)}</strong></td>
+                    <td><span class="orders-status delivery-method ${statusClass(order.metodoEntrega)}">${escapeHtml(order.metodoEntrega || "-")}</span></td>
+                    <td>${escapeHtml(order.telefono || "Sin telefono")}</td>
+                    <td>${escapeHtml(order.ciudad || "Sin ciudad")}</td>
+                    <td>${escapeHtml(order.deliveryUsuario || "-")}</td>
+                    <td>
+                        ${isTransportadora ? `<button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>` : ""}
+                    </td>
+                </tr>`;
+        }
+
+        function renderAvailable() {
+            const method = currentMethod();
+            const orders = filteredOrdersForActiveTab();
+            updateTabCounts();
+            renderCityMenu();
+            selectedCityTitle.textContent = selectedCity || method.label;
+            deliveryPanelHelp.textContent = method.help;
+            routeCount.textContent = `${orders.length} pedidos`;
+            availableList.innerHTML = orders.length
+                ? orders.map(renderCard).join("")
+                : `<div class="delivery-empty">${method.empty}</div>`;
+        }
+
+        function renderAssigned() {
+            const orders = myOrders.filter(order => matchesFilters(order, false));
+
+            assignedList.innerHTML = orders.length
+                ? orders.map(renderAssignedRow).join("")
+                : `<tr><td colspan="8">No hay entregas tuyas para los filtros seleccionados.</td></tr>`;
+        }
+
+        function statusClass(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
+        }
+
+        async function loadTrackingData() {
+            const params = new URLSearchParams();
+            if (dateFrom.value) {
+                params.set("fechaDesde", dateFrom.value);
+            }
+
+            if (dateTo.value) {
+                params.set("fechaHasta", dateTo.value);
+            }
+
+            renderAssigned();
+        }
+
+        async function loadDelivery() {
+            await withAppLoading("Cargando envio...", async function () {
+                const entries = Object.entries(methods);
+                const responses = await Promise.all(entries.map(([, method]) => fetch(method.endpoint)));
+                const mineResponse = await fetch("/api/delivery/mis-pedidos");
+
+                for (let index = 0; index < entries.length; index += 1) {
+                    const [key, method] = entries[index];
+                    const response = responses[index];
+                    if (!response.ok) {
+                        ordersByMethod[key] = [];
+                        showToast(`No se pudieron cargar pedidos de ${method.label}.`, "error");
+                        continue;
+                    }
+
+                    ordersByMethod[key] = await response.json() || [];
+                }
+
+                myOrders = mineResponse.ok ? await mineResponse.json() || [] : [];
+                await loadTrackingData();
+                buildClientOptions();
+                renderAvailable();
+            });
+        }
+
+        async function runOrderAction(id, action) {
+            const url = action === "take"
+                ? `/api/delivery/${id}/tomar`
+                : `/api/delivery/${id}/marcar-enviado`;
+            const loadingText = action === "take" ? "Tomando pedido..." : "Marcando enviado...";
+
+            await withAppLoading(loadingText, async function () {
+                const response = await fetch(url, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo actualizar el pedido.", "error");
+                    return;
+                }
+
+                showToast(action === "take" ? "Pedido tomado y enviado." : "Pedido marcado como enviado.", "success");
+                await loadDelivery();
+            });
+        }
+
+        async function downloadRoutePdf() {
+            await withAppLoading("Preparando ruta...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) {
+                    params.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    params.set("fechaHasta", dateTo.value);
+                }
+
+                const query = params.toString();
+                const response = await fetch(`/api/delivery/reporte-ruta/pdf${query ? `?${query}` : ""}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el PDF de ruta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `ruta-delivery-${localDateTimeFileValue()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        async function downloadTransportadoraLabel(id) {
+            await withAppLoading("Preparando etiqueta...", async function () {
+                const response = await fetch(`/api/delivery/${id}/transportadora-etiqueta/pdf`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar la etiqueta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `envio-transportadora-${id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        function setActiveTab(tab) {
+            activeTab = methods[tab] ? tab : "delivery";
+            selectedCity = "";
+            methodFilter.value = activeTab;
+            document.querySelectorAll("[data-delivery-tab]").forEach(button => {
+                button.classList.toggle("active", button.dataset.deliveryTab === activeTab);
+            });
+            renderAvailable();
+        }
+
+        function setActiveView(view) {
+            activeView = view || "pending";
+            pendingPanel.hidden = activeView !== "pending";
+            assignedPanel.hidden = activeView !== "assigned";
+            document.querySelector(".delivery-tabs").hidden = activeView !== "pending";
+            document.querySelectorAll("[data-delivery-view]").forEach(button => {
+                button.classList.toggle("active", button.dataset.deliveryView === activeView);
+            });
+
+            if (activeView === "assigned") {
+                renderAssigned();
+            }
+        }
+
+        document.getElementById("refresh-delivery").addEventListener("click", loadDelivery);
+        document.getElementById("download-route").addEventListener("click", downloadRoutePdf);
+
+        document.querySelectorAll("[data-delivery-tab]").forEach(button => {
+            button.addEventListener("click", () => setActiveTab(button.dataset.deliveryTab));
+        });
+
+        document.querySelectorAll("[data-delivery-view]").forEach(button => {
+            button.addEventListener("click", () => setActiveView(button.dataset.deliveryView));
+        });
+
+        methodFilter.addEventListener("change", function () {
+            if (methodFilter.value) {
+                setActiveTab(methodFilter.value);
+            } else {
+                renderAvailable();
+            }
+        });
+
+        [dateFrom, dateTo, clientFilter].forEach(input => {
+            input.addEventListener("change", async function () {
+                await loadTrackingData();
+                renderAvailable();
+            });
+        });
+
+        filterClientSelect2Button.addEventListener("click", function () {
+            setFilterClientSelect2Open(filterClientSelect2Dropdown.hidden);
+        });
+
+        filterClientSelect2Search.addEventListener("input", renderFilterClientSelect2Options);
+
+        filterClientSelect2Options.addEventListener("click", function (event) {
+            const option = event.target.closest("[data-value]");
+            if (!option) {
+                return;
+            }
+
+            clientFilter.value = option.dataset.value;
+            updateFilterClientSelect2Label();
+            renderFilterClientSelect2Options();
+            setFilterClientSelect2Open(false);
+            renderAvailable();
+        });
+
+        document.addEventListener("click", event => {
+            if (!filterClientSelect2.contains(event.target)) {
+                setFilterClientSelect2Open(false);
+            }
+
+            const button = event.target.closest("[data-action][data-id]");
+            const labelButton = event.target.closest("[data-label-id]");
+            if (labelButton) {
+                downloadTransportadoraLabel(labelButton.dataset.labelId);
+                return;
+            }
+
+            if (button) {
+                runOrderAction(button.dataset.id, button.dataset.action);
+            }
+        });
+
+        cityMenu.addEventListener("click", event => {
+            const button = event.target.closest("[data-city]");
+            if (!button) {
+                return;
+            }
+
+            selectedCity = button.dataset.city || "";
+            renderAvailable();
+        });
+
+        dateFrom.value = localDateValue();
+        dateTo.value = localDateValue();
+        loadDelivery();
+    </script>
+}

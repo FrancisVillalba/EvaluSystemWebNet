@@ -44,9 +44,9 @@
             </div>
 
             <form id="login-form" class="login-form">
-                <label for="email">
+                <label for="usuario">
                     Usuario
-                    <input id="email" name="usuario" type="text" placeholder="Nombre de usuario" autocomplete="username" />
+                    <input id="usuario" name="usuario" type="text" placeholder="fvillalba" autocomplete="username" />
                 </label>
 
                 <label for="password">
@@ -82,7 +82,7 @@
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            usuario: document.getElementById("email").value,
+                            usuario: document.getElementById("usuario").value,
                             pass: document.getElementById("password").value
                         })
                     });

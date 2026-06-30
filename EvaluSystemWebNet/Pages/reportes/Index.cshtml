@@ -1,0 +1,538 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Reportes";
+    ViewData["ActiveMenu"] = "reportes";
+    ViewData["ShellClass"] = "reports-shell";
+}
+
+<section class="reports-main">
+    <header class="reports-header">
+        <div>
+            <p class="eyebrow">Reportes</p>
+            <h1>Reportes del sistema</h1>
+            <p>Consulta, descarga y comparte reportes operativos.</p>
+        </div>
+    </header>
+
+    <div class="reports-workspace">
+        <aside class="reports-modules" aria-label="Lista de reportes">
+            <button class="active" type="button" data-report-module="commissions">Comisiones por vendedor</button>
+            <button type="button" data-report-module="payment-lots">Pagos generados</button>
+            <button type="button" data-report-module="shipping">Envio de pedidos</button>
+        </aside>
+
+        <section id="commissions-panel" class="reports-panel">
+            <div class="reports-panel-header">
+                <div>
+                    <h2>Comisiones por vendedor</h2>
+                    <p>Total vendido y detalle de productos para liquidar comisiones.</p>
+                </div>
+                <button id="download-bank-txt" class="reports-bank-button" type="button">Archivo TXT</button>
+            </div>
+
+            <div class="reports-filters">
+                <label for="date-from">
+                    Fecha desde
+                    <input id="date-from" type="date" />
+                </label>
+                <label for="date-to">
+                    Fecha hasta
+                    <input id="date-to" type="date" />
+                </label>
+                <label for="seller-filter">
+                    Vendedor
+                    <select id="seller-filter"></select>
+                </label>
+                <button id="search-report" type="button">Buscar</button>
+            </div>
+
+            <div id="seller-summary" class="reports-summary"></div>
+        </section>
+
+        <section id="shipping-panel" class="reports-panel" hidden>
+            <div class="reports-panel-header">
+                <div>
+                    <h2>Envio de pedidos</h2>
+                    <p>Control de pedidos ya enviados por usuario de entrega y metodo de envio.</p>
+                </div>
+            </div>
+
+            <div class="reports-filters reports-shipping-filters">
+                <label for="shipping-date-from">
+                    Fecha desde
+                    <input id="shipping-date-from" type="date" />
+                </label>
+                <label for="shipping-date-to">
+                    Fecha hasta
+                    <input id="shipping-date-to" type="date" />
+                </label>
+                <label for="shipping-client">
+                    Cliente
+                    <input id="shipping-client" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                </label>
+                <label for="shipping-method">
+                    Metodo de envio
+                    <select id="shipping-method">
+                        <option value="">Todos</option>
+                        <option value="DELIVERY">Delivery</option>
+                        <option value="TRANSPORTADORA">Transportadora</option>
+                        <option value="MOTOBOLT">Motobolt</option>
+                        <option value="RETIRO_LOCAL">Retiro del local</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </label>
+                <button id="search-shipping-report" type="button">Buscar</button>
+            </div>
+
+            <div id="shipping-summary" class="reports-summary"></div>
+
+            <div class="reports-table-wrap">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Metodo</th>
+                            <th>Estado</th>
+                            <th>Usuario entrega</th>
+                            <th>Ciudad</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shipping-detail-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="payment-lots-panel" class="reports-panel" hidden>
+            <div class="reports-panel-header">
+                <div>
+                    <h2>Pagos generados</h2>
+                    <p>Lotes TXT guardados para respaldo y re-descarga.</p>
+                </div>
+                <button id="refresh-payment-lots" class="reports-bank-button" type="button">Actualizar</button>
+            </div>
+
+            <div class="reports-table-wrap">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Lote</th>
+                            <th>Generado</th>
+                            <th>Rango</th>
+                            <th>Vendedor</th>
+                            <th>Personas</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payment-lots-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        const dateFromInput = document.getElementById("date-from");
+        const dateToInput = document.getElementById("date-to");
+        const sellerFilter = document.getElementById("seller-filter");
+        const summaryHost = document.getElementById("seller-summary");
+        const paymentLotsBody = document.getElementById("payment-lots-body");
+        const shippingSummary = document.getElementById("shipping-summary");
+        const shippingDetailBody = document.getElementById("shipping-detail-body");
+        const shippingDateFromInput = document.getElementById("shipping-date-from");
+        const shippingDateToInput = document.getElementById("shipping-date-to");
+        const shippingClientInput = document.getElementById("shipping-client");
+        const shippingMethodInput = document.getElementById("shipping-method");
+        const sellerUserNames = new Map();
+
+        function localDateValue(date = new Date()) {
+            const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return offsetDate.toISOString().slice(0, 10);
+        }
+
+        function localDateTimeFileValue(date = new Date()) {
+            const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return offsetDate.toISOString().slice(0, 16).replaceAll("-", "").replace("T", "").replace(":", "");
+        }
+
+        function fileSafeName(value) {
+            return String(value || "vendedor")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-zA-Z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .toLowerCase() || "vendedor";
+        }
+
+        function firstNameFirstSurname(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 3) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+
+            if (parts.length >= 2) {
+                return `${parts[0]} ${parts[1]}`;
+            }
+
+            return parts[0] || "vendedor";
+        }
+
+
+        function monthStartValue() {
+            const now = new Date();
+            return localDateValue(new Date(now.getFullYear(), now.getMonth(), 1));
+        }
+
+        function formatMoney(value) {
+            return `Gs. ${Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 0 })}`;
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "";
+            }
+
+            return new Date(value).toLocaleDateString("es-PY");
+        }
+
+        function formatDateTime(value) {
+            if (!value) {
+                return "";
+            }
+
+            return new Date(value).toLocaleString("es-PY", { dateStyle: "short", timeStyle: "short" });
+        }
+
+        function calculateSellerCommission(seller) {
+            const details = seller.detalles || [];
+            if (!details.length) {
+                return Number(seller.totalComision || 0);
+            }
+
+            return details.reduce((total, detail) => {
+                const quantity = Number(detail.cantidad || 0);
+                const commission = Number(detail.comisionUnitario || 0);
+                const extra = Number(detail.precioExtra || 0);
+                return total + quantity * commission + extra;
+            }, 0);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function buildParams() {
+            const params = new URLSearchParams();
+            if (dateFromInput.value) {
+                params.set("dateFrom", dateFromInput.value);
+            }
+
+            if (dateToInput.value) {
+                params.set("dateTo", dateToInput.value);
+            }
+
+            if (sellerFilter.value) {
+                params.set("vendedorId", sellerFilter.value);
+            }
+
+            return params;
+        }
+
+        function buildShippingParams() {
+            const params = new URLSearchParams();
+            if (shippingDateFromInput.value) {
+                params.set("dateFrom", shippingDateFromInput.value);
+            }
+
+            if (shippingDateToInput.value) {
+                params.set("dateTo", shippingDateToInput.value);
+            }
+
+            if (shippingClientInput.value.trim()) {
+                params.set("cliente", shippingClientInput.value.trim());
+            }
+
+            if (shippingMethodInput.value) {
+                params.set("metodoEntrega", shippingMethodInput.value);
+            }
+
+            return params;
+        }
+
+        async function loadOptions() {
+            const response = await fetch("/api/reportes/opciones");
+            if (!response.ok) {
+                showToast("No se pudieron cargar las opciones de reportes.", "error");
+                return;
+            }
+
+            const options = await response.json();
+            sellerUserNames.clear();
+            (options.vendedores || []).forEach(seller => {
+                sellerUserNames.set(String(seller.id), seller.nombreUsuario || seller.persona || `vendedor-${seller.id}`);
+            });
+
+            sellerFilter.innerHTML = `<option value="">Todos</option>` + (options.vendedores || [])
+                .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
+                .join("");
+        }
+
+        async function loadReport() {
+            await withAppLoading("Cargando reporte...", async function () {
+                const response = await fetch(`/api/reportes/comisiones-vendedores?${buildParams().toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo cargar el reporte.", "error");
+                    return;
+                }
+
+                renderReport(await response.json());
+            });
+        }
+
+        async function loadPaymentLots() {
+            await withAppLoading("Cargando lotes...", async function () {
+                const response = await fetch("/api/reportes/lotes-pago");
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudieron cargar los lotes.", "error");
+                    return;
+                }
+
+                renderPaymentLots(await response.json());
+            });
+        }
+
+        async function loadShippingReport() {
+            await withAppLoading("Cargando reporte de envios...", async function () {
+                const response = await fetch(`/api/reportes/envios?${buildShippingParams().toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo cargar el reporte de envios.", "error");
+                    return;
+                }
+
+                renderShippingReport(await response.json());
+            });
+        }
+
+        function renderReport(report) {
+            const sellers = report.vendedores || [];
+            summaryHost.innerHTML = sellers.length
+                ? sellers.map(seller => `
+                    <article>
+                        <div class="reports-card-info">
+                            <span>${escapeHtml(seller.vendedor)}</span>
+                            <strong>${formatMoney(calculateSellerCommission(seller))}</strong>
+                            <small>${seller.cantidadPedidos} pedidos - ${formatMoney(seller.totalVenta)}</small>
+                        </div>
+                        <div class="reports-card-actions">
+                            <button type="button" data-report-format="pdf" data-seller-id="${seller.vendedorId}" data-seller-name="${escapeHtml(seller.vendedor)}" title="Descargar PDF" aria-label="Descargar reporte PDF">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <path d="M14 2v6h6"></path>
+                                    <path d="M8 13h1.5a1.5 1.5 0 0 1 0 3H8v-5"></path>
+                                    <path d="M13 11v5h1a2.5 2.5 0 0 0 0-5z"></path>
+                                    <path d="M17 11h3"></path>
+                                    <path d="M17 13.5h2"></path>
+                                    <path d="M17 16v-5"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </article>`).join("")
+                : `<p>No hay ventas para los filtros seleccionados.</p>`;
+        }
+
+        function renderPaymentLots(lots) {
+            paymentLotsBody.innerHTML = (lots || []).length
+                ? lots.map(lot => `
+                    <tr>
+                        <td>${lot.id}</td>
+                        <td>${formatDateTime(lot.fechaGeneracion)}</td>
+                        <td>${formatDate(lot.fechaDesde)} al ${formatDate(lot.fechaHasta)}</td>
+                        <td>${escapeHtml(lot.vendedor || "Todos")}</td>
+                        <td>${lot.cantidadPersonas}</td>
+                        <td>${formatMoney(lot.montoTotal)}</td>
+                        <td><span class="reports-lot-status ${statusClass(lot.estado)}">${escapeHtml(lot.estado)}</span></td>
+                        <td>
+                            <div class="reports-row-actions">
+                                <button type="button" data-lot-action="download" data-lot-id="${lot.id}">TXT</button>
+                                <button type="button" data-lot-action="paid" data-lot-id="${lot.id}">Pagado</button>
+                                <button type="button" data-lot-action="cancel" data-lot-id="${lot.id}">Anular</button>
+                            </div>
+                        </td>
+                    </tr>`).join("")
+                : `<tr><td colspan="8">No hay lotes generados.</td></tr>`;
+        }
+
+        function renderShippingReport(report) {
+            const resumen = report.resumen || [];
+            const detalles = report.detalles || [];
+
+            shippingSummary.innerHTML = resumen.length
+                ? resumen.map(item => `
+                    <article>
+                        <div class="reports-card-info">
+                            <span>${escapeHtml(item.usuarioEntrega)}</span>
+                            <strong>${item.cantidadPedidos} envios</strong>
+                            <small>${item.cantidadTransportadora} transportadora</small>
+                            <small>Total pedidos ${formatMoney(item.totalPedidos)}</small>
+                        </div>
+                    </article>`).join("")
+                : `<p>No hay envios para los filtros seleccionados.</p>`;
+
+            shippingDetailBody.innerHTML = detalles.length
+                ? detalles.map(item => `
+                    <tr>
+                        <td>${item.pedidoId}</td>
+                        <td>${formatDate(item.fecha)}</td>
+                        <td><strong>${escapeHtml(item.cliente)}</strong></td>
+                        <td><span class="orders-status delivery-method ${statusClass(item.metodoEntrega)}">${escapeHtml(item.metodoEntrega)}</span></td>
+                        <td><span class="reports-lot-status ${statusClass(item.estado)}">${escapeHtml(item.estado)}</span></td>
+                        <td>${escapeHtml(item.usuarioEntrega || "-")}</td>
+                        <td>${escapeHtml(item.ciudad || "-")}</td>
+                        <td>${formatMoney(item.totalPedido)}</td>
+                    </tr>`).join("")
+                : `<tr><td colspan="8">No hay pedidos para los filtros seleccionados.</td></tr>`;
+        }
+
+        function statusClass(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
+        }
+
+        async function downloadReport(format, sellerId, sellerName) {
+            await withAppLoading(`Preparando ${format.toUpperCase()}...`, async function () {
+                const params = buildParams();
+                if (sellerId) {
+                    params.set("vendedorId", sellerId);
+                }
+
+                const response = await fetch(`/api/reportes/comisiones-vendedores/${format}?${params.toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el archivo.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                const extension = format === "pdf" ? "pdf" : format === "txt" ? "txt" : "xlsx";
+                const fileName = format === "txt"
+                    ? `banco-continental-comisiones-${localDateTimeFileValue()}.txt`
+                    : `${fileSafeName(firstNameFirstSurname(sellerName))}-${localDateTimeFileValue()}.${extension}`;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        async function downloadLotTxt(lotId) {
+            await withAppLoading("Descargando TXT...", async function () {
+                const response = await fetch(`/api/reportes/lotes-pago/${lotId}/txt`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo descargar el lote.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `lote-pago-${lotId}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        async function updateLotStatus(lotId, estado) {
+            await withAppLoading("Actualizando lote...", async function () {
+                const response = await fetch(`/api/reportes/lotes-pago/${lotId}/estado`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ estado })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo actualizar el lote.", "error");
+                    return;
+                }
+
+                showToast(`Lote marcado como ${estado}.`, "success");
+                await loadPaymentLots();
+            });
+        }
+
+        function setReportModule(module) {
+            const isLots = module === "payment-lots";
+            const isShipping = module === "shipping";
+            document.getElementById("commissions-panel").hidden = isLots || isShipping;
+            document.getElementById("shipping-panel").hidden = !isShipping;
+            document.getElementById("payment-lots-panel").hidden = !isLots;
+            document.querySelectorAll("[data-report-module]").forEach(button => {
+                button.classList.toggle("active", button.dataset.reportModule === module);
+            });
+
+            if (isLots) {
+                loadPaymentLots();
+            } else if (isShipping) {
+                loadShippingReport();
+            }
+        }
+
+        dateFromInput.value = monthStartValue();
+        dateToInput.value = localDateValue();
+        shippingDateFromInput.value = localDateValue();
+        shippingDateToInput.value = localDateValue();
+
+        document.getElementById("search-report").addEventListener("click", loadReport);
+        document.getElementById("search-shipping-report").addEventListener("click", loadShippingReport);
+        document.getElementById("download-bank-txt").addEventListener("click", () => downloadReport("txt", sellerFilter.value, sellerFilter.selectedOptions[0]?.textContent || "todos"));
+        document.getElementById("refresh-payment-lots").addEventListener("click", loadPaymentLots);
+        document.querySelectorAll("[data-report-module]").forEach(button => {
+            button.addEventListener("click", () => setReportModule(button.dataset.reportModule));
+        });
+        paymentLotsBody.addEventListener("click", event => {
+            const button = event.target.closest("[data-lot-action]");
+            if (!button) {
+                return;
+            }
+
+            const lotId = button.dataset.lotId;
+            if (button.dataset.lotAction === "download") {
+                downloadLotTxt(lotId);
+            } else if (button.dataset.lotAction === "paid") {
+                updateLotStatus(lotId, "Pagado");
+            } else if (button.dataset.lotAction === "cancel") {
+                updateLotStatus(lotId, "Anulado");
+            }
+        });
+        summaryHost.addEventListener("click", event => {
+            const button = event.target.closest("[data-report-format]");
+            if (!button) {
+                return;
+            }
+
+            downloadReport(button.dataset.reportFormat, button.dataset.sellerId, button.dataset.sellerName);
+        });
+
+        loadOptions().then(loadReport);
+    </script>
+}

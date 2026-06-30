@@ -1,0 +1,21 @@
+@{
+    var title = ViewData["Title"]?.ToString() ?? "EvaluSystem";
+}
+
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - EvaluSystem</title>
+    <link rel="stylesheet" href="~/assets/index-Cio5xgoS.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="modal-page-body">
+    <div id="toast-host" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+    @RenderBody()
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

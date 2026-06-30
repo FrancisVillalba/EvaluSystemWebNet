@@ -1,5 +1,6 @@
 using EvaluSystemWebNet.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace EvaluSystemWebNet.Controllers;
 
@@ -28,6 +29,7 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString(TokenSessionKey, response.Token);
         HttpContext.Session.SetString("BackendUserName", response.Usuario);
         HttpContext.Session.SetInt32("BackendUserId", response.UsuarioId);
+        HttpContext.Session.SetString("BackendPermissions", JsonSerializer.Serialize(response.Permisos));
 
         return Ok(new
         {

@@ -1,0 +1,226 @@
+@page
+@model EvaluSystemWebNet.Pages.impresiones.IndexModel
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Impresiones";
+    ViewData["ActiveMenu"] = "impresiones";
+    ViewData["ShellClass"] = "reports-shell";
+}
+
+<section class="reports-main">
+    <header class="reports-header">
+        <div>
+            <p class="eyebrow">Impresiones</p>
+            <h1>Archivos para impresion</h1>
+            <p>Descarga los archivos de diseño agrupados por maquina.</p>
+        </div>
+        <button id="refresh-print-files" class="admin-primary" type="button">Actualizar</button>
+    </header>
+
+    <div class="reports-workspace">
+        <aside id="machine-menu" class="reports-modules" aria-label="Maquinas"></aside>
+
+        <section class="reports-panel">
+            <div class="reports-panel-header">
+                <div>
+                    <h2 id="machine-title">Todas las maquinas</h2>
+                    <p id="machine-help">Archivos cargados para impresion.</p>
+                </div>
+                <span id="machine-count" class="delivery-route-count">0 archivos</span>
+            </div>
+
+            <div class="reports-filters">
+                <label for="print-date-from">
+                    Fecha desde
+                    <input id="print-date-from" type="date" />
+                </label>
+                <label for="print-date-to">
+                    Fecha hasta
+                    <input id="print-date-to" type="date" />
+                </label>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Archivo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="print-files-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        const machineMenu = document.getElementById("machine-menu");
+        const machineTitle = document.getElementById("machine-title");
+        const machineCount = document.getElementById("machine-count");
+        const tableBody = document.getElementById("print-files-body");
+        const dateFrom = document.getElementById("print-date-from");
+        const dateTo = document.getElementById("print-date-to");
+
+        let files = [];
+        let selectedMachine = "";
+
+        function localDateValue(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function formatDate(value) {
+            return value ? new Date(value).toLocaleDateString("es-PY") : "-";
+        }
+
+        function formatQuantity(value) {
+            return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
+        }
+
+        function filteredFiles() {
+            return files.filter(item => !selectedMachine || String(item.tipoMaquinaId) === selectedMachine);
+        }
+
+        function renderMachineMenu() {
+            const groups = new Map();
+            files.forEach(item => {
+                const key = String(item.tipoMaquinaId);
+                const current = groups.get(key) || { id: key, name: item.tipoMaquina || "Sin maquina", count: 0 };
+                current.count += 1;
+                groups.set(key, current);
+            });
+
+            const machines = Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+            const total = files.length;
+            machineMenu.innerHTML = `
+                <button class="${selectedMachine === "" ? "active" : ""}" type="button" data-machine="">
+                    Todas <strong>${total}</strong>
+                </button>
+                ${machines.map(machine => `
+                    <button class="${selectedMachine === machine.id ? "active" : ""}" type="button" data-machine="${machine.id}">
+                        ${escapeHtml(machine.name)} <strong>${machine.count}</strong>
+                    </button>
+                `).join("")}`;
+        }
+
+        function renderTable() {
+            const rows = filteredFiles();
+            const title = selectedMachine
+                ? rows[0]?.tipoMaquina || "Maquina"
+                : "Todas las maquinas";
+            machineTitle.textContent = title;
+            machineCount.textContent = `${rows.length} archivos`;
+            tableBody.innerHTML = rows.length
+                ? rows.map(item => `
+                    <tr>
+                        <td>#${item.pedidoId}</td>
+                        <td>${formatDate(item.fechaEntrega || item.fechaCarga)}</td>
+                        <td><strong>${escapeHtml(item.cliente)}</strong></td>
+                        <td>${escapeHtml(item.producto)}</td>
+                        <td>${formatQuantity(item.cantidad)}</td>
+                        <td>${escapeHtml(item.archivoDisenioNombre || "Archivo de diseno")}</td>
+                        <td><span class="orders-status ${item.impreso ? "enviado" : "pendiente-envio"}">${item.impreso ? "Impreso" : escapeHtml(item.estadoVenta)}</span></td>
+                        <td><button class="admin-secondary" type="button" data-download="${item.detalleId}">Descargar</button></td>
+                    </tr>
+                `).join("")
+                : `<tr><td colspan="8">No hay archivos para los filtros seleccionados.</td></tr>`;
+        }
+
+        async function loadFiles() {
+            await withAppLoading("Cargando archivos...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) {
+                    params.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    params.set("fechaHasta", dateTo.value);
+                }
+
+                const response = await fetch(`/api/impresiones?${params.toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudieron cargar los archivos.", "error");
+                    return;
+                }
+
+                files = await response.json() || [];
+                if (selectedMachine && !files.some(item => String(item.tipoMaquinaId) === selectedMachine)) {
+                    selectedMachine = "";
+                }
+
+                renderMachineMenu();
+                renderTable();
+            });
+        }
+
+        async function downloadFile(id) {
+            await withAppLoading("Descargando archivo...", async function () {
+                const response = await fetch(`/api/impresiones/${id}/archivo`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo descargar el archivo.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get("content-disposition") || "";
+                const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+                const fileName = match ? decodeURIComponent(match[1] || match[2]) : `archivo-${id}`;
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        machineMenu.addEventListener("click", event => {
+            const button = event.target.closest("[data-machine]");
+            if (!button) {
+                return;
+            }
+
+            selectedMachine = button.dataset.machine || "";
+            renderMachineMenu();
+            renderTable();
+        });
+
+        tableBody.addEventListener("click", event => {
+            const button = event.target.closest("[data-download]");
+            if (button) {
+                downloadFile(button.dataset.download);
+            }
+        });
+
+        document.getElementById("refresh-print-files").addEventListener("click", loadFiles);
+        [dateFrom, dateTo].forEach(input => input.addEventListener("change", loadFiles));
+
+        dateFrom.value = localDateValue();
+        dateTo.value = localDateValue();
+        loadFiles();
+    </script>
+}

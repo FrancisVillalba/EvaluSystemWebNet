@@ -60,6 +60,16 @@
                     <input id="client-address" placeholder="Direccion comercial" />
                 </label>
 
+                <label for="client-department">
+                    Departamento
+                    <select id="client-department"></select>
+                </label>
+
+                <label for="client-city">
+                    Ciudad
+                    <select id="client-city"></select>
+                </label>
+
                 <label for="client-status">
                     Estado
                     <select id="client-status">
@@ -145,6 +155,8 @@
         const shippingFields = document.getElementById("shipping-fields");
         const documentTypeSelect = document.getElementById("client-document-type");
         const clientTypeSelect = document.getElementById("client-type");
+        const clientDepartmentSelect = document.getElementById("client-department");
+        const clientCitySelect = document.getElementById("client-city");
         const carrierSelect = document.getElementById("shipping-carrier");
         const departmentSelect = document.getElementById("shipping-department");
         const citySelect = document.getElementById("shipping-city");
@@ -206,6 +218,13 @@
             citySelect.value = selectedValue ? String(selectedValue) : "";
         }
 
+        function renderClientCities(selectedValue = "") {
+            const departmentId = Number(clientDepartmentSelect.value);
+            const cities = options.ciudades.filter(city => !departmentId || Number(city.departamentoId) === departmentId);
+            clientCitySelect.innerHTML = optionMarkup(cities, "id", "nombre");
+            clientCitySelect.value = selectedValue ? String(selectedValue) : "";
+        }
+
         function loadClient(client) {
             const envio = client.datosEnvio || null;
             currentShippingId = envio?.id || (envio ? "loaded" : null);
@@ -217,6 +236,8 @@
             document.getElementById("client-phone").value = client.nroTelefono || "";
             document.getElementById("client-email").value = client.email || "";
             document.getElementById("client-address").value = client.direccion || "";
+            clientDepartmentSelect.value = String(client.departamentoId || "");
+            renderClientCities(client.ciudadId);
             document.getElementById("client-status").value = client.estado === false ? "false" : "true";
             setShippingEnabled(Boolean(envio));
 
@@ -251,6 +272,8 @@
             clientTypeSelect.innerHTML = optionMarkup(options.tiposCliente || []);
             carrierSelect.innerHTML = optionMarkup(options.transportadoras || [], "id", "nombre", "No hay transportadoras cargadas");
             departmentSelect.innerHTML = optionMarkup(options.departamentos || []);
+            clientDepartmentSelect.innerHTML = optionMarkup(options.departamentos || []);
+            renderClientCities();
             renderCities();
             documentTypeSelect.value = findOptionValue(options.tiposDocumento || [], "CI", "cedula");
             clientTypeSelect.value = findOptionValue(options.tiposCliente || [], "P", "persona");
@@ -286,6 +309,8 @@
                 email: document.getElementById("client-email").value.trim() || null,
                 nroTelefono: document.getElementById("client-phone").value.trim(),
                 direccion: document.getElementById("client-address").value.trim() || null,
+                departamentoId: clientDepartmentSelect.value ? Number(clientDepartmentSelect.value) : null,
+                ciudadId: clientCitySelect.value ? Number(clientCitySelect.value) : null,
                 estado: document.getElementById("client-status").value === "true"
             };
 
@@ -310,11 +335,14 @@
 
         shippingEnabled.addEventListener("change", () => setShippingEnabled(shippingEnabled.checked));
         departmentSelect.addEventListener("change", () => renderCities());
+        clientDepartmentSelect.addEventListener("change", () => renderClientCities());
         document.getElementById("copy-client-data").addEventListener("click", function () {
             document.getElementById("shipping-recipient").value = document.getElementById("client-name").value.trim();
             document.getElementById("shipping-document").value = document.getElementById("client-document").value.trim();
             document.getElementById("shipping-phone").value = document.getElementById("client-phone").value.trim();
             document.getElementById("shipping-address").value = document.getElementById("client-address").value.trim();
+            departmentSelect.value = clientDepartmentSelect.value;
+            renderCities(clientCitySelect.value);
         });
 
         deleteShippingButton.addEventListener("click", async function () {
