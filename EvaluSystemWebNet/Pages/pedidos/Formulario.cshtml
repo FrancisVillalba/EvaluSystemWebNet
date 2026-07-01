@@ -864,10 +864,16 @@
 
         async function saveOrder(targetStateId = null) {
             const previousStateId = saleStatusSelect.value;
+            const isStateChange = Boolean(targetStateId);
+            const currentStateId = loadedSaleStateId || saleStatusSelect.value || initialSaleState()?.id || "";
+
             if (targetStateId) {
                 const targetState = stateById(targetStateId);
                 ensureSaleStatusOption(targetState);
                 saleStatusSelect.value = targetStateId;
+            } else if (currentStateId) {
+                ensureSaleStatusOption(stateById(currentStateId));
+                saleStatusSelect.value = currentStateId;
             }
 
             const payload = {
@@ -881,7 +887,7 @@
                 comprobantePagoNombre: paymentProofFileName || null,
                 observacion: document.getElementById("order-notes").value || null,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
-                estadoVentaId: saleStatusSelect.value || null,
+                estadoVentaId: isStateChange ? targetStateId : currentStateId,
                 detalles: details.map(detail => ({
                     id: detail.detailId,
                     productoId: Number(detail.productId),

@@ -92,7 +92,7 @@
                 <h2>Mejor vendedor del mes</h2>
             </header>
             <div class="bar-chart seller-chart" id="seller-bars"></div>
-            <p class="chart-axis-label">Monto vendido</p>
+            <p class="chart-axis-label">Ranking del mes</p>
         </article>
 
         <article class="analytics-card bar-card">
@@ -100,7 +100,7 @@
                 <h2>Pendientes de pago</h2>
             </header>
             <div class="bar-chart" id="payment-bars"></div>
-            <p class="chart-axis-label">Monto pendiente</p>
+            <p class="chart-axis-label">Clientes con saldo pendiente</p>
         </article>
     </section>
 </section>
@@ -111,10 +111,6 @@
 
         function formatInteger(value) {
             return Number(value || 0).toLocaleString("es-PY");
-        }
-
-        function formatMoney(value) {
-            return `Gs. ${Number(value || 0).toLocaleString("es-PY")}`;
         }
 
         function renderDonut(items, total) {
@@ -145,7 +141,7 @@
             `).join("");
         }
 
-        function renderBars(containerId, items, valueKey, formatter) {
+        function renderBars(containerId, items, valueKey) {
             const container = document.getElementById(containerId);
             const max = Math.max(...items.map(item => Number(item[valueKey] || 0)), 1);
 
@@ -163,7 +159,6 @@
                         <div class="bar-track">
                             <i style="width:${width}%; background:${chartColors[index % chartColors.length]}"></i>
                         </div>
-                        <strong>${formatter(value)}</strong>
                     </div>
                 `;
             }).join("");
@@ -188,8 +183,8 @@
             document.getElementById("machine-total").textContent = formatInteger(dashboard.totalPedidos || totalMachines);
 
             renderDonut(machines, totalMachines);
-            renderBars("payment-bars", dashboard.pendientesPago || [], "monto", formatMoney);
-            renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto", formatMoney);
+            renderBars("payment-bars", dashboard.pendientesPago || [], "monto");
+            renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto");
         }
 
         loadDashboard();

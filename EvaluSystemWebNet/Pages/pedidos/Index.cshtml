@@ -77,7 +77,6 @@
                                 <th>Fecha carga</th>
                                 <th>Cliente</th>
                                 <th>Vendedor</th>
-                                <th>Tipo</th>
                                 <th>Metros</th>
                                 <th>Estado</th>
                                 <th>Metodo entrega</th>
@@ -202,6 +201,17 @@
             return total ? `${total} m` : "0 m";
         }
 
+        function sellerColorClass(value) {
+            const text = String(value || "").trim().toLowerCase();
+            let hash = 0;
+
+            for (let index = 0; index < text.length; index += 1) {
+                hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+            }
+
+            return `seller-color-${Math.abs(hash) % 7}`;
+        }
+
         function buildFilterParams() {
             const params = new URLSearchParams();
             if (dateFrom.value) {
@@ -236,18 +246,18 @@
 
         function renderOrders() {
             if (!orders.length) {
-                body.innerHTML = `<tr><td colspan="11">No hay pedidos para los filtros seleccionados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="10">No hay pedidos para los filtros seleccionados.</td></tr>`;
             } else {
                 body.innerHTML = orders.map(order => {
                     const details = Array.isArray(order.details) ? order.details : [];
                     const deliveryMethod = order.deliveryMethod || "Sin metodo";
+                    const sellerName = shortPersonName(order.seller) || order.seller || "-";
                     return `
                 <tr>
                     <td>${escapeHtml(order.id)}</td>
                     <td>${escapeHtml(order.date)}</td>
                     <td class="orders-strong">${escapeHtml(order.client)}</td>
-                    <td class="orders-strong">${escapeHtml(shortPersonName(order.seller) || order.seller)}</td>
-                    <td>${escapeHtml(orderTypeFromDetails(details))}</td>
+                    <td><span class="orders-seller ${sellerColorClass(order.seller)}">${escapeHtml(sellerName)}</span></td>
                     <td>${escapeHtml(metersFromDetails(details))}</td>
                     <td><span class="orders-status ${statusClass(order.status)}">${escapeHtml(order.status)}</span></td>
                     <td><span class="orders-status delivery-method ${statusClass(deliveryMethod)}">${escapeHtml(deliveryMethod)}</span></td>

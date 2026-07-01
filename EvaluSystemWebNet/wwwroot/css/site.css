@@ -264,6 +264,20 @@ body.modal-page-body {
   background: #b33131;
 }
 
+.app-confirm-dialog.info .app-confirm-icon {
+  color: #0c5f72;
+  background: #e7f5f3;
+}
+
+.app-confirm-dialog.info .app-confirm-accept {
+  color: #fff;
+  background: #0c6b7b;
+}
+
+.app-confirm-dialog.info .app-confirm-accept:hover {
+  background: #095766;
+}
+
 .orders-pagination {
   display: flex;
   align-items: center;
@@ -702,6 +716,60 @@ body.modal-page-body {
   font-weight: 850;
 }
 
+.orders-seller {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.orders-seller.seller-color-0 {
+  color: #075f72;
+  background: #e5f7fb;
+  border-color: #a9dfea;
+}
+
+.orders-seller.seller-color-1 {
+  color: #0c6a43;
+  background: #e7f7ee;
+  border-color: #9fdcbc;
+}
+
+.orders-seller.seller-color-2 {
+  color: #8a5a07;
+  background: #fff4dc;
+  border-color: #f1ce83;
+}
+
+.orders-seller.seller-color-3 {
+  color: #6f3aa5;
+  background: #f3e9ff;
+  border-color: #d6b4f5;
+}
+
+.orders-seller.seller-color-4 {
+  color: #19599f;
+  background: #e5f0ff;
+  border-color: #a9cff7;
+}
+
+.orders-seller.seller-color-5 {
+  color: #9f2f2f;
+  background: #fdecec;
+  border-color: #efaaaa;
+}
+
+.orders-seller.seller-color-6 {
+  color: #5d6470;
+  background: #eef2f6;
+  border-color: #cdd6df;
+}
+
 .orders-actions {
   display: flex;
   justify-content: flex-end;
@@ -1120,7 +1188,7 @@ body.modal-page-body {
 
 .bar-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(120px, 1fr) minmax(92px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 1.4fr);
   align-items: center;
   gap: 12px;
   color: #07145a;

@@ -34,6 +34,8 @@ public record LoginResponse(
     string? Persona,
     IEnumerable<PerfilFormularioPermisoDto> Permisos);
 
+public record MensajePendienteDto(string Clave, string Titulo, string Mensaje, string Tipo);
+
 public record ClienteDto(
     int Id,
     string? Nombre,

@@ -35,6 +35,20 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
+app.Use(async (context, next) =>
+{
+    var isApiRequest = context.Request.Path.StartsWithSegments("/api");
+    var isAuthRequest = context.Request.Path.StartsWithSegments("/api/auth");
+
+    if (isApiRequest && !isAuthRequest && string.IsNullOrWhiteSpace(context.Session.GetString("BackendAccessToken")))
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new { message = "La sesion caduco. Inicie sesion nuevamente." });
+        return;
+    }
+
+    await next();
+});
 app.UseAuthorization();
 
 app.MapRazorPages();

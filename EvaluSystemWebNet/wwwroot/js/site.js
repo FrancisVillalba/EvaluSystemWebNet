@@ -23,6 +23,53 @@ window.showToast = function (message, type = "success") {
     }, 4200);
 };
 
+(function () {
+    const nativeFetch = window.fetch.bind(window);
+    let redirectingToLogin = false;
+
+    function requestPath(input) {
+        const rawUrl = typeof input === "string" ? input : input?.url || "";
+
+        try {
+            return new URL(rawUrl, window.location.origin).pathname.toLowerCase();
+        } catch {
+            return "";
+        }
+    }
+
+    function shouldRedirectToLogin(input, response) {
+        if (response.status !== 401 || redirectingToLogin) {
+            return false;
+        }
+
+        const path = requestPath(input);
+        return path.startsWith("/api/") && !path.startsWith("/api/auth/");
+    }
+
+    function redirectToLogin() {
+        redirectingToLogin = true;
+
+        if (window.location.pathname !== "/") {
+            window.showToast?.("La sesion caduco. Inicie sesion nuevamente.", "error");
+        }
+
+        window.setTimeout(() => {
+            const target = window.top || window;
+            target.location.href = "/";
+        }, 600);
+    }
+
+    window.fetch = async function (input, init) {
+        const response = await nativeFetch(input, init);
+
+        if (shouldRedirectToLogin(input, response)) {
+            redirectToLogin();
+        }
+
+        return response;
+    };
+})();
+
 let appLoadingCount = 0;
 
 function ensureAppLoadingOverlay() {
@@ -137,3 +184,86 @@ window.showConfirmDialog = function ({
         overlay.querySelector(".app-confirm-accept").focus();
     });
 };
+
+window.showMessageDialog = function ({
+    title = "Mensaje",
+    message = "",
+    confirmText = "Aceptar"
+} = {}) {
+    return new Promise(resolve => {
+        const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#039;"
+        })[character]);
+
+        const overlay = document.createElement("div");
+        overlay.className = "app-confirm-overlay";
+        overlay.innerHTML = `
+            <section class="app-confirm-dialog info" role="dialog" aria-modal="true" aria-labelledby="app-message-title" aria-describedby="app-message-text">
+                <div class="app-confirm-icon" aria-hidden="true">i</div>
+                <div class="app-confirm-content">
+                    <h2 id="app-message-title">${escapeHtml(title)}</h2>
+                    <p id="app-message-text">${escapeHtml(message)}</p>
+                </div>
+                <div class="app-confirm-actions">
+                    <button class="app-confirm-accept" type="button">${escapeHtml(confirmText)}</button>
+                </div>
+            </section>
+        `;
+
+        const close = () => {
+            overlay.classList.add("is-leaving");
+            overlay.addEventListener("transitionend", () => overlay.remove(), { once: true });
+            resolve(true);
+        };
+
+        overlay.querySelector(".app-confirm-accept").addEventListener("click", close);
+
+        document.body.appendChild(overlay);
+        overlay.querySelector(".app-confirm-accept").focus();
+    });
+};
+
+(function () {
+    async function acceptMessage(clave) {
+        await fetch(`/api/mensajes/${encodeURIComponent(clave)}/aceptar`, {
+            method: "POST"
+        });
+    }
+
+    async function showPendingMessages() {
+        if (window.location.pathname === "/") {
+            return;
+        }
+
+        let response;
+        try {
+            response = await fetch("/api/mensajes/pendientes");
+        } catch {
+            return;
+        }
+
+        if (!response.ok) {
+            return;
+        }
+
+        const messages = await response.json();
+        for (const message of messages) {
+            await window.showMessageDialog({
+                title: message.titulo || "Mensaje",
+                message: message.mensaje || "",
+                confirmText: "Aceptar"
+            });
+            await acceptMessage(message.clave);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", showPendingMessages, { once: true });
+    } else {
+        showPendingMessages();
+    }
+})();
