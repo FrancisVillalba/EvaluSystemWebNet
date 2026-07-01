@@ -69,10 +69,23 @@
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
+        const rememberedUserKey = "evaluSystem.rememberedUser";
+        const usuarioInput = document.getElementById("usuario");
+        const passwordInput = document.getElementById("password");
+        const rememberInput = document.getElementById("remember");
+        const rememberedUser = localStorage.getItem(rememberedUserKey);
+
+        if (rememberedUser) {
+            usuarioInput.value = rememberedUser;
+            rememberInput.checked = true;
+            passwordInput.focus();
+        }
+
         document.getElementById("login-form").addEventListener("submit", async function (event) {
             event.preventDefault();
 
             let response;
+            const usuario = usuarioInput.value.trim();
 
             try {
                 response = await withAppLoading("Iniciando sesion...", async function () {
@@ -82,8 +95,8 @@
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            usuario: document.getElementById("usuario").value,
-                            pass: document.getElementById("password").value
+                            usuario: usuario,
+                            pass: passwordInput.value
                         })
                     });
                 });
@@ -104,6 +117,12 @@
 
                 showToast(message, "error");
                 return;
+            }
+
+            if (rememberInput.checked) {
+                localStorage.setItem(rememberedUserKey, usuario);
+            } else {
+                localStorage.removeItem(rememberedUserKey);
             }
 
             showToast("Inicio de sesion correcto.", "success");

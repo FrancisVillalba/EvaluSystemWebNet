@@ -133,7 +133,7 @@ public class PedidosController : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
         }
 
         return Ok(result.Value);
@@ -152,7 +152,7 @@ public class PedidosController : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
         }
 
         return Ok(result.Value);

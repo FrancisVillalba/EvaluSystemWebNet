@@ -419,6 +419,10 @@
             return Number(current?.numeroFlujo) === 1 && Number(destination?.numeroFlujo) === 2;
         }
 
+        function canDeleteCurrentOrder() {
+            return Number(currentSaleState()?.numeroFlujo) === 1;
+        }
+
         function isPaidStatusSelected(statusId = paymentStatusSelect.value) {
             return String(statusId || "") === String(findOptionId(formOptions.estadosPago, "pagado") || "");
         }
@@ -466,11 +470,14 @@
 
             stateBackAction.disabled = !hasOrder || !previous;
             stateNextAction.disabled = !hasOrder || !next;
-            stateDeleteAction.disabled = !hasOrder;
+            stateDeleteAction.disabled = !hasOrder || !canDeleteCurrentOrder();
             stateSaveAction.disabled = false;
 
             stateBackAction.textContent = previous ? `Devolver a ${previous.nombre || previous.id}` : "Devolver";
             stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
+            stateDeleteAction.title = stateDeleteAction.disabled && hasOrder
+                ? "Solo se puede eliminar un pedido en estado Carga."
+                : "";
         }
 
         function createDetail(seed = {}) {
@@ -976,6 +983,11 @@
         });
 
         stateDeleteAction.addEventListener("click", async function () {
+            if (!canDeleteCurrentOrder()) {
+                showToast("Solo se puede eliminar un pedido cuando esta en estado Carga.", "error");
+                return;
+            }
+
             const deleteComment = document.getElementById("order-notes").value.trim();
             if (!deleteComment) {
                 showToast("Agregue un comentario en Observacion antes de eliminar el pedido.", "error");
