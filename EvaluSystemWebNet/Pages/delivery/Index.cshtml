@@ -67,28 +67,25 @@
         <div class="delivery-panel-header">
             <div>
                 <h2>Mis entregas</h2>
-                <p>Pedidos asignados o entregados por usuario en el rango seleccionado.</p>
+                <p>Pedidos tomados sin lote y rutas generadas.</p>
             </div>
             <div class="delivery-assigned-actions">
-                <button id="download-route" class="delivery-refresh" type="button">PDF ruta</button>
+                <button id="generate-route" class="delivery-refresh" type="button">Generar lote</button>
             </div>
         </div>
-        <div class="delivery-assigned-table-wrap">
-            <table class="delivery-assigned-table">
-                <thead>
-                    <tr>
-                        <th>Pedido</th>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Metodo</th>
-                        <th>Telefono</th>
-                        <th>Ciudad</th>
-                        <th>Usuario entrega</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="assigned-list"></tbody>
-            </table>
+        <div class="delivery-assigned-block">
+            <div class="delivery-section-title">
+                <h3>Mis pedidos sin lote</h3>
+                <span id="assigned-count">0 pedidos</span>
+            </div>
+            <div id="assigned-list" class="delivery-list delivery-assigned-cards"></div>
+        </div>
+        <div class="delivery-assigned-block">
+            <div class="delivery-section-title">
+                <h3>Mis lotes</h3>
+                <span id="route-lot-count">0 lotes</span>
+            </div>
+            <div id="route-lot-list" class="delivery-route-lots"></div>
         </div>
     </section>
 
@@ -157,6 +154,9 @@
         const pendingPanel = document.getElementById("pending-panel");
         const assignedPanel = document.getElementById("assigned-panel");
         const assignedList = document.getElementById("assigned-list");
+        const assignedCount = document.getElementById("assigned-count");
+        const routeLotList = document.getElementById("route-lot-list");
+        const routeLotCount = document.getElementById("route-lot-count");
         const cityMenu = document.getElementById("city-menu");
         const selectedCityTitle = document.getElementById("selected-city-title");
         const deliveryPanelHelp = document.getElementById("delivery-panel-help");
@@ -179,6 +179,7 @@
             retiro: []
         };
         let myOrders = [];
+        let myRoutes = [];
         let selectedCity = "";
         let activeTab = "delivery";
         let activeView = "pending";
@@ -206,7 +207,7 @@
         }
 
         function dateValue(value) {
-            return value ? new Date(value).toISOString().slice(0, 10) : "";
+            return value ? localDateValue(new Date(value)) : "";
         }
 
         function cityName(order) {
@@ -220,6 +221,20 @@
         function localDateTimeFileValue(date = new Date()) {
             const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
             return offsetDate.toISOString().slice(0, 16).replaceAll("-", "").replace("T", "").replace(":", "");
+        }
+
+        function formatDateTime(value) {
+            if (!value) {
+                return "Sin fecha";
+            }
+
+            const date = new Date(value);
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
         }
 
         function currentMethod() {
@@ -353,21 +368,46 @@
                 </article>`;
         }
 
-        function renderAssignedRow(order) {
+        function renderAssignedCard(order) {
             const isTransportadora = String(order.metodoEntregaId || "").toUpperCase() === "TRANSPORTADORA";
             return `
-                <tr>
-                    <td>#${order.id}</td>
-                    <td>${formatDate(order.fechaEntrega)}</td>
-                    <td><strong>${escapeHtml(order.cliente)}</strong></td>
-                    <td><span class="orders-status delivery-method ${statusClass(order.metodoEntrega)}">${escapeHtml(order.metodoEntrega || "-")}</span></td>
-                    <td>${escapeHtml(order.telefono || "Sin telefono")}</td>
-                    <td>${escapeHtml(order.ciudad || "Sin ciudad")}</td>
-                    <td>${escapeHtml(order.deliveryUsuario || "-")}</td>
-                    <td>
-                        ${isTransportadora ? `<button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>` : ""}
-                    </td>
-                </tr>`;
+                <article class="delivery-card delivery-card-compact">
+                    <div class="delivery-card-head">
+                        <strong>#${order.id}</strong>
+                        <span>${escapeHtml(order.metodoEntrega || "-")}</span>
+                    </div>
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <div class="delivery-card-body">
+                        <dl>
+                            <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
+                            <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
+                            <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                        </dl>
+                        <div class="delivery-card-side-actions">
+                            ${isTransportadora ? `<button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>` : ""}
+                            <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
+                        </div>
+                    </div>
+                </article>`;
+        }
+
+        function renderRouteLot(route) {
+            return `
+                <article class="delivery-route-lot">
+                    <button class="delivery-route-pdf" type="button" data-route-pdf-id="${route.id}" data-route-number="${escapeHtml(route.numeroLote)}">PDF ruta</button>
+                    <div>
+                        <span>Lote</span>
+                        <strong>${escapeHtml(route.numeroLote)}</strong>
+                    </div>
+                    <div>
+                        <span>Fecha</span>
+                        <strong>${formatDateTime(route.fechaGeneracion)}</strong>
+                    </div>
+                    <div>
+                        <span>Pedidos</span>
+                        <strong>${route.cantidadPedidos}</strong>
+                    </div>
+                </article>`;
         }
 
         function renderAvailable() {
@@ -385,10 +425,20 @@
 
         function renderAssigned() {
             const orders = myOrders.filter(order => matchesFilters(order, false));
+            const routes = myRoutes.filter(route => {
+                const routeDate = dateValue(route.fechaGeneracion);
+                return (!dateFrom.value || routeDate >= dateFrom.value)
+                    && (!dateTo.value || routeDate <= dateTo.value);
+            });
 
             assignedList.innerHTML = orders.length
-                ? orders.map(renderAssignedRow).join("")
-                : `<tr><td colspan="8">No hay entregas tuyas para los filtros seleccionados.</td></tr>`;
+                ? orders.map(renderAssignedCard).join("")
+                : `<div class="delivery-empty">No hay pedidos tomados sin lote.</div>`;
+            assignedCount.textContent = `${orders.length} pedidos`;
+            routeLotList.innerHTML = routes.length
+                ? routes.map(renderRouteLot).join("")
+                : `<div class="delivery-empty">No hay lotes generados para los filtros seleccionados.</div>`;
+            routeLotCount.textContent = `${routes.length} lotes`;
         }
 
         function statusClass(value) {
@@ -404,7 +454,6 @@
             if (dateTo.value) {
                 params.set("fechaHasta", dateTo.value);
             }
-
             renderAssigned();
         }
 
@@ -413,6 +462,16 @@
                 const entries = Object.entries(methods);
                 const responses = await Promise.all(entries.map(([, method]) => fetch(method.endpoint)));
                 const mineResponse = await fetch("/api/delivery/mis-pedidos");
+                const routeParams = new URLSearchParams();
+                if (dateFrom.value) {
+                    routeParams.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    routeParams.set("fechaHasta", dateTo.value);
+                }
+
+                const routesResponse = await fetch(`/api/delivery/mis-rutas?${routeParams.toString()}`);
 
                 for (let index = 0; index < entries.length; index += 1) {
                     const [key, method] = entries[index];
@@ -427,6 +486,7 @@
                 }
 
                 myOrders = mineResponse.ok ? await mineResponse.json() || [] : [];
+                myRoutes = routesResponse.ok ? await routesResponse.json() || [] : [];
                 await loadTrackingData();
                 buildClientOptions();
                 renderAvailable();
@@ -447,7 +507,33 @@
                     return;
                 }
 
-                showToast(action === "take" ? "Pedido tomado y enviado." : "Pedido marcado como enviado.", "success");
+                showToast(action === "take" ? "Pedido tomado." : "Pedido marcado como enviado.", "success");
+                await loadDelivery();
+            });
+        }
+
+        async function removeAssignedOrder(id) {
+            const confirmed = await showConfirmDialog({
+                title: "Quitar pedido",
+                message: `Desea quitar el pedido #${id} de tus pedidos sin lote?`,
+                confirmText: "Quitar",
+                cancelText: "Cancelar",
+                tone: "danger"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            await withAppLoading("Quitando pedido...", async function () {
+                const response = await fetch(`/api/delivery/${id}/quitar`, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo quitar el pedido.", "error");
+                    return;
+                }
+
+                showToast("Pedido quitado y devuelto a pendientes.", "success");
                 await loadDelivery();
             });
         }
@@ -475,6 +561,74 @@
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
                 link.download = `ruta-delivery-${localDateTimeFileValue()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+                await loadDelivery();
+            });
+        }
+
+        async function generateRouteLot() {
+            const visibleOrders = myOrders.filter(order => matchesFilters(order, false));
+            if (visibleOrders.length === 0) {
+                showToast("No hay pedidos tomados sin lote.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirmDialog({
+                title: "Generar lote de ruta",
+                message: `Se generara un lote con ${visibleOrders.length} pedidos tomados sin lote. Desea continuar?`,
+                confirmText: "Generar",
+                cancelText: "Cancelar",
+                tone: "info"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            await withAppLoading("Generando lote...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) {
+                    params.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    params.set("fechaHasta", dateTo.value);
+                }
+
+                if (clientFilter.value) {
+                    params.set("cliente", clientFilter.value);
+                }
+
+                const query = params.toString();
+                const response = await fetch(`/api/delivery/rutas/generar${query ? `?${query}` : ""}`, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo generar el lote.", "error");
+                    return;
+                }
+
+                const route = await response.json();
+                showToast(`Lote ${route.numeroLote} generado.`, "success");
+                await loadDelivery();
+            });
+        }
+
+        async function downloadRouteLotPdf(id, number) {
+            await withAppLoading("Preparando ruta...", async function () {
+                const response = await fetch(`/api/delivery/rutas/${id}/pdf`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el PDF de ruta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `ruta-${number || id}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -527,7 +681,7 @@
         }
 
         document.getElementById("refresh-delivery").addEventListener("click", loadDelivery);
-        document.getElementById("download-route").addEventListener("click", downloadRoutePdf);
+        document.getElementById("generate-route").addEventListener("click", generateRouteLot);
 
         document.querySelectorAll("[data-delivery-tab]").forEach(button => {
             button.addEventListener("click", () => setActiveTab(button.dataset.deliveryTab));
@@ -578,6 +732,18 @@
 
             const button = event.target.closest("[data-action][data-id]");
             const labelButton = event.target.closest("[data-label-id]");
+            const routePdfButton = event.target.closest("[data-route-pdf-id]");
+            const removeButton = event.target.closest("[data-remove-id]");
+            if (removeButton) {
+                removeAssignedOrder(removeButton.dataset.removeId);
+                return;
+            }
+
+            if (routePdfButton) {
+                downloadRouteLotPdf(routePdfButton.dataset.routePdfId, routePdfButton.dataset.routeNumber);
+                return;
+            }
+
             if (labelButton) {
                 downloadTransportadoraLabel(labelButton.dataset.labelId);
                 return;

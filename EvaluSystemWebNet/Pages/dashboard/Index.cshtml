@@ -10,18 +10,21 @@
     <section class="dashboard-analytics-grid" aria-label="Resumen del sistema de impresiones">
         <article class="analytics-card machine-card">
             <header>
-                <h2>Pedidos cargados por maquina hoy</h2>
+                <h2>Meta mensual de facturacion por maquina</h2>
             </header>
-            <div class="machine-chart-layout">
-                <div class="donut-chart" id="machine-donut">
-                    <div>
-                        <span>Total</span>
-                        <strong id="machine-total">0</strong>
+            <div class="machine-dashboard-row">
+                <div class="machine-chart-layout">
+                    <div class="donut-chart" id="machine-donut">
+                        <div>
+                            <span>Total</span>
+                            <strong id="machine-total"></strong>
+                        </div>
                     </div>
+                    <ul class="machine-legend" id="machine-legend"></ul>
                 </div>
-                <ul class="machine-legend" id="machine-legend"></ul>
+                <div class="machine-goals-grid" id="machine-goals-grid" aria-label="Metas mensuales por maquina"></div>
             </div>
-            <p class="chart-caption">Distribucion de pedidos cargados hoy por equipo</p>
+            <p class="chart-caption" id="machine-period-caption">Facturacion mensual contra metas configuradas</p>
         </article>
 
         <section class="summary-card-grid" aria-label="Indicadores principales">
@@ -113,32 +116,73 @@
             return Number(value || 0).toLocaleString("es-PY");
         }
 
-        function renderDonut(items, total) {
+        function formatDecimal(value) {
+            return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
+        }
+
+        function formatCompactMoney(value) {
+            const number = Number(value || 0);
+            if (Math.abs(number) >= 1000000) {
+                return `${formatDecimal(number / 1000000)}M`;
+            }
+
+            return formatDecimal(number);
+        }
+
+        function renderTotalDonut(goal) {
             const donut = document.getElementById("machine-donut");
             const legend = document.getElementById("machine-legend");
-            let cursor = 0;
+            const target = Number(goal?.meta || 0);
+            const percent = Math.max(Math.min(Number(goal?.porcentaje || 0), 100), 0);
 
-            if (!items.length || total === 0) {
+            if (target === 0) {
                 donut.style.background = "#edf2f5";
-                legend.innerHTML = `<li><span></span><strong>Sin datos</strong><em>0</em></li>`;
+                donut.querySelector("span").textContent = "Sin meta";
+                donut.querySelector("strong").textContent = "";
+                legend.innerHTML = `<li><span></span><strong>Sin meta configurada</strong></li>`;
                 return;
             }
 
-            const segments = items.map((item, index) => {
-                const start = cursor;
-                const value = (item.cantidad / total) * 100;
-                cursor += value;
-                return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
-            });
-
-            donut.style.background = `conic-gradient(${segments.join(", ")})`;
-            legend.innerHTML = items.map((item, index) => `
+            donut.style.background = `conic-gradient(${chartColors[0]} 0% ${percent}%, #d9e1ea ${percent}% 100%)`;
+            donut.querySelector("span").textContent = goal.cumplido ? "Cumplido" : "Falta";
+            donut.querySelector("strong").textContent = "";
+            legend.innerHTML = `
                 <li>
-                    <span style="background:${chartColors[index % chartColors.length]}"></span>
-                    <strong>${item.nombre}</strong>
-                    <em>${formatInteger(item.cantidad)}</em>
+                    <span style="background:${chartColors[0]}"></span>
+                    <strong>Vendido</strong>
                 </li>
-            `).join("");
+                <li>
+                    <span style="background:#d9e1ea"></span>
+                    <strong>Falta para meta total</strong>
+                </li>
+                <li>
+                    <span style="background:#07145a"></span>
+                    <strong>Meta total</strong>
+                </li>`;
+        }
+
+        function renderGoalDonuts(items) {
+            const container = document.getElementById("machine-goals-grid");
+            const goals = items || [];
+
+            container.innerHTML = goals.map((item, index) => {
+                const percent = Math.max(Math.min(Number(item.porcentaje || 0), 100), 0);
+                const color = chartColors[index % chartColors.length];
+                const background = percent > 0
+                    ? `conic-gradient(${color} 0% ${percent}%, #d9e1ea ${percent}% 100%)`
+                    : "#edf2f5";
+
+                return `
+                    <article class="goal-donut-card">
+                        <h3>${item.nombre}</h3>
+                        <div class="donut-chart donut-chart-small" style="background:${background}">
+                            <div>
+                                <span>Falta</span>
+                                <strong></strong>
+                            </div>
+                        </div>
+                    </article>`;
+            }).join("");
         }
 
         function renderBars(containerId, items, valueKey) {
@@ -173,16 +217,19 @@
             }
 
             const dashboard = await response.json();
-            const machines = dashboard.pedidosPorMaquina || [];
-            const totalMachines = machines.reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+            const machineGoals = dashboard.metasMensualesPorMaquina || [];
+            const totalGoal = dashboard.metaMensualTotal || {};
+            const monthLabel = new Date().toLocaleDateString("es-PY", { month: "long", year: "numeric" });
 
             document.getElementById("metric-loaded-today").textContent = formatInteger(dashboard.pedidosCargados);
             document.getElementById("metric-printed").textContent = formatInteger(dashboard.pedidosImpresos);
             document.getElementById("metric-missing-print").textContent = formatInteger(dashboard.pedidosPendientesImpresion);
             document.getElementById("metric-delivered").textContent = `${formatInteger(dashboard.pedidosEntregados)}/${formatInteger(dashboard.totalPedidos)}`;
-            document.getElementById("machine-total").textContent = formatInteger(dashboard.totalPedidos || totalMachines);
+            document.getElementById("machine-total").textContent = "";
+            document.getElementById("machine-period-caption").textContent = `Facturacion de ${monthLabel} contra metas configuradas`;
 
-            renderDonut(machines, totalMachines);
+            renderTotalDonut(totalGoal);
+            renderGoalDonuts(machineGoals);
             renderBars("payment-bars", dashboard.pendientesPago || [], "monto");
             renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto");
         }

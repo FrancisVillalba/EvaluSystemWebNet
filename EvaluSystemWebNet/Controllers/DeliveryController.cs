@@ -59,6 +59,19 @@ public class DeliveryController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudieron cargar tus pedidos de delivery." });
     }
 
+    [HttpGet("mis-rutas")]
+    public async Task<ActionResult<IEnumerable<DeliveryRutaDto>>> GetMisRutas(
+        [FromQuery] string? fechaDesde,
+        [FromQuery] string? fechaHasta,
+        CancellationToken cancellationToken)
+    {
+        var endpoint = $"api/Delivery/mis-rutas?{BuildDeliveryFilters(fechaDesde, fechaHasta, null)}";
+        var result = await _backendApiClient.GetResultAsync<IEnumerable<DeliveryRutaDto>>(endpoint, cancellationToken);
+        return result.IsSuccess && result.Value is not null
+            ? Ok(result.Value)
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudieron cargar tus lotes de delivery." });
+    }
+
     [HttpGet("entregas")]
     public async Task<ActionResult<IEnumerable<DeliveryPedidoDto>>> GetEntregas(
         [FromQuery] string? fechaDesde,
@@ -104,6 +117,39 @@ public class DeliveryController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo marcar como enviado." });
     }
 
+    [HttpPost("{id:int}/quitar")]
+    public async Task<IActionResult> QuitarPedidoTomado(int id, CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.PostResultAsync<object>($"api/Delivery/{id}/quitar", new { }, cancellationToken);
+        return result.IsSuccess
+            ? NoContent()
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo quitar el pedido." });
+    }
+
+    [HttpPost("rutas/generar")]
+    public async Task<ActionResult<DeliveryRutaDto>> GenerarRuta(
+        [FromQuery] string? fechaDesde,
+        [FromQuery] string? fechaHasta,
+        [FromQuery] string? cliente,
+        CancellationToken cancellationToken)
+    {
+        var query = BuildDeliveryFilters(fechaDesde, fechaHasta, null);
+        if (!string.IsNullOrWhiteSpace(cliente))
+        {
+            query = string.IsNullOrWhiteSpace(query)
+                ? $"cliente={Uri.EscapeDataString(cliente)}"
+                : $"{query}&cliente={Uri.EscapeDataString(cliente)}";
+        }
+
+        var endpoint = string.IsNullOrWhiteSpace(query)
+            ? "api/Delivery/rutas/generar"
+            : $"api/Delivery/rutas/generar?{query}";
+        var result = await _backendApiClient.PostResultAsync<DeliveryRutaDto>(endpoint, new { }, cancellationToken);
+        return result.IsSuccess && result.Value is not null
+            ? Ok(result.Value)
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo generar el lote de ruta." });
+    }
+
     [HttpGet("reporte-ruta/pdf")]
     public async Task<IActionResult> DescargarRutaPdf([FromQuery] string? fechaDesde, [FromQuery] string? fechaHasta, CancellationToken cancellationToken)
     {
@@ -122,6 +168,19 @@ public class DeliveryController : ControllerBase
             ? "api/Delivery/reporte-ruta/pdf"
             : $"api/Delivery/reporte-ruta/pdf?{string.Join("&", query)}";
         var file = await _backendApiClient.GetAsync<ExcelFileDto>(endpoint, cancellationToken);
+
+        if (file is null || string.IsNullOrWhiteSpace(file.Bytes))
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo preparar el reporte de ruta." });
+        }
+
+        return File(Convert.FromBase64String(file.Bytes), file.ContentType, file.FileName);
+    }
+
+    [HttpGet("rutas/{id:int}/pdf")]
+    public async Task<IActionResult> DescargarRutaLotePdf(int id, CancellationToken cancellationToken)
+    {
+        var file = await _backendApiClient.GetAsync<ExcelFileDto>($"api/Delivery/rutas/{id}/pdf", cancellationToken);
 
         if (file is null || string.IsNullOrWhiteSpace(file.Bytes))
         {

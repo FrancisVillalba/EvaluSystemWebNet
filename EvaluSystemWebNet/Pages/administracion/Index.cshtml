@@ -189,7 +189,11 @@
                 title: "Configuraciones",
                 help: "Valores parametrizables del sistema.",
                 id: "id",
-                columns: [["nombre", "Nombre"], ["nroConfiguracion", "Numero"], ["valor", "Valor"]],
+                columns: [
+                    ["nombre", "Nombre"],
+                    ["nroConfiguracion", "Numero"],
+                    ["valor", "Valor"]
+                ],
                 fields: [
                     { name: "nombre", label: "Nombre", required: true },
                     { name: "nroConfiguracion", label: "Numero", type: "number", defaultValue: 1 },

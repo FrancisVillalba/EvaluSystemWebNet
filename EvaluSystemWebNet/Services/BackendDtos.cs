@@ -13,11 +13,17 @@ public record DashboardSummaryDto(
     int PedidosImpresos,
     int PedidosPendientesImpresion,
     int PedidosEntregados,
+    decimal TotalPedidosMensuales,
+    DashboardGoalDto MetaMensualTotal,
     IEnumerable<DashboardMachineDto> PedidosPorMaquina,
+    IEnumerable<DashboardMachineDto> PedidosMensualesPorMaquina,
+    IEnumerable<DashboardGoalDto> MetasMensualesPorMaquina,
     IEnumerable<DashboardMoneyDto> PendientesPago,
     IEnumerable<DashboardSellerDto> MejoresVendedores);
 
-public record DashboardMachineDto(string Nombre, int Cantidad);
+public record DashboardMachineDto(string Nombre, decimal Cantidad);
+
+public record DashboardGoalDto(string Nombre, decimal Cantidad, decimal Meta, decimal Faltante, decimal Porcentaje, bool Cumplido);
 
 public record DashboardMoneyDto(string Nombre, decimal Monto);
 
@@ -232,6 +238,18 @@ public record DeliveryResumenDto(
     decimal TotalPedidos,
     string Ciudades,
     string MetodosEnvio);
+
+public record DeliveryRutaDto(
+    int Id,
+    string NumeroLote,
+    int UsuarioDeliveryId,
+    string UsuarioDelivery,
+    DateTime FechaGeneracion,
+    string Estado,
+    int CantidadPedidos,
+    string Ciudades,
+    string MetodosEnvio,
+    IEnumerable<DeliveryPedidoDto> Pedidos);
 
 public record ReporteComisionesDto(
     DateTime FechaDesde,
