@@ -23,6 +23,8 @@
             <button type="button" data-module="accesos">Accesos</button>
             <button type="button" data-module="transportadoras">Transportadoras</button>
             <button type="button" data-module="productos">Productos</button>
+            <button type="button" data-module="productoComisiones">Comisiones por producto</button>
+            <button type="button" data-module="gruposVenta">Grupo de ventas</button>
             <button type="button" data-module="maquinas">Tipos de maquina</button>
             <button type="button" data-module="formasPago">Formas de pago</button>
             <button type="button" data-module="estadosPago">Estados de pago</button>
@@ -159,12 +161,49 @@
                 title: "Productos",
                 help: "Productos disponibles para los pedidos.",
                 id: "id",
-                columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["comision", "Comision"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
                 fields: [
                     { name: "nombre", label: "Nombre", required: true },
                     { name: "precioBase", label: "Precio base", type: "number", defaultValue: 0 },
-                    { name: "comision", label: "Comision", type: "number" },
                     { name: "maquinaId", label: "Maquina", type: "select", source: "maquinas", value: "id", text: "nombre" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            productoComisiones: {
+                title: "Comisiones por producto",
+                help: "Define la comision por metro de cada producto segun el perfil del vendedor.",
+                id: "id",
+                columns: [
+                    ["producto", "Producto"],
+                    ["perfil", "Perfil"],
+                    ["montoPorMetro", "Monto por metro"],
+                    ["fechaDesde", "Desde", value => formatDate(value)],
+                    ["fechaHasta", "Hasta", value => formatDate(value)],
+                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
+                ],
+                fields: [
+                    { name: "productoId", label: "Producto", type: "select", source: "productos", value: "id", text: "nombre", required: true },
+                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre", required: true },
+                    { name: "montoPorMetro", label: "Monto por metro", type: "number", defaultValue: 0 },
+                    { name: "fechaDesde", label: "Fecha desde", type: "date" },
+                    { name: "fechaHasta", label: "Fecha hasta", type: "date" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+            gruposVenta: {
+                title: "Grupo de ventas",
+                help: "Asigna vendedores externos a un Team Leader.",
+                id: "id",
+                columns: [
+                    ["nombre", "Nombre"],
+                    ["teamLeader", "Team Leader"],
+                    ["vendedores", "Vendedores", value => (value || []).map(item => item.vendedor).filter(Boolean).join(", ")],
+                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
+                ],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "teamLeaderUsuarioId", label: "Team Leader", type: "select", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}`, required: true },
+                    { name: "vendedorUsuarioIds", label: "Vendedores externos", type: "multiselect", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}` },
                     { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
                 ]
             },
@@ -229,7 +268,7 @@
             module: "usuarios",
             records: [],
             editing: null,
-            options: { perfiles: [], personas: [], maquinas: [], departamentos: [], tiposDocumento: [] },
+            options: { perfiles: [], personas: [], maquinas: [], departamentos: [], tiposDocumento: [], productos: [], usuarios: [] },
             formularios: [],
             permisos: []
         };
@@ -284,6 +323,15 @@
 
         function fieldValue(record, key) {
             return key.split(".").reduce((value, part) => value?.[part], record);
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "";
+            }
+
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("es-PY");
         }
 
         function formatValue(record, column) {
@@ -460,7 +508,10 @@
 
         window.editRecord = function (id) {
             const config = modules[state.module];
-            state.editing = state.records.find(record => String(record[config.id]) === String(id)) || null;
+            const record = state.records.find(record => String(record[config.id]) === String(id)) || null;
+            state.editing = state.module === "gruposVenta" && record
+                ? { ...record, vendedorUsuarioIds: (record.vendedores || []).map(item => item.vendedorUsuarioId) }
+                : record;
             renderForm();
         };
 

@@ -36,7 +36,8 @@ public class AuthController : ControllerBase
             response.UsuarioId,
             response.Usuario,
             response.Persona,
-            response.ExpiresAt
+            response.ExpiresAt,
+            RedirectUrl = ResolveRedirectUrl(response.Permisos)
         });
     }
 
@@ -45,5 +46,32 @@ public class AuthController : ControllerBase
     {
         HttpContext.Session.Clear();
         return NoContent();
+    }
+
+    private static string ResolveRedirectUrl(IEnumerable<PerfilFormularioPermisoDto> permissions)
+    {
+        var visible = permissions
+            .Where(x => x.PuedeVer)
+            .OrderBy(x => x.Orden)
+            .ThenBy(x => x.Formulario)
+            .ToList();
+
+        return visible.Select(RouteForPermission).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "/dashboard";
+    }
+
+    private static string? RouteForPermission(PerfilFormularioPermisoDto permission)
+    {
+        return permission.Formulario switch
+        {
+            "Tablero" => "/dashboard",
+            "Pedidos" => "/pedidos",
+            "Grupo de ventas" => "/grupo-ventas",
+            "Clientes" => "/clientes",
+            "Impresiones" => "/impresiones",
+            "Envio" => "/delivery",
+            "Reportes" => "/reportes",
+            "Administracion" => "/administracion",
+            _ => string.IsNullOrWhiteSpace(permission.Ruta) ? null : permission.Ruta
+        };
     }
 }

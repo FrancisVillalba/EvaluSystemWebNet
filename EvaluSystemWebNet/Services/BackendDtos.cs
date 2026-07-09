@@ -165,7 +165,9 @@ public record AdminOptionsDto(
     IEnumerable<PersonaDto> Personas,
     IEnumerable<TipoMaquinaDto> Maquinas,
     IEnumerable<DepartamentoDto> Departamentos,
-    IEnumerable<CatalogStringDto> TiposDocumento);
+    IEnumerable<CatalogStringDto> TiposDocumento,
+    IEnumerable<ProductoDto> Productos,
+    IEnumerable<UsuarioDto> Usuarios);
 
 public record EstadoVentaOptionDto(string Id, string? Nombre, string? Estado, int? NumeroFlujo);
 
@@ -180,7 +182,53 @@ public record UsuarioDto(
     string? Perfiles,
     bool? Estado);
 
-public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal? Comision, int? MaquinaId, string? Maquina, bool Estado);
+public record ProductoDto(int Id, string Nombre, decimal PrecioBase, int? MaquinaId, string? Maquina, bool Estado);
+
+public record ProductoComisionDto(
+    int Id,
+    int ProductoId,
+    string? Producto,
+    int PerfilId,
+    string? Perfil,
+    decimal MontoPorMetro,
+    bool Estado,
+    DateTime? FechaDesde,
+    DateTime? FechaHasta);
+
+public record GrupoVentaDto(
+    int Id,
+    string Nombre,
+    int TeamLeaderUsuarioId,
+    string? TeamLeader,
+    bool Estado,
+    IEnumerable<GrupoVentaVendedorDto> Vendedores);
+
+public record GrupoVentaVendedorDto(int Id, int VendedorUsuarioId, string? Vendedor, bool Estado);
+
+public record GrupoVentaEquipoDto(
+    DateTime FechaDesde,
+    DateTime FechaHasta,
+    IEnumerable<GrupoVentaResumenVendedorDto> Resumen,
+    IEnumerable<GrupoVentaVentaDto> Ventas);
+
+public record GrupoVentaResumenVendedorDto(
+    int VendedorId,
+    string Vendedor,
+    int CantidadPedidos,
+    decimal TotalVenta,
+    decimal TotalMetros,
+    decimal TotalComision);
+
+public record GrupoVentaVentaDto(
+    int PedidoId,
+    DateTime Fecha,
+    int VendedorId,
+    string Vendedor,
+    string Cliente,
+    string Estado,
+    decimal TotalVenta,
+    decimal TotalMetros,
+    decimal TotalComision);
 
 public record TipoMaquinaDto(int Id, string Nombre, bool Estado);
 

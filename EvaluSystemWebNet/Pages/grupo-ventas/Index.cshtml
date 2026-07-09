@@ -1,0 +1,139 @@
+@page
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Grupo de ventas";
+    ViewData["ActiveMenu"] = "grupo-ventas";
+    ViewData["ShellClass"] = "reports-shell";
+}
+
+<section class="reports-main">
+    <header class="reports-header">
+        <div>
+            <p class="eyebrow">Grupo de ventas</p>
+            <h1>Venta externa</h1>
+            <p>Resumen y ventas del equipo asignado al Team Leader.</p>
+        </div>
+    </header>
+
+    <section class="team-sales-panel">
+        <div class="team-sales-filters">
+            <label>Desde<input id="team-date-from" type="date" /></label>
+            <label>Hasta<input id="team-date-to" type="date" /></label>
+        </div>
+
+        <div class="team-sales-tabs">
+            <button class="active" type="button" data-tab="summary">Resumen</button>
+            <button type="button" data-tab="sales">Ventas</button>
+        </div>
+
+        <section id="team-summary-tab" class="team-sales-tab-panel">
+            <div id="team-summary-chart" class="team-summary-chart"></div>
+        </section>
+
+        <section id="team-sales-tab" class="team-sales-tab-panel" hidden>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Fecha</th>
+                            <th>Vendedor</th>
+                            <th>Cliente</th>
+                            <th>Estado</th>
+                            <th>Total venta</th>
+                            <th>Metros</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-sales-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        const dateFrom = document.getElementById("team-date-from");
+        const dateTo = document.getElementById("team-date-to");
+        const summaryChart = document.getElementById("team-summary-chart");
+        const salesBody = document.getElementById("team-sales-body");
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-PY");
+        }
+
+        function formatDate(value) {
+            return value ? new Date(value).toLocaleDateString("es-PY") : "";
+        }
+
+        function setDefaultDates() {
+            const today = new Date();
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            dateFrom.value = start.toISOString().slice(0, 10);
+            dateTo.value = today.toISOString().slice(0, 10);
+        }
+
+        function renderSummary(items) {
+            if (!items.length) {
+                summaryChart.innerHTML = `<p class="empty-chart">Sin ventas para el periodo seleccionado</p>`;
+                return;
+            }
+
+            const max = Math.max(...items.map(item => Number(item.totalVenta || 0)), 1);
+            summaryChart.innerHTML = items.map(item => {
+                const width = Math.max((Number(item.totalVenta || 0) / max) * 100, 4);
+                return `
+                    <div class="team-summary-row">
+                        <span>${item.vendedor}</span>
+                        <div><i style="width:${width}%"></i></div>
+                        <strong>${formatMoney(item.totalVenta)}</strong>
+                    </div>`;
+            }).join("");
+        }
+
+        function renderSales(items) {
+            salesBody.innerHTML = items.length
+                ? items.map(item => `
+                    <tr>
+                        <td>${item.pedidoId}</td>
+                        <td>${formatDate(item.fecha)}</td>
+                        <td>${item.vendedor}</td>
+                        <td>${item.cliente}</td>
+                        <td>${item.estado}</td>
+                        <td>${formatMoney(item.totalVenta)}</td>
+                        <td>${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                    </tr>`).join("")
+                : `<tr><td colspan="7">Sin ventas para el periodo seleccionado</td></tr>`;
+        }
+
+        async function loadTeamSales() {
+            const params = new URLSearchParams();
+            if (dateFrom.value) params.set("dateFrom", dateFrom.value);
+            if (dateTo.value) params.set("dateTo", dateTo.value);
+
+            const response = await fetch(`/api/grupo-ventas/mi-equipo?${params}`);
+            if (!response.ok) {
+                showToast("No se pudo cargar el grupo de ventas.", "error");
+                return;
+            }
+
+            const data = await response.json();
+            renderSummary(data.resumen || []);
+            renderSales(data.ventas || []);
+        }
+
+        document.querySelectorAll(".team-sales-tabs button").forEach(button => {
+            button.addEventListener("click", () => {
+                document.querySelectorAll(".team-sales-tabs button").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                document.getElementById("team-summary-tab").hidden = button.dataset.tab !== "summary";
+                document.getElementById("team-sales-tab").hidden = button.dataset.tab !== "sales";
+            });
+        });
+
+        dateFrom.addEventListener("change", loadTeamSales);
+        dateTo.addEventListener("change", loadTeamSales);
+        setDefaultDates();
+        loadTeamSales();
+    </script>
+}

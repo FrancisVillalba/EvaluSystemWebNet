@@ -24,6 +24,10 @@
     }
 
     bool CanSee(string name) => allowedModules.Count == 0 || allowedModules.Contains(name);
+    var canSeePedidos = CanSee("Pedidos");
+    var canSeeGrupoVentas = CanSee("Grupo de ventas");
+    var canSeeVentas = canSeePedidos || canSeeGrupoVentas;
+    var ventasActive = activeMenu == "pedidos" || activeMenu == "grupo-ventas";
 }
 
 <aside class="app-sidebar">
@@ -41,7 +45,19 @@
 
     <nav aria-label="Menu principal">
         @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">Tablero</button> }
-        @if (CanSee("Pedidos")) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button> }
+        @if (canSeeVentas)
+        {
+            <div class="sidebar-group @(ventasActive ? "open active" : "")" data-sidebar-group>
+                <button class="sidebar-group-title @(ventasActive ? "active" : "")" type="button" aria-expanded="@(ventasActive ? "true" : "false")" data-sidebar-toggle>
+                    <span>Ventas</span>
+                    <span class="sidebar-group-arrow" aria-hidden="true">&#9662;</span>
+                </button>
+                <div class="sidebar-submenu">
+                    @if (canSeePedidos) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button> }
+                    @if (canSeeGrupoVentas) { <button class="@(activeMenu == "grupo-ventas" ? "active" : "")" type="button" onclick="window.location.href='/grupo-ventas'">Grupo de ventas</button> }
+                </div>
+            </div>
+        }
         @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">Clientes</button> }
         @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">Impresiones</button> }
         @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">Envio</button> }
@@ -52,3 +68,13 @@
 
     <a class="app-sidebar-logout" href="/">Cerrar sesion</a>
 </aside>
+
+<script>
+    document.querySelectorAll("[data-sidebar-toggle]").forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+            const group = toggle.closest("[data-sidebar-group]");
+            const isOpen = group?.classList.toggle("open") ?? false;
+            toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+    });
+</script>

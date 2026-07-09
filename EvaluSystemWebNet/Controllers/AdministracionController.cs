@@ -15,6 +15,8 @@ public class AdministracionController : ControllerBase
         ["perfiles"] = new("api/Perfiles", true, true, true),
         ["transportadoras"] = new("api/Transportadoras", true, true, true),
         ["productos"] = new("api/Productos", true, true, true),
+        ["productoComisiones"] = new("api/ProductoComisiones", true, true, true),
+        ["gruposVenta"] = new("api/GruposVenta", true, true, true),
         ["maquinas"] = new("api/TiposMaquina", true, true, true),
         ["formasPago"] = new("api/FormasPago", true, true, true),
         ["estadosPago"] = new("api/EstadosPago", true, true, true),
@@ -41,15 +43,19 @@ public class AdministracionController : ControllerBase
         var maquinasTask = _backendApiClient.GetAsync<IEnumerable<TipoMaquinaDto>>("api/TiposMaquina", cancellationToken);
         var departamentosTask = _backendApiClient.GetAsync<IEnumerable<DepartamentoDto>>("api/Departamentos", cancellationToken);
         var tiposDocumentoTask = _backendApiClient.GetAsync<IEnumerable<CatalogStringDto>>("api/TiposDocumento", cancellationToken);
+        var productosTask = _backendApiClient.GetAsync<IEnumerable<ProductoDto>>("api/Productos", cancellationToken);
+        var usuariosTask = _backendApiClient.GetAsync<IEnumerable<UsuarioDto>>("api/Usuarios", cancellationToken);
 
-        await Task.WhenAll(perfilesTask, personasTask, maquinasTask, departamentosTask, tiposDocumentoTask);
+        await Task.WhenAll(perfilesTask, personasTask, maquinasTask, departamentosTask, tiposDocumentoTask, productosTask, usuariosTask);
 
         return Ok(new AdminOptionsDto(
             await perfilesTask ?? [],
             await personasTask ?? [],
             await maquinasTask ?? [],
             await departamentosTask ?? [],
-            await tiposDocumentoTask ?? []));
+            await tiposDocumentoTask ?? [],
+            await productosTask ?? [],
+            await usuariosTask ?? []));
     }
 
     [HttpGet("{module}")]
