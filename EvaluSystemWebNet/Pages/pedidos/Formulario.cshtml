@@ -189,7 +189,8 @@
             estadosVenta: [],
             productos: [],
             maquinas: [],
-            usuarioActualId: null
+            usuarioActualId: null,
+            puedeVerTodosPedidos: false
         };
 
         const form = document.getElementById("order-form");
@@ -365,8 +366,7 @@
         }
 
         function previousSaleState() {
-            const flow = Number(currentSaleState()?.numeroFlujo);
-            return flow === 2 ? stateByFlow(1) : null;
+            return null;
         }
 
         function nextSaleState() {
@@ -374,14 +374,6 @@
 
             if (flow === 1) {
                 return stateByFlow(2);
-            }
-
-            if (flow === 2) {
-                return stateByFlow(3);
-            }
-
-            if (flow === 3) {
-                return stateByFlow(4);
             }
 
             return null;
@@ -434,15 +426,6 @@
 
             if (flow === 1) {
                 options.push(stateByFlow(2));
-            }
-
-            if (flow === 2) {
-                options.unshift(stateByFlow(1));
-                options.push(stateByFlow(3));
-            }
-
-            if (flow === 3) {
-                options.push(stateByFlow(4));
             }
 
             return options.filter((item, index, items) =>
@@ -708,6 +691,12 @@
                 sellerSelect.value,
                 "Seleccionar vendedor"
             );
+            sellerSelect.disabled = !formOptions.puedeVerTodosPedidos;
+            sellerSelect.classList.toggle("is-locked", !formOptions.puedeVerTodosPedidos);
+
+            if (!formOptions.puedeVerTodosPedidos && formOptions.usuarioActualId) {
+                sellerSelect.value = String(formOptions.usuarioActualId);
+            }
 
             paymentStatusSelect.innerHTML = selectOptions(
                 formOptions.estadosPago.map(item => ({
@@ -746,6 +735,8 @@
                 sellerSelect.value = String(formOptions.usuarioActualId);
             }
 
+            sellerSelect.disabled = !formOptions.puedeVerTodosPedidos;
+
             loadedSaleStateId = saleStatusSelect.value;
             renderSaleStatusOptions(saleStatusSelect.value);
         }
@@ -757,7 +748,9 @@
             document.getElementById("order-client").value = order.clientId || "";
             renderClientOptions(order.clientId || "");
             document.getElementById("payment-method").value = order.formaPagoId || "";
-            document.getElementById("order-seller").value = order.vendedorId || "";
+            document.getElementById("order-seller").value = formOptions.puedeVerTodosPedidos
+                ? order.vendedorId || ""
+                : formOptions.usuarioActualId || "";
             document.getElementById("order-delivery").value = order.delivery || today;
             deliveryMethodSelect.value = order.deliveryMethodId || "DELIVERY";
             deliveryUserInput.value = order.deliveryUser ? shortPersonName(order.deliveryUser) : "Sin tomar";

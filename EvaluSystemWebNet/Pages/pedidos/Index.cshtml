@@ -69,45 +69,56 @@
                     </label>
                 </section>
 
-                <div class="orders-table-wrap">
-                    <table class="orders-table">
-                        <thead>
-                            <tr>
-                                <th>Pedido</th>
-                                <th>Fecha carga</th>
-                                <th>Cliente</th>
-                                <th>Vendedor</th>
-                                <th>Metros</th>
-                                <th>Estado</th>
-                                <th>Metodo entrega</th>
-                                <th>Usuario entrega</th>
-                                <th>Entrega</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="orders-body"></tbody>
-                    </table>
+                <div id="seller-orders-tabs" class="orders-tabs" hidden>
+                    <button class="active" type="button" data-orders-tab="summary">Resumen</button>
+                    <button type="button" data-orders-tab="sales">Ventas</button>
                 </div>
 
-                <div class="orders-pagination">
-                    <span id="order-pagination-summary">Pagina 1 de 1</span>
-                    <div>
-                        <label class="page-size-control" for="order-page-size">
-                            Registros
-                            <select id="order-page-size">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="80">80</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-                        <button id="order-prev-page" type="button">Anterior</button>
-                        <strong id="order-current-page">1</strong>
-                        <button id="order-next-page" type="button">Siguiente</button>
+                <section id="seller-orders-summary-tab" class="orders-tab-panel" hidden>
+                    <div id="seller-orders-summary" class="seller-orders-summary"></div>
+                </section>
+
+                <section id="seller-orders-sales-tab" class="orders-tab-panel">
+                    <div class="orders-table-wrap">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Fecha carga</th>
+                                    <th>Cliente</th>
+                                    <th>Vendedor</th>
+                                    <th>Metros</th>
+                                    <th>Estado</th>
+                                    <th>Metodo entrega</th>
+                                    <th>Usuario entrega</th>
+                                    <th>Entrega</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-body"></tbody>
+                        </table>
                     </div>
-                </div>
+
+                    <div class="orders-pagination">
+                        <span id="order-pagination-summary">Pagina 1 de 1</span>
+                        <div>
+                            <label class="page-size-control" for="order-page-size">
+                                Registros
+                                <select id="order-page-size">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="80">80</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </label>
+                            <button id="order-prev-page" type="button">Anterior</button>
+                            <strong id="order-current-page">1</strong>
+                            <button id="order-next-page" type="button">Siguiente</button>
+                        </div>
+                    </div>
+                </section>
             </section>
 </section>
 
@@ -140,10 +151,15 @@
         let filterClients = [];
         let currentUserId = null;
         let canViewAllOrders = false;
+        let canViewUserSales = false;
         let ordersRequestId = 0;
 
         const body = document.getElementById("orders-body");
         const count = document.getElementById("order-count");
+        const sellerOrdersTabs = document.getElementById("seller-orders-tabs");
+        const sellerOrdersSummaryTab = document.getElementById("seller-orders-summary-tab");
+        const sellerOrdersSalesTab = document.getElementById("seller-orders-sales-tab");
+        const sellerOrdersSummary = document.getElementById("seller-orders-summary");
         const dateFrom = document.getElementById("filter-date-from");
         const dateTo = document.getElementById("filter-date-to");
         const clientFilter = document.getElementById("filter-client");
@@ -187,6 +203,10 @@
 
         function numberValue(value) {
             return Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-PY");
         }
 
         function orderTypeFromDetails(orderDetails) {
@@ -276,6 +296,50 @@
             currentPageLabel.textContent = currentPage;
             prevPageButton.disabled = currentPage <= 1;
             nextPageButton.disabled = currentPage >= totalPages;
+        }
+
+        function renderUserSalesSummary(data) {
+            if (!data?.puedeVerVentasUsuario) {
+                sellerOrdersSummary.innerHTML = "";
+                return;
+            }
+
+            const totals = data.totales || {};
+            sellerOrdersSummary.innerHTML = `
+                <div class="seller-summary-metrics">
+                    <article class="summary-card-orders">
+                        <span>Pedidos</span>
+                        <strong>${formatMoney(totals.cantidadPedidos)}</strong>
+                    </article>
+                    <article class="summary-card-sales">
+                        <span>Total venta</span>
+                        <strong>${formatMoney(totals.totalVenta)}</strong>
+                    </article>
+                    <article class="summary-card-meters">
+                        <span>Metros</span>
+                        <strong>${Number(totals.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</strong>
+                    </article>
+                    <article class="summary-card-commission">
+                        <span>Total comision</span>
+                        <strong>${formatMoney(totals.totalComision)}</strong>
+                    </article>
+                </div>`;
+        }
+
+        async function loadUserSalesSummary() {
+            if (!canViewUserSales) {
+                return;
+            }
+
+            const params = buildFilterParams();
+
+            const response = await fetch(`/api/pedidos/mis-ventas?${params}`);
+            if (!response.ok) {
+                showToast("No se pudo cargar el resumen de ventas.", "error");
+                return;
+            }
+
+            renderUserSalesSummary(await response.json());
         }
 
         function openOrder(id = "") {
@@ -383,6 +447,10 @@
                 filterClients = options.clientes || [];
                 currentUserId = options.usuarioActualId || null;
                 canViewAllOrders = options.puedeVerTodosPedidos === true;
+                canViewUserSales = options.puedeVerVentasUsuario === true;
+                sellerOrdersTabs.hidden = !canViewUserSales;
+                sellerOrdersSummaryTab.hidden = !canViewUserSales;
+                sellerOrdersSalesTab.hidden = canViewUserSales;
                 clientFilter.innerHTML = optionMarkup(filterClients, "id", "nombre");
                 updateFilterClientSelect2Label();
                 renderFilterClientSelect2Options();
@@ -423,6 +491,7 @@
                 }
 
                 renderOrders();
+                await loadUserSalesSummary();
             });
         }
 
@@ -470,6 +539,14 @@
         });
 
         downloadOrdersExcelButton.addEventListener("click", downloadFilteredOrdersExcel);
+        sellerOrdersTabs.querySelectorAll("button").forEach(button => {
+            button.addEventListener("click", function () {
+                sellerOrdersTabs.querySelectorAll("button").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                sellerOrdersSummaryTab.hidden = button.dataset.ordersTab !== "summary";
+                sellerOrdersSalesTab.hidden = button.dataset.ordersTab !== "sales";
+            });
+        });
         orderFormModalClose.addEventListener("click", () => closeOrderModal());
         orderFormModal.addEventListener("click", function (event) {
             if (event.target.closest("[data-order-modal-close]")) {

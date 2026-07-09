@@ -16,9 +16,18 @@
     </header>
 
     <section class="team-sales-panel">
+        <div class="orders-panel-heading">
+            <div>
+                <h2>Ventas externas</h2>
+                <p id="team-sales-count">0 ventas encontradas</p>
+            </div>
+            <button id="download-team-sales-excel" class="orders-export" type="button">Excel</button>
+        </div>
+
         <div class="team-sales-filters">
             <label>Desde<input id="team-date-from" type="date" /></label>
             <label>Hasta<input id="team-date-to" type="date" /></label>
+            <label>Vendedor externo<select id="team-seller-filter"><option value="">Todos</option></select></label>
         </div>
 
         <div class="team-sales-tabs">
@@ -42,10 +51,27 @@
                             <th>Estado</th>
                             <th>Total venta</th>
                             <th>Metros</th>
+                            <th>Total comision</th>
                         </tr>
                     </thead>
                     <tbody id="team-sales-body"></tbody>
+                    <tfoot id="team-sales-foot"></tfoot>
                 </table>
+            </div>
+            <div class="team-sales-pagination">
+                <span id="team-sales-page-info">Pagina 1 de 1</span>
+                <div>
+                    <label>Registros
+                        <select id="team-sales-page-size">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </label>
+                    <button id="team-sales-prev" type="button">Anterior</button>
+                    <strong id="team-sales-page-number">1</strong>
+                    <button id="team-sales-next" type="button">Siguiente</button>
+                </div>
             </div>
         </section>
     </section>
@@ -55,8 +81,19 @@
     <script>
         const dateFrom = document.getElementById("team-date-from");
         const dateTo = document.getElementById("team-date-to");
+        const sellerFilter = document.getElementById("team-seller-filter");
         const summaryChart = document.getElementById("team-summary-chart");
         const salesBody = document.getElementById("team-sales-body");
+        const salesFoot = document.getElementById("team-sales-foot");
+        const downloadExcelButton = document.getElementById("download-team-sales-excel");
+        const pageSizeSelect = document.getElementById("team-sales-page-size");
+        const prevPageButton = document.getElementById("team-sales-prev");
+        const nextPageButton = document.getElementById("team-sales-next");
+        const pageInfo = document.getElementById("team-sales-page-info");
+        const pageNumber = document.getElementById("team-sales-page-number");
+        const salesCount = document.getElementById("team-sales-count");
+        let currentTeamSales = [];
+        let currentSalesPage = 1;
 
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("es-PY");
@@ -64,6 +101,15 @@
 
         function formatDate(value) {
             return value ? new Date(value).toLocaleDateString("es-PY") : "";
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
         }
 
         function setDefaultDates() {
@@ -80,20 +126,69 @@
             }
 
             const max = Math.max(...items.map(item => Number(item.totalVenta || 0)), 1);
+            const totalCommission = items.reduce((sum, item) => sum + Number(item.totalComision || 0), 0);
             summaryChart.innerHTML = items.map(item => {
                 const width = Math.max((Number(item.totalVenta || 0) / max) * 100, 4);
                 return `
                     <div class="team-summary-row">
                         <span>${item.vendedor}</span>
                         <div><i style="width:${width}%"></i></div>
-                        <strong>${formatMoney(item.totalVenta)}</strong>
+                        <strong>
+                            ${formatMoney(item.totalVenta)}
+                            <small>Comision ${formatMoney(item.totalComision)}</small>
+                        </strong>
                     </div>`;
-            }).join("");
+            }).join("") + `
+                <div class="team-summary-total">
+                    <span>Total comision</span>
+                    <strong>${formatMoney(totalCommission)}</strong>
+                </div>`;
+        }
+
+        function renderSellerFilter(items, canFilter) {
+            const sellers = items || [];
+            const selected = sellerFilter.value;
+
+            if (!sellers.length) {
+                sellerFilter.innerHTML = `<option value="">Sin vendedores</option>`;
+                sellerFilter.disabled = true;
+                return;
+            }
+
+            const canSelectAll = Boolean(canFilter);
+            sellerFilter.innerHTML = [
+                canSelectAll ? `<option value="">Todos</option>` : "",
+                ...sellers.map(item => `<option value="${item.vendedorId}">${escapeHtml(item.vendedor)}</option>`)
+            ].join("");
+
+            if (selected && sellers.some(item => String(item.vendedorId) === selected)) {
+                sellerFilter.value = selected;
+            } else if (!canSelectAll) {
+                sellerFilter.value = String(sellers[0].vendedorId);
+            } else {
+                sellerFilter.value = "";
+            }
+
+            sellerFilter.disabled = !canFilter;
         }
 
         function renderSales(items) {
-            salesBody.innerHTML = items.length
-                ? items.map(item => `
+            currentTeamSales = items;
+            currentSalesPage = 1;
+            salesCount.textContent = `${items.length} ${items.length === 1 ? "venta encontrada" : "ventas encontradas"}`;
+            renderSalesPage();
+        }
+
+        function renderSalesPage() {
+            const pageSize = Number(pageSizeSelect.value || 10);
+            const totalPages = Math.max(1, Math.ceil(currentTeamSales.length / pageSize));
+            currentSalesPage = Math.min(Math.max(currentSalesPage, 1), totalPages);
+            const start = (currentSalesPage - 1) * pageSize;
+            const pageItems = currentTeamSales.slice(start, start + pageSize);
+            const totalCommission = currentTeamSales.reduce((sum, item) => sum + Number(item.totalComision || 0), 0);
+
+            salesBody.innerHTML = pageItems.length
+                ? pageItems.map(item => `
                     <tr>
                         <td>${item.pedidoId}</td>
                         <td>${formatDate(item.fecha)}</td>
@@ -102,14 +197,58 @@
                         <td>${item.estado}</td>
                         <td>${formatMoney(item.totalVenta)}</td>
                         <td>${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                        <td>${formatMoney(item.totalComision)}</td>
                     </tr>`).join("")
-                : `<tr><td colspan="7">Sin ventas para el periodo seleccionado</td></tr>`;
+                : `<tr><td colspan="8">Sin ventas para el periodo seleccionado</td></tr>`;
+            salesFoot.innerHTML = currentTeamSales.length
+                ? `<tr>
+                    <td colspan="7"><strong>Total comision</strong></td>
+                    <td><strong>${formatMoney(totalCommission)}</strong></td>
+                </tr>`
+                : "";
+            pageInfo.textContent = `Pagina ${currentSalesPage} de ${totalPages}`;
+            pageNumber.textContent = currentSalesPage;
+            prevPageButton.disabled = currentSalesPage <= 1;
+            nextPageButton.disabled = currentSalesPage >= totalPages;
+        }
+
+        async function downloadSalesExcel() {
+            if (!currentTeamSales.length) {
+                showToast("No hay ventas para exportar.", "error");
+                return;
+            }
+
+            await withAppLoading("Preparando Excel...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) params.set("dateFrom", dateFrom.value);
+                if (dateTo.value) params.set("dateTo", dateTo.value);
+                if (sellerFilter.value) params.set("vendedorId", sellerFilter.value);
+                const response = await fetch(`/api/grupo-ventas/mi-equipo/excel?${params}`);
+                if (!response.ok) {
+                    showToast("No se pudo preparar el Excel.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `grupo-ventas-${dateFrom.value || "desde"}-${dateTo.value || "hasta"}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
         }
 
         async function loadTeamSales() {
+            if (!dateFrom.value || !dateTo.value) {
+                setDefaultDates();
+            }
+
             const params = new URLSearchParams();
             if (dateFrom.value) params.set("dateFrom", dateFrom.value);
             if (dateTo.value) params.set("dateTo", dateTo.value);
+            if (sellerFilter.value) params.set("vendedorId", sellerFilter.value);
 
             const response = await fetch(`/api/grupo-ventas/mi-equipo?${params}`);
             if (!response.ok) {
@@ -118,6 +257,7 @@
             }
 
             const data = await response.json();
+            renderSellerFilter(data.vendedores || [], data.puedeFiltrarVendedores);
             renderSummary(data.resumen || []);
             renderSales(data.ventas || []);
         }
@@ -133,6 +273,20 @@
 
         dateFrom.addEventListener("change", loadTeamSales);
         dateTo.addEventListener("change", loadTeamSales);
+        sellerFilter.addEventListener("change", loadTeamSales);
+        downloadExcelButton.addEventListener("click", downloadSalesExcel);
+        pageSizeSelect.addEventListener("change", function () {
+            currentSalesPage = 1;
+            renderSalesPage();
+        });
+        prevPageButton.addEventListener("click", function () {
+            currentSalesPage -= 1;
+            renderSalesPage();
+        });
+        nextPageButton.addEventListener("click", function () {
+            currentSalesPage += 1;
+            renderSalesPage();
+        });
         setDefaultDates();
         loadTeamSales();
     </script>

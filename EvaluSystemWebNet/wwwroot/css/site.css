@@ -779,6 +779,87 @@ body.modal-page-body {
   grid-template-columns: repeat(5, minmax(150px, 1fr));
 }
 
+.orders-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #edf2f5;
+  margin-top: 14px;
+}
+
+.orders-tabs button {
+  border: 0;
+  border-radius: 7px 7px 0 0;
+  padding: 10px 14px;
+  color: #0c5f72;
+  background: #e7f5f3;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.orders-tabs button.active {
+  color: #fff;
+  background: #0c5f72;
+}
+
+.orders-tab-panel {
+  margin-top: 16px;
+}
+
+.seller-orders-summary {
+  display: grid;
+  gap: 16px;
+}
+
+.seller-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.seller-summary-metrics article {
+  border: 1px solid #dfe8ed;
+  border-radius: 8px;
+  padding: 14px;
+  background: #f8fbfc;
+  box-shadow: 0 10px 22px rgba(15, 39, 53, 0.07);
+}
+
+.seller-summary-metrics .summary-card-orders {
+  background: #eaf4ff;
+  border-color: #bddaf6;
+}
+
+.seller-summary-metrics .summary-card-sales {
+  background: #e9f8ef;
+  border-color: #b7e3c8;
+}
+
+.seller-summary-metrics .summary-card-meters {
+  background: #fff5df;
+  border-color: #efd28f;
+}
+
+.seller-summary-metrics .summary-card-commission {
+  background: #f0eaff;
+  border-color: #d4c1f5;
+}
+
+.seller-summary-metrics span {
+  display: block;
+  color: #4f6380;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.seller-summary-metrics strong {
+  display: block;
+  margin-top: 7px;
+  color: #07145a;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
 .orders-table tbody tr {
   transition: background 0.16s ease;
 }
@@ -1373,9 +1454,13 @@ body.modal-page-body {
 
 .team-sales-filters {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
   align-items: end;
   gap: 12px;
+  border: 1px solid #d9e5eb;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 14px 32px rgba(15, 39, 53, 0.05);
 }
 
 .team-sales-filters label {
@@ -1386,11 +1471,14 @@ body.modal-page-body {
   font-weight: 700;
 }
 
-.team-sales-filters input {
+.team-sales-filters input,
+.team-sales-filters select {
   min-height: 40px;
   border: 1px solid #bfcbd3;
   border-radius: 7px;
   padding: 9px 11px;
+  color: #07145a;
+  font-weight: 800;
 }
 
 .team-sales-tabs {
@@ -1432,6 +1520,18 @@ body.modal-page-body {
   font-weight: 850;
 }
 
+.team-summary-row strong {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.team-summary-row strong small {
+  color: #60709b;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .team-summary-row div {
   height: 18px;
   border-radius: 999px;
@@ -1446,8 +1546,88 @@ body.modal-page-body {
   background: #20b85a;
 }
 
+.team-summary-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid #edf2f5;
+  padding-top: 12px;
+  color: #07145a;
+}
+
+.team-summary-total span {
+  color: #60709b;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.team-summary-total strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.team-sales-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.team-sales-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #edf2f5;
+  padding-top: 14px;
+  color: #506779;
+  font-size: 0.88rem;
+}
+
+.team-sales-pagination div,
+.team-sales-pagination label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-sales-pagination select {
+  min-height: 38px;
+  border: 1px solid #c7d5df;
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: #07145a;
+  font-weight: 800;
+}
+
+.team-sales-pagination button {
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 14px;
+  color: #0c5f72;
+  background: #e7f5f3;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.team-sales-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-table tfoot td {
+  background: #f8fbfc;
+  color: #07145a;
+  font-weight: 850;
+}
+
 @media (width <= 1180px) {
   .dashboard-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-sales-filters {
     grid-template-columns: 1fr;
   }
 

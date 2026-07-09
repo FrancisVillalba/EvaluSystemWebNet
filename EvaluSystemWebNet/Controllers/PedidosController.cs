@@ -98,6 +98,50 @@ public class PedidosController : ControllerBase
             : Ok(options);
     }
 
+    [HttpGet("mis-ventas")]
+    public async Task<ActionResult<VentaUsuarioResumenDto>> GetMySales(
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] int? clienteId = null,
+        [FromQuery] string? estadoVentaId = null,
+        [FromQuery] int? vendedorId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var filters = new List<string>();
+        if (dateFrom.HasValue)
+        {
+            filters.Add($"dateFrom={Uri.EscapeDataString(dateFrom.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (dateTo.HasValue)
+        {
+            filters.Add($"dateTo={Uri.EscapeDataString(dateTo.Value.ToString("yyyy-MM-dd"))}");
+        }
+
+        if (clienteId.HasValue)
+        {
+            filters.Add($"clienteId={clienteId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoVentaId))
+        {
+            filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
+        }
+
+        if (vendedorId.HasValue)
+        {
+            filters.Add($"vendedorId={vendedorId.Value}");
+        }
+
+        var result = await _backendApiClient.GetResultAsync<VentaUsuarioResumenDto>(
+            $"api/VentasImpresion/mis-ventas?{string.Join("&", filters)}",
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+    }
+
     [HttpGet("exportar-excel")]
     public async Task<IActionResult> ExportExcel(
         [FromQuery] DateTime? dateFrom = null,
