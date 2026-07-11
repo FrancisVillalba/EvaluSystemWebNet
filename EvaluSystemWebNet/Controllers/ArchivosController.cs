@@ -7,6 +7,7 @@ namespace EvaluSystemWebNet.Controllers;
 [Route("api/[controller]")]
 public class ArchivosController : ControllerBase
 {
+    private const long MaxUploadBytes = 500L * 1024L * 1024L;
     private readonly IBackendApiClient _backendApiClient;
 
     public ArchivosController(IBackendApiClient backendApiClient)
@@ -15,7 +16,8 @@ public class ArchivosController : ControllerBase
     }
 
     [HttpPost("upload")]
-    [RequestSizeLimit(50_000_000)]
+    [RequestSizeLimit(MaxUploadBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes)]
     public async Task<IActionResult> Upload(IFormFile archivo, [FromForm] string? carpeta = null, CancellationToken cancellationToken = default)
     {
         if (archivo.Length == 0)
