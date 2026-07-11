@@ -7,14 +7,6 @@
 }
 
 <section class="admin-main">
-    <header class="admin-header">
-        <div>
-            <p class="eyebrow">Administracion</p>
-            <h1>Administracion del sistema</h1>
-            <p>Gestiona usuarios, perfiles, catalogos, transportadoras y accesos.</p>
-        </div>
-    </header>
-
     <div class="admin-workspace">
         <aside class="admin-modules" aria-label="Modulos de administracion">
             <button class="active" type="button" data-module="usuarios">Usuarios</button>
@@ -42,7 +34,13 @@
                     <h2 id="module-title">Usuarios</h2>
                     <p id="module-help">Crea y mantiene los usuarios del sistema.</p>
                 </div>
-                <button id="new-record-button" class="admin-primary" type="button">Nuevo</button>
+                <button id="new-record-button" class="admin-primary" type="button">
+                    <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                    <span>Nuevo</span>
+                </button>
             </div>
 
             <div id="admin-form" class="admin-form"></div>
@@ -321,6 +319,16 @@
             })[character]);
         }
 
+        function appIcon(name) {
+            const paths = {
+                cancel: `<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>`,
+                save: `<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>`,
+                plus: `<path d="M12 5v14"></path><path d="M5 12h14"></path>`
+            };
+
+            return `<svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || ""}</svg>`;
+        }
+
         function fieldValue(record, key) {
             return key.split(".").reduce((value, part) => value?.[part], record);
         }
@@ -364,8 +372,8 @@
             formHost.innerHTML = `
                 ${config.fields.map(field => renderField(field, record)).join("")}
                 <div class="admin-form-actions">
-                    <button class="admin-secondary" type="button" id="cancel-record-button">Cancelar</button>
-                    <button class="admin-primary" type="button" id="save-record-button">${state.editing ? "Guardar" : "Crear"}</button>
+                    <button class="admin-secondary" type="button" id="cancel-record-button">${appIcon("cancel")}<span>Cancelar</span></button>
+                    <button class="admin-primary" type="button" id="save-record-button">${appIcon(state.editing ? "save" : "plus")}<span>${state.editing ? "Guardar" : "Crear"}</span></button>
                 </div>`;
 
             document.getElementById("cancel-record-button").addEventListener("click", () => {

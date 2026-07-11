@@ -17,6 +17,36 @@ html {
   gap: 4px;
 }
 
+.app-icon {
+  display: inline-block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.app-sidebar nav button,
+.app-sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-sidebar nav button span,
+.app-sidebar-logout span {
+  min-width: 0;
+}
+
+.app-sidebar nav .sidebar-submenu .app-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.9;
+}
+
 .app-sidebar nav .sidebar-group-title {
   color: #fff;
   cursor: pointer;
@@ -25,6 +55,13 @@ html {
   justify-content: space-between;
   gap: 10px;
   display: flex;
+}
+
+.sidebar-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .app-sidebar nav .sidebar-group-title:hover,
@@ -64,6 +101,18 @@ html {
 }
 
 @media (width <= 1080px) {
+  .dashboard-shell,
+  .orders-shell,
+  .entry-shell,
+  .clients-shell,
+  .client-entry-shell,
+  .admin-shell,
+  .delivery-shell,
+  .reports-shell,
+  .state-mock-shell {
+    grid-template-columns: 1fr;
+  }
+
   .app-sidebar nav .sidebar-group {
     min-width: max-content;
   }
@@ -79,6 +128,28 @@ html {
 }
 
 @media (width <= 620px) {
+  .app-topbar {
+    min-height: 58px;
+    padding: 9px 14px;
+  }
+
+  .app-user-button {
+    max-width: calc(100vw - 28px);
+  }
+
+  .app-user-dropdown {
+    right: 0;
+    min-width: min(210px, calc(100vw - 28px));
+  }
+
+  .app-password-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-password-actions button {
+    width: 100%;
+  }
+
   .app-sidebar nav .sidebar-submenu {
     padding-left: 12px;
   }
@@ -107,6 +178,360 @@ body {
 .delivery-shell,
 .dashboard-analytics {
   background: #eef3f5;
+}
+
+.dashboard-shell,
+.orders-shell,
+.entry-shell,
+.clients-shell,
+.client-entry-shell,
+.admin-shell,
+.delivery-shell,
+.reports-shell,
+.state-mock-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100svh;
+}
+
+.app-content {
+  min-width: 0;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 64px;
+  padding: 12px 30px;
+  border-bottom: 1px solid #dce7ed;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(15, 39, 53, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.app-user-menu {
+  position: relative;
+}
+
+.app-user-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(320px, calc(100vw - 60px));
+  min-height: 40px;
+  border: 1px solid #cfe0e7;
+  border-radius: 8px;
+  padding: 6px 10px 6px 6px;
+  color: #0f2735;
+  background: #f8fbfc;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+}
+
+.app-user-button:hover,
+.app-user-button[aria-expanded="true"] {
+  border-color: #b8d4df;
+  background: #eef8f7;
+}
+
+.app-user-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #fff;
+  background: #0c5f72;
+  font-size: 0.86rem;
+  font-weight: 950;
+}
+
+.app-user-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-user-chevron {
+  flex: none;
+  color: #5d7280;
+  font-size: 0.84rem;
+}
+
+.app-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 80;
+  display: grid;
+  min-width: 210px;
+  overflow: hidden;
+  border: 1px solid #d7e4eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 20px 42px rgba(15, 39, 53, 0.16);
+}
+
+.app-user-dropdown[hidden] {
+  display: none;
+}
+
+.app-user-dropdown button {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-bottom: 1px solid #edf3f6;
+  padding: 9px 11px;
+  color: #203747;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.app-user-dropdown button:last-child {
+  border-bottom: 0;
+  color: #b33131;
+}
+
+.app-user-dropdown button:hover,
+.app-user-dropdown button:focus-visible {
+  background: #eef8f7;
+  outline: none;
+}
+
+.app-password-modal[hidden] {
+  display: none;
+}
+
+.app-password-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.app-password-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 31, 42, 0.58);
+}
+
+.app-password-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(440px, 100%);
+  overflow: hidden;
+  border: 1px solid #d7e4eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 26px 70px rgba(5, 26, 36, 0.28);
+}
+
+.app-password-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #edf3f6;
+}
+
+.app-password-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 5px;
+  color: #0f2735;
+  font-size: 1.15rem;
+}
+
+.app-password-header p {
+  margin: 0;
+  color: #607381;
+  font-weight: 750;
+}
+
+.app-password-header button {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 7px;
+  color: #0c5f72;
+  background: #e7f5f3;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.app-password-header button .app-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.app-password-form {
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+}
+
+.app-password-form label {
+  display: grid;
+  gap: 7px;
+  color: #203747;
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+
+.app-password-form input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #c7d7e0;
+  border-radius: 7px;
+  padding: 9px 11px;
+  color: #0f2735;
+  background: #f8fbfc;
+  font: inherit;
+  font-weight: 650;
+}
+
+.app-password-form input:focus {
+  border-color: #1d9f92;
+  outline: none;
+  box-shadow: 0 0 0 3px #1d9f9221;
+}
+
+.app-password-error {
+  margin: 0;
+  border: 1px solid #efaaaa;
+  border-radius: 7px;
+  padding: 9px 11px;
+  color: #9f2f2f;
+  background: #fff1f1;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.app-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.app-password-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+}
+
+.app-password-cancel {
+  color: #0c5f72;
+  background: #e7f5f3;
+}
+
+.app-password-submit {
+  color: #fff;
+  background: #0c5f72;
+}
+
+.app-password-submit:disabled {
+  cursor: progress;
+  opacity: 0.68;
+}
+
+.orders-primary,
+.orders-export,
+.clients-primary,
+.client-entry-primary,
+.client-entry-secondary,
+.delivery-refresh,
+.reports-bank-button,
+.admin-primary,
+.admin-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.orders-primary .app-icon,
+.clients-primary .app-icon,
+.client-entry-primary .app-icon,
+.delivery-refresh .app-icon,
+.reports-bank-button .app-icon,
+.admin-primary .app-icon,
+.app-password-submit .app-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.orders-export .app-icon,
+.client-entry-secondary .app-icon,
+.admin-secondary .app-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.orders-header,
+.clients-header,
+.delivery-header,
+.reports-header,
+.admin-header,
+.client-entry-header,
+.entry-header {
+  display: none;
+}
+
+.orders-main,
+.clients-main,
+.admin-main,
+.reports-main,
+.delivery-main,
+.client-entry-main,
+.entry-main {
+  padding-top: 18px;
+}
+
+.panel-heading-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.delivery-filters {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+}
+
+.delivery-filters .delivery-refresh {
+  align-self: end;
+  min-height: 42px;
 }
 
 .admin-shell,
@@ -3597,6 +4022,121 @@ body.modal-page-body {
   }
 
   .state-action-button {
+    width: 100%;
+  }
+}
+
+@media (width <= 1080px) {
+  .dashboard-shell,
+  .orders-shell,
+  .entry-shell,
+  .clients-shell,
+  .client-entry-shell,
+  .admin-shell,
+  .delivery-shell,
+  .reports-shell,
+  .state-mock-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (width <= 620px) {
+  .app-topbar {
+    min-height: 58px;
+    padding: 9px 14px;
+  }
+
+  .app-user-button {
+    max-width: calc(100vw - 28px);
+  }
+
+  .app-user-dropdown {
+    right: 0;
+    min-width: min(210px, calc(100vw - 28px));
+  }
+
+  .app-password-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-password-actions button {
+    width: 100%;
+  }
+}
+
+.orders-header,
+.clients-header,
+.delivery-header,
+.reports-header,
+.admin-header,
+.client-entry-header,
+.entry-header {
+  display: none !important;
+}
+
+.orders-main,
+.clients-main,
+.admin-main,
+.reports-main,
+.delivery-main,
+.client-entry-main,
+.entry-main {
+  padding-top: 18px;
+}
+
+.panel-heading-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.orders-panel-heading,
+.clients-panel-heading,
+.reports-panel-header,
+.admin-panel-header,
+.delivery-panel-header {
+  align-items: center;
+}
+
+.delivery-filters {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+}
+
+.delivery-filters .delivery-refresh {
+  align-self: end;
+  min-height: 42px;
+}
+
+@media (width <= 1120px) {
+  .delivery-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 720px) {
+  .orders-main,
+  .clients-main,
+  .admin-main,
+  .reports-main,
+  .delivery-main,
+  .client-entry-main,
+  .entry-main {
+    padding-top: 14px;
+  }
+
+  .panel-heading-actions,
+  .orders-panel-heading,
+  .clients-panel-heading,
+  .reports-panel-header,
+  .admin-panel-header,
+  .delivery-panel-header {
+    align-items: stretch;
+  }
+
+  .panel-heading-actions,
+  .panel-heading-actions > button {
     width: 100%;
   }
 }

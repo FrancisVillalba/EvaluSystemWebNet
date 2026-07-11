@@ -29,6 +29,27 @@
     var canSeeVentas = canSeePedidos || canSeeGrupoVentas;
     var ventasActive = activeMenu == "pedidos" || activeMenu == "grupo-ventas";
 }
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent AppIcon(string name)
+    {
+        var path = name switch
+        {
+            "dashboard" => "<rect x=\"3\" y=\"3\" width=\"7\" height=\"8\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"3\" y=\"15\" width=\"7\" height=\"6\" rx=\"1.5\"/>",
+            "sales" => "<path d=\"M6 6h15l-1.5 8.5H8L6 6Z\"/><path d=\"M6 6 5.4 3H3\"/><circle cx=\"9\" cy=\"20\" r=\"1.5\"/><circle cx=\"18\" cy=\"20\" r=\"1.5\"/>",
+            "orders" => "<path d=\"M9 5h6\"/><path d=\"M9 3h6v4H9z\"/><path d=\"M6 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1\"/><path d=\"M8 12h8\"/><path d=\"M8 16h6\"/>",
+            "team" => "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>",
+            "clients" => "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M20 21a8 8 0 0 0-16 0\"/>",
+            "printer" => "<path d=\"M6 9V3h12v6\"/><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><path d=\"M6 14h12v7H6z\"/>",
+            "delivery" => "<path d=\"M3 6h11v10H3z\"/><path d=\"M14 10h4l3 3v3h-7z\"/><circle cx=\"7\" cy=\"19\" r=\"2\"/><circle cx=\"18\" cy=\"19\" r=\"2\"/>",
+            "reports" => "<path d=\"M4 19V5\"/><path d=\"M4 19h16\"/><rect x=\"7\" y=\"11\" width=\"3\" height=\"5\" rx=\"1\"/><rect x=\"12\" y=\"7\" width=\"3\" height=\"9\" rx=\"1\"/><rect x=\"17\" y=\"3\" width=\"3\" height=\"13\" rx=\"1\"/>",
+            "admin" => "<path d=\"M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z\"/><path d=\"M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2.1 2.1 0 1 1-2.97 2.97l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 1 1-4.2 0v-.06a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.04.04a2.1 2.1 0 1 1-2.97-2.97l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 1 1 0-4.2h.06A1.8 1.8 0 0 0 4.72 8.6a1.8 1.8 0 0 0-.36-1.98l-.04-.04a2.1 2.1 0 1 1 2.97-2.97l.04.04a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.4 2.35V2a2.1 2.1 0 1 1 4.2 0v.06a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.04-.04a2.1 2.1 0 1 1 2.97 2.97l-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H21a2.1 2.1 0 1 1 0 4.2h-.06A1.8 1.8 0 0 0 19.4 15Z\"/>",
+            "logout" => "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><path d=\"M16 17l5-5-5-5\"/><path d=\"M21 12H9\"/>",
+            _ => ""
+        };
+
+        return new Microsoft.AspNetCore.Html.HtmlString($"<svg class=\"app-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>");
+    }
+}
 
 <aside class="app-sidebar">
     <div class="brand-logo" aria-label="EvaluSystem">
@@ -44,29 +65,27 @@
     </div>
 
     <nav aria-label="Menu principal">
-        @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">Tablero</button> }
+        @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">@AppIcon("dashboard")<span>Tablero</span></button> }
         @if (canSeeVentas)
         {
             <div class="sidebar-group @(ventasActive ? "open active" : "")" data-sidebar-group>
                 <button class="sidebar-group-title @(ventasActive ? "active" : "")" type="button" aria-expanded="@(ventasActive ? "true" : "false")" data-sidebar-toggle>
-                    <span>Ventas</span>
+                    <span class="sidebar-group-label">@AppIcon("sales")<span>Ventas</span></span>
                     <span class="sidebar-group-arrow" aria-hidden="true">&#9662;</span>
                 </button>
                 <div class="sidebar-submenu">
-                    @if (canSeePedidos) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">Pedidos</button> }
-                    @if (canSeeGrupoVentas) { <button class="@(activeMenu == "grupo-ventas" ? "active" : "")" type="button" onclick="window.location.href='/grupo-ventas'">Grupo de ventas</button> }
+                    @if (canSeePedidos) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">@AppIcon("orders")<span>Pedidos</span></button> }
+                    @if (canSeeGrupoVentas) { <button class="@(activeMenu == "grupo-ventas" ? "active" : "")" type="button" onclick="window.location.href='/grupo-ventas'">@AppIcon("team")<span>Grupo de ventas</span></button> }
                 </div>
             </div>
         }
-        @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">Clientes</button> }
-        @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">Impresiones</button> }
-        @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">Envio</button> }
-        @if (CanSee("Reportes")) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">Reportes</button> }
-        @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">Administracion</button> }
+        @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">@AppIcon("clients")<span>Clientes</span></button> }
+        @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">@AppIcon("printer")<span>Impresiones</span></button> }
+        @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">@AppIcon("delivery")<span>Envio</span></button> }
+        @if (CanSee("Reportes")) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">@AppIcon("reports")<span>Reportes</span></button> }
+        @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">@AppIcon("admin")<span>Administracion</span></button> }
 
     </nav>
-
-    <a class="app-sidebar-logout" href="/">Cerrar sesion</a>
 </aside>
 
 <script>

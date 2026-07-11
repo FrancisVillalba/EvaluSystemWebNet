@@ -39,8 +39,20 @@ app.Use(async (context, next) =>
 {
     var isApiRequest = context.Request.Path.StartsWithSegments("/api");
     var isAuthRequest = context.Request.Path.StartsWithSegments("/api/auth");
+    var token = context.Session.GetString("BackendAccessToken");
+    var expiresAtText = context.Session.GetString("BackendExpiresAt");
+    var sessionExpired = DateTime.TryParse(
+        expiresAtText,
+        null,
+        System.Globalization.DateTimeStyles.RoundtripKind,
+        out var expiresAt) && expiresAt <= DateTime.UtcNow;
 
-    if (isApiRequest && !isAuthRequest && string.IsNullOrWhiteSpace(context.Session.GetString("BackendAccessToken")))
+    if (sessionExpired)
+    {
+        context.Session.Clear();
+    }
+
+    if (isApiRequest && !isAuthRequest && (string.IsNullOrWhiteSpace(token) || sessionExpired))
     {
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         await context.Response.WriteAsJsonAsync(new { message = "La sesion caduco. Inicie sesion nuevamente." });

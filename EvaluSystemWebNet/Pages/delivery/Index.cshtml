@@ -8,17 +8,6 @@
 }
 
 <section class="delivery-main">
-    <header class="delivery-header">
-        <div>
-            <p class="eyebrow">Envio</p>
-            <h1>Pedidos para envio</h1>
-            <p>Gestiona los pedidos pendientes por metodo de envio.</p>
-        </div>
-        <div class="delivery-header-actions">
-            <button id="refresh-delivery" class="delivery-refresh" type="button">Actualizar</button>
-        </div>
-    </header>
-
     <section class="delivery-filters" aria-label="Filtros de envio">
         <label for="filter-date-from">
             Fecha desde
@@ -56,6 +45,16 @@
                 <option value="retiro">Retiro del local</option>
             </select>
         </label>
+
+        <button id="refresh-delivery" class="delivery-refresh" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+                <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+                <path d="M18 3v4h-4" />
+                <path d="M6 21v-4h4" />
+            </svg>
+            <span>Actualizar</span>
+        </button>
     </section>
 
     <div class="delivery-view-tabs" aria-label="Vistas de envio">
@@ -70,7 +69,15 @@
                 <p>Pedidos tomados sin lote y rutas generadas.</p>
             </div>
             <div class="delivery-assigned-actions">
-                <button id="generate-route" class="delivery-refresh" type="button">Generar lote</button>
+                <button id="generate-route" class="delivery-refresh" type="button">
+                    <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M3 6h11v10H3z" />
+                        <path d="M14 10h4l3 3v3h-7z" />
+                        <circle cx="7" cy="19" r="2" />
+                        <circle cx="18" cy="19" r="2" />
+                    </svg>
+                    <span>Generar lote</span>
+                </button>
             </div>
         </div>
         <div class="delivery-assigned-block">

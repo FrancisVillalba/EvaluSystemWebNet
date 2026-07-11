@@ -7,24 +7,30 @@
 }
 
 <section class="orders-main">
-            <header class="orders-header">
-                <div>
-                    <p class="eyebrow">Lista de pedidos</p>
-                    <h1>Pedidos</h1>
-                    <p>Pedidos cargados, con filtros por fecha de carga, cliente y estado.</p>
-                </div>
-                <button class="orders-primary" type="button" onclick="openOrder()">Cargar pedido</button>
-            </header>
-
             <section class="orders-panel">
                 <div class="orders-panel-heading">
                     <div>
                         <h2>Pedidos cargados</h2>
                         <p id="order-count">0 pedidos encontrados</p>
                     </div>
-                    <button id="download-orders-excel" class="orders-export" type="button">
-                       Excel
-                    </button>
+                    <div class="panel-heading-actions">
+                        <button class="orders-primary" type="button" onclick="openOrder()">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>
+                            <span>Cargar pedido</span>
+                        </button>
+                        <button id="download-orders-excel" class="orders-export" type="button">
+                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M14 3v4a2 2 0 0 0 2 2h4" />
+                                <path d="M5 3h9l6 6v12H5z" />
+                                <path d="M8 16h8" />
+                                <path d="M8 12h4" />
+                            </svg>
+                            <span>Excel</span>
+                        </button>
+                    </div>
                 </div>
 
                 <section class="orders-filters" aria-label="Filtros de pedidos">

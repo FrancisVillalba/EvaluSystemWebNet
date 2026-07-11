@@ -1,6 +1,25 @@
 @{
     var title = ViewData["Title"]?.ToString() ?? "EvaluSystem";
     var shellClass = ViewData["ShellClass"]?.ToString() ?? "dashboard-shell";
+    var userName = Context.Session.GetString("BackendUserName") ?? "Usuario";
+    var userInitial = string.IsNullOrWhiteSpace(userName) ? "U" : userName[..1].ToUpperInvariant();
+}
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent AppIcon(string name)
+    {
+        var path = name switch
+        {
+            "user" => "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M20 21a8 8 0 0 0-16 0\"/>",
+            "key" => "<circle cx=\"7.5\" cy=\"14.5\" r=\"4.5\"/><path d=\"M11 11 21 1\"/><path d=\"M16 6l2 2\"/><path d=\"M14 8l2 2\"/>",
+            "logout" => "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><path d=\"M16 17l5-5-5-5\"/><path d=\"M21 12H9\"/>",
+            "lock" => "<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>",
+            "save" => "<path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z\"/><path d=\"M17 21v-8H7v8\"/><path d=\"M7 3v5h8\"/>",
+            "x" => "<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>",
+            _ => ""
+        };
+
+        return new Microsoft.AspNetCore.Html.HtmlString($"<svg class=\"app-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>");
+    }
 }
 
 <!doctype html>
@@ -37,8 +56,56 @@
     <div id="toast-host" class="toast-host" aria-live="polite" aria-atomic="true"></div>
     <main class="@shellClass">
         <partial name="_Sidebar" />
-        @RenderBody()
+        <div class="app-content">
+            <header class="app-topbar">
+                <div class="app-topbar-spacer"></div>
+                <div class="app-user-menu" data-user-menu>
+                    <button class="app-user-button" type="button" aria-haspopup="true" aria-expanded="false" data-user-menu-toggle>
+                        <span class="app-user-avatar" aria-hidden="true">@userInitial</span>
+                        <span class="app-user-name">@userName</span>
+                        <span class="app-user-chevron" aria-hidden="true">&#9662;</span>
+                    </button>
+                    <div class="app-user-dropdown" role="menu" hidden data-user-menu-dropdown>
+                        <button type="button" role="menuitem" data-open-change-password>@AppIcon("key")<span>Cambiar contrasena</span></button>
+                        <button type="button" role="menuitem" data-logout>@AppIcon("logout")<span>Cerrar sesion</span></button>
+                    </div>
+                </div>
+            </header>
+            @RenderBody()
+        </div>
     </main>
+
+    <div class="app-password-modal" hidden data-password-modal>
+        <div class="app-password-backdrop" data-password-close></div>
+        <section class="app-password-dialog" role="dialog" aria-modal="true" aria-labelledby="app-password-title">
+            <header class="app-password-header">
+                <div>
+                    <h2 id="app-password-title">@AppIcon("lock")<span>Cambiar contrasena</span></h2>
+                    <p>@userName</p>
+                </div>
+                <button type="button" aria-label="Cerrar" data-password-close>@AppIcon("x")</button>
+            </header>
+            <form class="app-password-form" data-password-form>
+                <label for="current-password">
+                    Contrasena actual
+                    <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required />
+                </label>
+                <label for="new-password">
+                    Nueva contrasena
+                    <input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="6" required />
+                </label>
+                <label for="confirm-password">
+                    Confirmar contrasena
+                    <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required />
+                </label>
+                <p class="app-password-error" data-password-error hidden></p>
+                <div class="app-password-actions">
+                    <button class="app-password-cancel" type="button" data-password-close>Cancelar</button>
+                    <button class="app-password-submit" type="submit">@AppIcon("save")<span>Guardar</span></button>
+                </div>
+            </form>
+        </section>
+    </div>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

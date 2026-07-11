@@ -26,7 +26,10 @@
                     <h2 id="machine-title">Maquina</h2>
                     <p id="machine-help">Archivos cargados para impresion.</p>
                 </div>
-                <span id="machine-count" class="delivery-route-count">0 archivos</span>
+                <div class="panel-heading-actions">
+                    <span id="machine-count" class="delivery-route-count">0 archivos</span>
+                    <button id="refresh-print-files-panel" class="admin-primary" type="button">Actualizar</button>
+                </div>
             </div>
 
             <div class="reports-filters">
@@ -261,7 +264,8 @@
             }
         });
 
-        document.getElementById("refresh-print-files").addEventListener("click", loadFiles);
+        document.getElementById("refresh-print-files")?.addEventListener("click", loadFiles);
+        document.getElementById("refresh-print-files-panel")?.addEventListener("click", loadFiles);
         [dateFrom, dateTo].forEach(input => input.addEventListener("change", loadFiles));
 
         dateFrom.value = localDateValue();

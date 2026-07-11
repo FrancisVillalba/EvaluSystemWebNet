@@ -8,15 +8,6 @@
 }
 
 <section class="entry-main @(embedded ? "entry-main-embedded" : "")">
-            <header class="entry-header">
-                <div>
-                    <p class="eyebrow">Carga de ventas impresiones</p>
-                    <h1 id="order-form-title">Nuevo pedido</h1>
-                    <p>Registra la venta y sus detalles para enviarla a produccion.</p>
-                </div>
-                <button class="back-list-button" type="button" onclick="closeEmbeddedForm()">Volver a la lista</button>
-            </header>
-
             <form id="order-form" class="entry-form">
                 <input type="hidden" id="order-id" />
                 <input type="hidden" id="order-date" />
@@ -24,7 +15,10 @@
 
                 <div class="entry-top-row">
                     <section class="entry-section" aria-label="Carga de ventas impresiones">
-                        <div class="section-title">Carga de ventas impresiones</div>
+                        <div class="section-title detail-title">
+                            <span id="order-form-title">Nuevo pedido</span>
+                            <button class="back-list-button" type="button" onclick="closeEmbeddedForm()">Volver a la lista</button>
+                        </div>
 
                         <div class="entry-fields">
                             <label class="field client-field" for="order-client">

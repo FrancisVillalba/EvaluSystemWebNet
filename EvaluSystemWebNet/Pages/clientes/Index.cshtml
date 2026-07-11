@@ -7,21 +7,21 @@
 }
 
 <section class="clients-main">
-            <header class="clients-header">
-                <div>
-                    <p class="eyebrow">ABM de clientes</p>
-                    <h1>Clientes</h1>
-                    <p>Clientes cargados, con filtros por busqueda, ciudad y estado.</p>
-                </div>
-                <button class="clients-primary" type="button" onclick="window.location.href='/clientes/formulario'">Cargar cliente</button>
-            </header>
-
             <section class="clients-panel" id="client-list-panel">
                 <div class="clients-panel-heading">
                     <div>
                         <h2>Clientes cargados</h2>
                         <p id="client-count">0 clientes encontrados</p>
                     </div>
+                    <button class="clients-primary" type="button" onclick="window.location.href='/clientes/formulario'">
+                        <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M20 21a8 8 0 0 0-16 0" />
+                            <path d="M19 8v6" />
+                            <path d="M16 11h6" />
+                        </svg>
+                        <span>Cargar cliente</span>
+                    </button>
                 </div>
 
                 <section class="clients-filters" aria-label="Filtros de clientes">

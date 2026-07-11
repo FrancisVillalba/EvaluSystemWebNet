@@ -29,6 +29,7 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString(TokenSessionKey, response.Token);
         HttpContext.Session.SetString("BackendUserName", response.Usuario);
         HttpContext.Session.SetInt32("BackendUserId", response.UsuarioId);
+        HttpContext.Session.SetString("BackendExpiresAt", response.ExpiresAt.ToString("O"));
         HttpContext.Session.SetString("BackendPermissions", JsonSerializer.Serialize(response.Permisos));
 
         return Ok(new
@@ -46,6 +47,59 @@ public class AuthController : ControllerBase
     {
         HttpContext.Session.Clear();
         return NoContent();
+    }
+
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userId = HttpContext.Session.GetInt32("BackendUserId");
+        var userName = HttpContext.Session.GetString("BackendUserName");
+
+        if (!userId.HasValue || string.IsNullOrWhiteSpace(userName))
+        {
+            return Unauthorized(new { message = "La sesion caduco. Inicie sesion nuevamente." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "Complete la contrasena actual y la nueva contrasena." });
+        }
+
+        if (request.NewPassword != request.ConfirmPassword)
+        {
+            return BadRequest(new { message = "La confirmacion no coincide con la nueva contrasena." });
+        }
+
+        var loginResult = await _backendApiClient.PostResultAsync<LoginResponse>(
+            "api/Auth/login",
+            new LoginRequest(userName, request.CurrentPassword),
+            cancellationToken);
+
+        if (!loginResult.IsSuccess || loginResult.Value is null)
+        {
+            return BadRequest(new { message = "La contrasena actual no es correcta." });
+        }
+
+        var userResult = await _backendApiClient.GetResultAsync<UsuarioDto>($"api/Usuarios/{userId.Value}", cancellationToken);
+        if (!userResult.IsSuccess || userResult.Value is null)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = userResult.ErrorMessage ?? "No se pudo obtener el usuario actual." });
+        }
+
+        var user = userResult.Value;
+        var updatePayload = new
+        {
+            NombreUsuario = user.NombreUsuario ?? userName,
+            Pass = request.NewPassword,
+            user.PersonaId,
+            PerfilIds = user.PerfilIds,
+            Estado = user.Estado ?? true
+        };
+
+        var updateResult = await _backendApiClient.PutResultAsync<JsonElement>($"api/Usuarios/{userId.Value}", updatePayload, cancellationToken);
+        return updateResult.IsSuccess
+            ? NoContent()
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = updateResult.ErrorMessage ?? "No se pudo cambiar la contrasena." });
     }
 
     private static string ResolveRedirectUrl(IEnumerable<PerfilFormularioPermisoDto> permissions)
@@ -74,4 +128,6 @@ public class AuthController : ControllerBase
             _ => string.IsNullOrWhiteSpace(permission.Ruta) ? null : permission.Ruta
         };
     }
+
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword, string ConfirmPassword);
 }

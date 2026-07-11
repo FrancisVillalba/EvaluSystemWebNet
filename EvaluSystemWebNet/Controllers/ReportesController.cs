@@ -17,10 +17,29 @@ public class ReportesController : ControllerBase
     [HttpGet("opciones")]
     public async Task<ActionResult<object>> GetOptions(CancellationToken cancellationToken)
     {
-        var options = await _backendApiClient.GetAsync<PedidoFormOptionsDto>("api/VentasImpresion/opciones", cancellationToken);
-        return options is null
-            ? StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudieron obtener opciones de reportes." })
-            : Ok(new { vendedores = options.Vendedores });
+        var usuarios = await _backendApiClient.GetAsync<IEnumerable<UsuarioDto>>("api/Usuarios", cancellationToken);
+        if (usuarios is null)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudieron obtener opciones de reportes." });
+        }
+
+        var gruposVenta = await _backendApiClient.GetAsync<IEnumerable<GrupoVentaDto>>("api/GruposVenta", cancellationToken)
+            ?? Enumerable.Empty<GrupoVentaDto>();
+        var vendedoresExternosIds = gruposVenta
+            .Where(grupo => grupo.Estado)
+            .SelectMany(grupo => grupo.Vendedores.Where(vendedor => vendedor.Estado))
+            .Select(vendedor => vendedor.VendedorUsuarioId)
+            .ToHashSet();
+
+        var vendedores = usuarios
+            .Where(IsPerfilVendedor)
+            .Where(vendedor => !vendedoresExternosIds.Contains(vendedor.Id))
+            .ToList();
+        var vendedoresExternos = usuarios
+            .Where(vendedor => vendedoresExternosIds.Contains(vendedor.Id))
+            .ToList();
+
+        return Ok(new { vendedores, vendedoresExternos });
     }
 
     [HttpGet("comisiones-vendedores")]
@@ -28,9 +47,10 @@ public class ReportesController : ControllerBase
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
+        [FromQuery] string? scope = null,
         CancellationToken cancellationToken = default)
     {
-        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId);
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope));
         var result = await _backendApiClient.GetResultAsync<ReporteComisionesDto>(
             $"api/Reportes/comisiones-vendedores?{filters}",
             cancellationToken);
@@ -46,6 +66,7 @@ public class ReportesController : ControllerBase
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
+        [FromQuery] string? scope = null,
         CancellationToken cancellationToken = default)
     {
         var normalizedFormat = format.Equals("pdf", StringComparison.OrdinalIgnoreCase)
@@ -53,7 +74,7 @@ public class ReportesController : ControllerBase
             : format.Equals("txt", StringComparison.OrdinalIgnoreCase)
                 ? "txt"
                 : "excel";
-        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId);
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope));
         var result = await _backendApiClient.GetResultAsync<ExcelFileDto>(
             $"api/Reportes/comisiones-vendedores/{normalizedFormat}?{filters}",
             cancellationToken);
@@ -126,7 +147,7 @@ public class ReportesController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo actualizar el lote." });
     }
 
-    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId)
+    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId, string? scope = null)
     {
         var filters = new List<string>();
 
@@ -145,7 +166,32 @@ public class ReportesController : ControllerBase
             filters.Add($"vendedorId={vendedorId.Value}");
         }
 
+        if (!string.IsNullOrWhiteSpace(scope))
+        {
+            filters.Add($"scope={Uri.EscapeDataString(scope)}");
+        }
+
         return string.Join("&", filters);
+    }
+
+    private static bool IsPerfilVendedor(UsuarioDto usuario)
+    {
+        var perfil = $"{usuario.Perfil} {usuario.Perfiles}";
+        return perfil.Contains("vendedor", StringComparison.OrdinalIgnoreCase) ||
+            perfil.Contains("ventas", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsExternalScope(string? scope)
+    {
+        return scope is not null &&
+            (scope.Equals("externos", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("external", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("vendedores-externos", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string NormalizeCommissionsScope(string? scope)
+    {
+        return IsExternalScope(scope) ? "externos" : "vendedores";
     }
 
     private static string BuildEnviosFilterQuery(DateTime? dateFrom, DateTime? dateTo, string? cliente, string? metodoEntrega)

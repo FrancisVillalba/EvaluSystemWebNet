@@ -228,6 +228,179 @@ window.showMessageDialog = function ({
 };
 
 (function () {
+    function closeUserMenus(exceptMenu) {
+        document.querySelectorAll("[data-user-menu]").forEach(menu => {
+            if (menu === exceptMenu) {
+                return;
+            }
+
+            const toggle = menu.querySelector("[data-user-menu-toggle]");
+            const dropdown = menu.querySelector("[data-user-menu-dropdown]");
+            toggle?.setAttribute("aria-expanded", "false");
+            if (dropdown) {
+                dropdown.hidden = true;
+            }
+        });
+    }
+
+    function setPasswordError(message) {
+        const error = document.querySelector("[data-password-error]");
+        if (!error) {
+            return;
+        }
+
+        error.textContent = message || "";
+        error.hidden = !message;
+    }
+
+    function openPasswordModal() {
+        const modal = document.querySelector("[data-password-modal]");
+        const form = document.querySelector("[data-password-form]");
+        if (!modal || !form) {
+            return;
+        }
+
+        form.reset();
+        setPasswordError("");
+        modal.hidden = false;
+        document.getElementById("current-password")?.focus();
+    }
+
+    function closePasswordModal() {
+        const modal = document.querySelector("[data-password-modal]");
+        if (modal) {
+            modal.hidden = true;
+        }
+        setPasswordError("");
+    }
+
+    async function logout(event) {
+        event?.preventDefault();
+
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+        } finally {
+            const target = window.top || window;
+            target.location.href = "/";
+        }
+    }
+
+    async function submitPasswordChange(event) {
+        event.preventDefault();
+
+        const form = event.currentTarget;
+        const submitButton = form.querySelector(".app-password-submit");
+        const formData = new FormData(form);
+        const payload = {
+            currentPassword: String(formData.get("currentPassword") || ""),
+            newPassword: String(formData.get("newPassword") || ""),
+            confirmPassword: String(formData.get("confirmPassword") || "")
+        };
+
+        if (!payload.currentPassword || !payload.newPassword || !payload.confirmPassword) {
+            setPasswordError("Complete todos los campos.");
+            return;
+        }
+
+        if (payload.newPassword.length < 6) {
+            setPasswordError("La nueva contrasena debe tener al menos 6 caracteres.");
+            return;
+        }
+
+        if (payload.newPassword !== payload.confirmPassword) {
+            setPasswordError("La confirmacion no coincide con la nueva contrasena.");
+            return;
+        }
+
+        submitButton.disabled = true;
+        setPasswordError("");
+
+        try {
+            const response = await fetch("/api/auth/change-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                let message = "No se pudo cambiar la contrasena.";
+                try {
+                    const error = await response.json();
+                    message = error.message || message;
+                } catch {
+                    // Keep the generic message if the API did not return JSON.
+                }
+
+                setPasswordError(message);
+                return;
+            }
+
+            closePasswordModal();
+            window.showToast?.("Contrasena actualizada correctamente.");
+        } catch {
+            setPasswordError("No se pudo conectar con el servidor.");
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    function setupUserMenu() {
+        document.querySelectorAll("[data-user-menu-toggle]").forEach(toggle => {
+            toggle.addEventListener("click", event => {
+                const menu = event.currentTarget.closest("[data-user-menu]");
+                const dropdown = menu?.querySelector("[data-user-menu-dropdown]");
+                if (!menu || !dropdown) {
+                    return;
+                }
+
+                const isOpen = dropdown.hidden;
+                closeUserMenus(menu);
+                dropdown.hidden = !isOpen;
+                toggle.setAttribute("aria-expanded", String(isOpen));
+            });
+        });
+
+        document.querySelectorAll("[data-logout]").forEach(button => {
+            button.addEventListener("click", logout);
+        });
+
+        document.querySelectorAll("[data-open-change-password]").forEach(button => {
+            button.addEventListener("click", () => {
+                closeUserMenus();
+                openPasswordModal();
+            });
+        });
+
+        document.querySelectorAll("[data-password-close]").forEach(button => {
+            button.addEventListener("click", closePasswordModal);
+        });
+
+        document.querySelector("[data-password-form]")?.addEventListener("submit", submitPasswordChange);
+
+        document.addEventListener("click", event => {
+            if (!event.target.closest("[data-user-menu]")) {
+                closeUserMenus();
+            }
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                closeUserMenus();
+                closePasswordModal();
+            }
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupUserMenu, { once: true });
+    } else {
+        setupUserMenu();
+    }
+})();
+
+(function () {
     async function acceptMessage(clave) {
         await fetch(`/api/mensajes/${encodeURIComponent(clave)}/aceptar`, {
             method: "POST"
