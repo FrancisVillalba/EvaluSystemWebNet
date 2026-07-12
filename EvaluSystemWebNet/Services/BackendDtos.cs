@@ -126,6 +126,7 @@ public record PersonaDto(
     DateTime? FechaCumpleanios,
     string? TipoDocumentoId,
     string? Documento,
+    string? Telefono,
     bool? Estado);
 
 public record FormularioDto(
