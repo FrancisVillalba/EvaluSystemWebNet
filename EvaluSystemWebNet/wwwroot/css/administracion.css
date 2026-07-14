@@ -2,12 +2,93 @@
   min-width: 0;
 }
 
+.admin-workspace {
+  align-items: start;
+}
+
 .admin-panel[hidden] {
   display: none;
 }
 
+.admin-panel {
+  overflow: hidden;
+}
+
 .admin-panel form.admin-form {
-  margin-bottom: 18px;
+  align-items: start;
+  background: #f8fbfc;
+  border: 1px solid #d7e5ec;
+  border-radius: 8px;
+  column-gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 18px;
+  padding: 18px;
+  row-gap: 18px;
+}
+
+.admin-screen-header {
+  align-items: start;
+  border-bottom: 1px solid #e7eef3;
+  margin-bottom: 22px;
+  padding-bottom: 20px;
+}
+
+.admin-screen-body {
+  display: contents;
+}
+
+.admin-screen-footer {
+  grid-column: 1 / -1;
+}
+
+.admin-panel .admin-field,
+.admin-panel .admin-check {
+  min-width: 0;
+}
+
+.admin-panel .admin-field {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.admin-panel .admin-form label,
+.admin-panel .admin-access-filter label,
+.admin-panel .admin-list-toolbar label {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-panel .admin-multi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-panel .admin-form label span {
+  min-height: 0;
+}
+
+.admin-panel .admin-form input,
+.admin-panel .admin-form select,
+.admin-panel .admin-form textarea,
+.admin-panel .admin-multiselect-button {
+  min-height: 42px;
+}
+
+.admin-panel .admin-multiselect-values:empty {
+  display: none;
+}
+
+.admin-panel .admin-field > span {
+  color: #536b7a;
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.2;
 }
 
 .admin-panel .admin-field textarea {
@@ -15,11 +96,51 @@
   resize: vertical;
 }
 
+.admin-panel .admin-form-actions {
+  align-items: center;
+  border-top: 1px solid #e1ebf0;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 16px;
+}
+
+.admin-panel .admin-form-checks {
+  min-height: 42px;
+}
+
+.admin-panel .admin-form-buttons {
+  gap: 10px;
+}
+
 .admin-panel .admin-form-buttons button,
 .admin-panel .admin-list-toolbar button,
 .admin-panel .admin-row-actions button,
 .admin-panel .admin-pagination-actions button {
   min-height: 42px;
+}
+
+.admin-panel .admin-list-toolbar {
+  align-items: end;
+  background: #f8fbfc;
+  border-color: #d7e5ec;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.admin-panel .admin-list-toolbar input {
+  height: 42px;
+}
+
+.admin-panel .admin-table th:first-child,
+.admin-panel .admin-table td:first-child {
+  padding-left: 14px;
+}
+
+.admin-panel .admin-table th:last-child,
+.admin-panel .admin-table td:last-child {
+  padding-right: 14px;
 }
 
 .admin-panel .save-record-button::before {
@@ -32,4 +153,30 @@
   content: "x";
   font-size: 18px;
   line-height: 1;
+}
+
+@media (max-width: 1200px) {
+  .admin-panel form.admin-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-panel form.admin-form,
+  .admin-panel .admin-list-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel .admin-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-panel .admin-form-buttons {
+    justify-content: stretch;
+  }
+
+  .admin-panel .admin-form-buttons button {
+    flex: 1;
+  }
 }

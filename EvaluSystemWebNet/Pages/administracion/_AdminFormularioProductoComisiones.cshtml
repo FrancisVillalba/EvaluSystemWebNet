@@ -10,3 +10,27 @@
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Producto", "Perfil", "Monto por metro", "Desde", "Hasta", "Estado" })' />
 </section>
+<script>
+    window.adminModuleDefinitions = window.adminModuleDefinitions || {};
+    window.adminModuleDefinitions.productoComisiones = {
+                title: "Comisiones por producto",
+                help: "Define la comision por metro de cada producto segun el perfil del vendedor.",
+                id: "id",
+                columns: [
+                    ["producto", "Producto"],
+                    ["perfil", "Perfil"],
+                    ["montoPorMetro", "Monto por metro"],
+                    ["fechaDesde", "Desde", value => formatDate(value)],
+                    ["fechaHasta", "Hasta", value => formatDate(value)],
+                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
+                ],
+                fields: [
+                    { name: "productoId", label: "Producto", type: "select", source: "productos", value: "id", text: "nombre", required: true },
+                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre", required: true },
+                    { name: "montoPorMetro", label: "Monto por metro", type: "number", defaultValue: 0 },
+                    { name: "fechaDesde", label: "Fecha desde", type: "date" },
+                    { name: "fechaHasta", label: "Fecha hasta", type: "date" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            };
+</script>

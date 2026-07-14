@@ -1,10 +1,45 @@
-<section class="admin-panel" data-module-panel="configuraciones" hidden>
-    <div class="admin-panel-header"><div><h2>Configuraciones</h2><p>Valores parametrizables del sistema.</p></div><button class="admin-primary new-record-button" type="button"><svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14" /><path d="M5 12h14" /></svg><span>Nuevo</span></button></div>
+<article class="admin-panel admin-screen" data-module-panel="configuraciones" hidden>
+    <header class="admin-panel-header admin-screen-header">
+        <div>
+            <h2>Configuraciones</h2>
+            <p>Valores parametrizables del sistema.</p>
+        </div>
+        <button class="admin-primary new-record-button" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+            <span>Nuevo</span>
+        </button>
+    </header>
     <form class="admin-form" data-admin-form>
-        <label class="admin-field">Nombre<input data-field="nombre" type="text" required /></label>
-        <label class="admin-field">Numero<input data-field="nroConfiguracion" type="number" value="1" /></label>
-        <label class="admin-field">Valor<input data-field="valor" type="text" required /></label>
-        <div class="admin-form-actions"><div class="admin-form-checks"></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+        <div class="admin-screen-body">
+            <label class="admin-field">Nombre<input data-field="nombre" type="text" required /></label>
+            <label class="admin-field">Numero<input data-field="nroConfiguracion" type="number" value="1" /></label>
+            <label class="admin-field">Valor<input data-field="valor" type="text" required /></label>
+        </div>
+        <footer class="admin-screen-footer admin-form-actions">
+            <div class="admin-form-checks"></div>
+            <div class="admin-form-buttons">
+                <button class="admin-secondary cancel-record-button" type="button">Cancelar</button>
+                <button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button>
+            </div>
+        </footer>
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Numero", "Valor" })' />
-</section>
+</article>
+<script>
+    window.adminModuleDefinitions = window.adminModuleDefinitions || {};
+    window.adminModuleDefinitions.configuraciones = {
+                title: "Configuraciones",
+                help: "Valores parametrizables del sistema.",
+                id: "id",
+                columns: [
+                    ["nombre", "Nombre"],
+                    ["nroConfiguracion", "Numero"],
+                    ["valor", "Valor"]
+                ],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "nroConfiguracion", label: "Numero", type: "number", defaultValue: 1 },
+                    { name: "valor", label: "Valor", required: true }
+                ]
+            };
+</script>

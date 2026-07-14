@@ -10,7 +10,7 @@
         </button>
     </div>
     <form class="admin-form" data-admin-form>
-        <label class="admin-field">Usuario<input data-field="nombreUsuario" type="text" required /></label>
+        <label class="admin-field">Usuario <input data-field="nombreUsuario" type="text" required /></label> 
         <label class="admin-field">Contrasena<input data-field="pass" type="password" /><span>Dejar vacio para no cambiar</span></label>
         <label class="admin-field">Persona<select data-field="personaId" data-source="personas"><option value="">Seleccionar</option></select></label>
         <fieldset class="admin-field admin-multi-field" data-multiselect-field="perfilIds">
@@ -31,3 +31,25 @@
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Usuario", "Persona", "Perfiles", "Estado" })' />
 </section>
+
+<script>
+    window.adminModuleDefinitions = window.adminModuleDefinitions || {};
+    window.adminModuleDefinitions.usuarios = {
+        title: "Usuarios",
+        help: "Crea y mantiene los usuarios del sistema.",
+        id: "id",
+        columns: [
+            ["nombreUsuario", "Usuario"],
+            ["persona", "Persona"],
+            ["perfiles", "Perfiles"],
+            ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+        ],
+        fields: [
+            { name: "nombreUsuario", label: "Usuario", required: true },
+            { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
+            { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
+            { name: "perfilIds", label: "Perfiles", type: "multiselect", source: "perfiles", value: "id", text: "nombre" },
+            { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+        ]
+    };
+</script>
