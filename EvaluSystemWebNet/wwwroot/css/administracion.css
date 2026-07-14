@@ -1,0 +1,35 @@
+.admin-panels {
+  min-width: 0;
+}
+
+.admin-panel[hidden] {
+  display: none;
+}
+
+.admin-panel form.admin-form {
+  margin-bottom: 18px;
+}
+
+.admin-panel .admin-field textarea {
+  min-height: 42px;
+  resize: vertical;
+}
+
+.admin-panel .admin-form-buttons button,
+.admin-panel .admin-list-toolbar button,
+.admin-panel .admin-row-actions button,
+.admin-panel .admin-pagination-actions button {
+  min-height: 42px;
+}
+
+.admin-panel .save-record-button::before {
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+}
+
+.admin-panel .cancel-record-button::before {
+  content: "x";
+  font-size: 18px;
+  line-height: 1;
+}

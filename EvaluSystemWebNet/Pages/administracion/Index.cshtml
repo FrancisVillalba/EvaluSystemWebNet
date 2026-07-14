@@ -6,6 +6,10 @@
     ViewData["ShellClass"] = "admin-shell";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/administracion.css" asp-append-version="true" />
+}
+
 <section class="admin-main">
     <div class="admin-workspace">
         <aside class="admin-modules" aria-label="Modulos de administracion">
@@ -28,40 +32,26 @@
             <button type="button" data-module="ciudades">Ciudades</button>
         </aside>
 
-        <section id="crud-panel" class="admin-panel">
-            <div class="admin-panel-header">
-                <div>
-                    <h2 id="module-title">Usuarios</h2>
-                    <p id="module-help">Crea y mantiene los usuarios del sistema.</p>
-                </div>
-                <button id="new-record-button" class="admin-primary" type="button">
-                    <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 5v14" />
-                        <path d="M5 12h14" />
-                    </svg>
-                    <span>Nuevo</span>
-                </button>
-            </div>
+        <div id="crud-panel" class="admin-panels">
+            @await Html.PartialAsync("_AdminFormularioUsuarios")
+            @await Html.PartialAsync("_AdminFormularioPersonas")
+            @await Html.PartialAsync("_AdminFormularioPerfiles")
+            @await Html.PartialAsync("_AdminFormularioTransportadoras")
+            @await Html.PartialAsync("_AdminFormularioProductos")
+            @await Html.PartialAsync("_AdminFormularioProductoComisiones")
+            @await Html.PartialAsync("_AdminFormularioGruposVenta")
+            @await Html.PartialAsync("_AdminFormularioMaquinas")
+            @await Html.PartialAsync("_AdminFormularioFormasPago")
+            @await Html.PartialAsync("_AdminFormularioEstadosPago")
+            @await Html.PartialAsync("_AdminFormularioEstadosVenta")
+            @await Html.PartialAsync("_AdminFormularioTiposDocumento")
+            @await Html.PartialAsync("_AdminFormularioTiposCliente")
+            @await Html.PartialAsync("_AdminFormularioConfiguraciones")
+            @await Html.PartialAsync("_AdminFormularioDepartamentos")
+            @await Html.PartialAsync("_AdminFormularioCiudades")
+        </div>
 
-            <div id="admin-form" class="admin-form"></div>
 
-            <div class="admin-list-toolbar">
-                <label>
-                    Buscar
-                    <input id="admin-search" type="search" placeholder="Buscar en este modulo" autocomplete="off" />
-                </label>
-                <button id="admin-search-button" class="admin-primary" type="button">Buscar</button>
-                <button id="admin-clear-search-button" class="admin-secondary" type="button">Limpiar</button>
-            </div>
-
-            <div class="admin-table-wrap">
-                <table class="admin-table">
-                    <thead id="admin-table-head"></thead>
-                    <tbody id="admin-table-body"></tbody>
-                </table>
-            </div>
-            <div id="admin-pagination" class="admin-pagination" aria-live="polite"></div>
-        </section>
 
         <section id="access-panel" class="admin-panel" hidden>
             <div class="admin-panel-header">
@@ -100,22 +90,191 @@
 @section Scripts {
     <script>
         const modules = {
-            @await Html.PartialAsync("_AdminModuloUsuarios")
-            @await Html.PartialAsync("_AdminModuloPersonas")
-            @await Html.PartialAsync("_AdminModuloPerfiles")
-            @await Html.PartialAsync("_AdminModuloTransportadoras")
-            @await Html.PartialAsync("_AdminModuloProductos")
-            @await Html.PartialAsync("_AdminModuloProductoComisiones")
-            @await Html.PartialAsync("_AdminModuloGruposVenta")
-            @await Html.PartialAsync("_AdminModuloMaquinas")
-            @await Html.PartialAsync("_AdminModuloFormasPago")
-            @await Html.PartialAsync("_AdminModuloEstadosPago")
-            @await Html.PartialAsync("_AdminModuloTiposDocumento")
-            @await Html.PartialAsync("_AdminModuloTiposCliente")
-            @await Html.PartialAsync("_AdminModuloEstadosVenta")
-            @await Html.PartialAsync("_AdminModuloConfiguraciones")
-            @await Html.PartialAsync("_AdminModuloDepartamentos")
-            @await Html.PartialAsync("_AdminModuloCiudades")
+            usuarios: {
+                title: "Usuarios",
+                help: "Crea y mantiene los usuarios del sistema.",
+                id: "id",
+                columns: [
+                    ["nombreUsuario", "Usuario"],
+                    ["persona", "Persona"],
+                    ["perfiles", "Perfiles"],
+                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+                ],
+                fields: [
+                    { name: "nombreUsuario", label: "Usuario", required: true },
+                    { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
+                    { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
+                    { name: "perfilIds", label: "Perfiles", type: "multiselect", source: "perfiles", value: "id", text: "nombre" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            personas: {
+                title: "Personas",
+                help: "Datos base de personas vinculadas a usuarios.",
+                id: "id",
+                columns: [
+                    ["primerNombre", "Nombre"],
+                    ["primerApellido", "Apellido"],
+                    ["documento", "Documento"],
+                    ["telefono", "Telefono"],
+                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+                ],
+                fields: [
+                    { name: "primerNombre", label: "Primer nombre" },
+                    { name: "segundoNombre", label: "Segundo nombre" },
+                    { name: "primerApellido", label: "Primer apellido" },
+                    { name: "segundoApellido", label: "Segundo apellido" },
+                    { name: "tipoDocumentoId", label: "Tipo documento", type: "select", source: "tiposDocumento", value: "id", text: "nombre" },
+                    { name: "documento", label: "Documento" },
+                    { name: "telefono", label: "Telefono / WhatsApp" },
+                    { name: "fechaCumpleanios", label: "Fecha cumpleanos", type: "date" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            perfiles: {
+                title: "Perfiles",
+                help: "Define los perfiles de trabajo.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["descripcion", "Descripcion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "descripcion", label: "Descripcion" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            transportadoras: {
+                title: "Transportadoras",
+                help: "Empresas de transporte para datos de envio.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "telefono", label: "Telefono" },
+                    { name: "direccion", label: "Direccion" },
+                    { name: "observacion", label: "Observacion", type: "textarea" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            productos: {
+                title: "Productos",
+                help: "Productos disponibles para los pedidos.",
+                id: "id",
+                columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "precioBase", label: "Precio base", type: "number", defaultValue: 0 },
+                    { name: "maquinaId", label: "Maquina", type: "select", source: "maquinas", value: "id", text: "nombre" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            productoComisiones: {
+                title: "Comisiones por producto",
+                help: "Define la comision por metro de cada producto segun el perfil del vendedor.",
+                id: "id",
+                columns: [
+                    ["producto", "Producto"],
+                    ["perfil", "Perfil"],
+                    ["montoPorMetro", "Monto por metro"],
+                    ["fechaDesde", "Desde", value => formatDate(value)],
+                    ["fechaHasta", "Hasta", value => formatDate(value)],
+                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
+                ],
+                fields: [
+                    { name: "productoId", label: "Producto", type: "select", source: "productos", value: "id", text: "nombre", required: true },
+                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre", required: true },
+                    { name: "montoPorMetro", label: "Monto por metro", type: "number", defaultValue: 0 },
+                    { name: "fechaDesde", label: "Fecha desde", type: "date" },
+                    { name: "fechaHasta", label: "Fecha hasta", type: "date" },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            gruposVenta: {
+                title: "Grupo de ventas",
+                help: "Asigna vendedores externos a un Team Leader.",
+                id: "id",
+                columns: [
+                    ["nombre", "Nombre"],
+                    ["teamLeader", "Team Leader"],
+                    ["vendedores", "Vendedores", value => (value || []).map(item => item.vendedor).filter(Boolean).join(", ")],
+                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
+                ],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "teamLeaderUsuarioId", label: "Team Leader", type: "select", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}`, required: true },
+                    { name: "vendedorUsuarioIds", label: "Vendedores externos", type: "multiselect", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}` },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            maquinas: simpleNumberModule("Tipos de maquina", "Maquinas o procesos productivos."),
+
+            formasPago: simpleStringModule("Formas de pago", "Catalogo de formas de pago."),
+
+            estadosPago: simpleStringModule("Estados de pago", "Catalogo de estados de pago."),
+
+            tiposDocumento: simpleStringModule("Tipos documento", "Catalogo de tipos de documento."),
+
+            tiposCliente: simpleStringModule("Tipos cliente", "Catalogo de tipos de cliente."),
+
+            estadosVenta: {
+                title: "Estados de venta",
+                help: "Flujo de estados del pedido.",
+                id: "id",
+                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado"], ["numeroFlujo", "Orden"]],
+                fields: [
+                    { name: "id", label: "Codigo", required: true },
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Estado" },
+                    { name: "numeroFlujo", label: "Orden", type: "number" }
+                ]
+            },
+
+            configuraciones: {
+                title: "Configuraciones",
+                help: "Valores parametrizables del sistema.",
+                id: "id",
+                columns: [
+                    ["nombre", "Nombre"],
+                    ["nroConfiguracion", "Numero"],
+                    ["valor", "Valor"]
+                ],
+                fields: [
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "nroConfiguracion", label: "Numero", type: "number", defaultValue: 1 },
+                    { name: "valor", label: "Valor", required: true }
+                ]
+            },
+
+            departamentos: {
+                title: "Departamentos",
+                help: "Crea y mantiene los departamentos disponibles para clientes y envios.",
+                id: "id",
+                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "id", label: "Codigo", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
+                    { name: "nombre", label: "Nombre", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            },
+
+            ciudades: {
+                title: "Ciudades",
+                help: "Crea y mantiene las ciudades por departamento.",
+                id: "id",
+                columns: [["id", "Id"], ["departamento", "Departamento"], ["codigoDistrito", "Codigo distrito"], ["nombre", "Ciudad"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                fields: [
+                    { name: "departamentoId", label: "Departamento", type: "select", source: "departamentos", value: "id", text: "nombre", required: true },
+                    { name: "codigoDistrito", label: "Codigo distrito", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
+                    { name: "nombre", label: "Ciudad", required: true },
+                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+                ]
+            }
         };
 
         const state = {
@@ -134,16 +293,24 @@
 
         const crudPanel = document.getElementById("crud-panel");
         const accessPanel = document.getElementById("access-panel");
-        const moduleTitle = document.getElementById("module-title");
-        const moduleHelp = document.getElementById("module-help");
-        const formHost = document.getElementById("admin-form");
-        const tableHead = document.getElementById("admin-table-head");
-        const tableBody = document.getElementById("admin-table-body");
-        const adminSearch = document.getElementById("admin-search");
-        const adminPagination = document.getElementById("admin-pagination");
-        const newButton = document.getElementById("new-record-button");
         const accessProfile = document.getElementById("access-profile");
         const accessTableBody = document.getElementById("access-table-body");
+
+        function activePanel() {
+            return document.querySelector(`[data-module-panel="${state.module}"]`);
+        }
+
+        function activeForm() {
+            return activePanel()?.querySelector("[data-admin-form]");
+        }
+
+        function activeTableBody() {
+            return activePanel()?.querySelector("[data-admin-table-body]");
+        }
+
+        function activeSearch() {
+            return activePanel()?.querySelector(".admin-search");
+        }
 
         function simpleStringModule(title, help) {
             return {
@@ -221,113 +388,119 @@
 
         function renderModule() {
             const config = modules[state.module];
-            moduleTitle.textContent = config.title;
-            moduleHelp.textContent = config.help;
-            newButton.hidden = Boolean(config.readonly);
+            document.querySelectorAll("[data-module-panel]").forEach(panel => {
+                panel.hidden = panel.dataset.modulePanel !== state.module;
+            });
+            activePanel()?.querySelector(".new-record-button")?.toggleAttribute("hidden", Boolean(config.readonly));
             renderForm();
             renderTable();
         }
 
         function renderForm() {
             const config = modules[state.module];
-            if (config.readonly) {
-                formHost.innerHTML = "";
+            const form = activeForm();
+            if (!form) {
                 return;
             }
 
+            if (config.readonly) {
+                form.hidden = true;
+                return;
+            }
+
+            form.hidden = false;
             const record = state.editing || {};
             const isEditingRecord = state.editing?.[config.id] !== undefined && state.editing?.[config.id] !== null;
-            const actionFields = config.fields.filter(field => field.type === "checkbox");
-            const inputFields = config.fields.filter(field => field.type !== "checkbox");
-            formHost.innerHTML = `
-                ${inputFields.map(field => renderField(field, record)).join("")}
-                <div class="admin-form-actions">
-                    <div class="admin-form-checks">
-                        ${actionFields.map(field => renderField(field, record)).join("")}
-                    </div>
-                    <div class="admin-form-buttons">
-                        <button class="admin-secondary" type="button" id="cancel-record-button">${appIcon("cancel")}<span>Cancelar</span></button>
-                        <button class="admin-primary" type="button" id="save-record-button">${appIcon(isEditingRecord ? "save" : "plus")}<span>${isEditingRecord ? "Guardar" : "Crear"}</span></button>
-                    </div>
-                </div>`;
-
-            document.getElementById("cancel-record-button").addEventListener("click", () => {
-                state.editing = null;
-                renderForm();
-            });
-            document.getElementById("save-record-button").addEventListener("click", saveRecord);
+            config.fields.forEach(field => setFieldValue(field, record));
+            form.querySelector("[data-save-label]").textContent = isEditingRecord ? "Guardar" : "Crear";
         }
 
-        function renderField(field, record) {
+        function setFieldValue(field, record) {
+            const form = activeForm();
             const value = record[field.name] ?? field.defaultValue ?? "";
+
             if (field.type === "checkbox") {
                 const checked = value === true || value === "true" || value === "";
-                return `<label class="admin-check"><input data-field="${field.name}" type="checkbox" ${checked ? "checked" : ""} />${escapeHtml(field.label)}</label>`;
+                const input = form.querySelector(`[data-field="${field.name}"]`);
+                if (input) {
+                    input.checked = checked;
+                }
+                return;
             }
 
             if (field.type === "select") {
-                const items = state.options[field.source] || [];
-                return `
-                    <label class="admin-field">${escapeHtml(field.label)}
-                        <select data-field="${field.name}" ${field.required ? "required" : ""}>
-                            <option value="">Seleccionar</option>
-                            ${items.map(item => `<option value="${escapeHtml(item[field.value])}" ${String(item[field.value]) === String(value) ? "selected" : ""}>${escapeHtml(optionText(item, field))}</option>`).join("")}
-                        </select>
-                    </label>`;
+                populateSelect(field, value);
+                return;
             }
 
             if (field.type === "multiselect") {
+                renderMultiselect(field, record);
+                return;
+            }
+
+            const input = form.querySelector(`[data-field="${field.name}"]`);
+            if (!input) {
+                return;
+            }
+
+            input.value = field.type === "date" && value
+                ? String(value).slice(0, 10)
+                : value;
+        }
+
+        function populateSelect(field, value) {
+            const select = activeForm()?.querySelector(`[data-field="${field.name}"]`);
+            if (!select) {
+                return;
+            }
+
+            const items = state.options[field.source] || [];
+            select.innerHTML = `<option value="">Seleccionar</option>` + items.map(item => {
+                const optionValue = item[field.value];
+                const selected = String(optionValue) === String(value) ? "selected" : "";
+                return `<option value="${escapeHtml(optionValue)}" ${selected}>${escapeHtml(optionText(item, field))}</option>`;
+            }).join("");
+        }
+
+        function renderMultiselect(field, record) {
+            const control = activeForm()?.querySelector(`[data-multiselect="${field.name}"]`);
+            if (!control) {
+                return;
+            }
+
                 const items = state.options[field.source] || [];
                 const selected = new Set((record[field.name] || []).map(value => String(value)));
                 const selectedItems = items.filter(item => selected.has(String(optionValue(item, field))));
                 const summary = selectedItems.length === 0
                     ? "Seleccionar"
                     : `${selectedItems.length} seleccionado${selectedItems.length === 1 ? "" : "s"}`;
+
+            control.querySelector("[data-multiselect-summary]").textContent = summary;
+            control.querySelector("[data-multiselect-values]").innerHTML = selectedItems.map(item => `
+                <span class="admin-multiselect-chip" data-chip-value="${escapeHtml(optionValue(item, field))}">
+                    ${escapeHtml(optionText(item, field))}
+                    <button type="button" data-remove-multiselect="${field.name}" data-value="${escapeHtml(optionValue(item, field))}" aria-label="Quitar ${escapeHtml(optionText(item, field))}">x</button>
+                </span>`).join("");
+            control.querySelector("[data-multiselect-options]").innerHTML = items.map(item => {
+                const value = optionValue(item, field);
+                const text = optionText(item, field);
                 return `
-                    <fieldset class="admin-field admin-multi-field">
-                        <legend>${escapeHtml(field.label)}</legend>
-                        <div class="admin-multiselect" data-multiselect="${field.name}">
-                            <button class="admin-multiselect-button" type="button" data-multiselect-toggle aria-expanded="false">
-                                <span>${escapeHtml(summary)}</span>
-                            </button>
-                            <div class="admin-multiselect-values" data-multiselect-values>
-                                ${selectedItems.map(item => `
-                                    <span class="admin-multiselect-chip" data-chip-value="${escapeHtml(optionValue(item, field))}">
-                                        ${escapeHtml(optionText(item, field))}
-                                        <button type="button" data-remove-multiselect="${field.name}" data-value="${escapeHtml(optionValue(item, field))}" aria-label="Quitar ${escapeHtml(optionText(item, field))}">x</button>
-                                    </span>
-                                `).join("")}
-                            </div>
-                            <div class="admin-multiselect-dropdown" data-multiselect-dropdown hidden>
-                                <input class="admin-multiselect-search" type="search" placeholder="Buscar..." data-multiselect-search autocomplete="off">
-                                <div class="admin-multiselect-options" data-multiselect-options>
-                                    ${items.map(item => {
-                                        const value = optionValue(item, field);
-                                        const text = optionText(item, field);
-                                        return `
-                                            <button class="admin-multiselect-option ${selected.has(String(value)) ? "is-selected" : ""}" type="button" data-toggle-multiselect="${field.name}" data-value="${escapeHtml(value)}" data-search="${escapeHtml(text).toLowerCase()}">
-                                                <span>${escapeHtml(text)}</span>
-                                                <span class="admin-multiselect-mark">${selected.has(String(value)) ? "Seleccionado" : ""}</span>
-                                            </button>`;
-                                    }).join("")}
-                                </div>
-                            </div>
-                            ${selectedItems.map(item => `<input data-field="${field.name}" type="hidden" value="${escapeHtml(optionValue(item, field))}">`).join("")}
-                        </div>
-                    </fieldset>`;
-            }
-
-            if (field.type === "textarea") {
-                return `<label class="admin-field">${escapeHtml(field.label)}<textarea data-field="${field.name}" rows="2">${escapeHtml(value)}</textarea></label>`;
-            }
-
-            const hint = field.createOnlyHint ? `<span>${escapeHtml(field.createOnlyHint)}</span>` : "";
-            return `<label class="admin-field">${escapeHtml(field.label)}<input data-field="${field.name}" type="${field.type || "text"}" value="${escapeHtml(value)}" ${field.required ? "required" : ""} />${hint}</label>`;
+                    <button class="admin-multiselect-option ${selected.has(String(value)) ? "is-selected" : ""}" type="button" data-toggle-multiselect="${field.name}" data-value="${escapeHtml(value)}" data-search="${escapeHtml(text).toLowerCase()}">
+                        <span>${escapeHtml(text)}</span>
+                        <span class="admin-multiselect-mark">${selected.has(String(value)) ? "Seleccionado" : ""}</span>
+                    </button>`;
+            }).join("");
+            control.querySelectorAll(`[data-field="${field.name}"]`).forEach(input => input.remove());
+            control.insertAdjacentHTML("beforeend", selectedItems.map(item => `<input data-field="${field.name}" type="hidden" value="${escapeHtml(optionValue(item, field))}">`).join(""));
         }
 
         function renderTable() {
             const config = modules[state.module];
-            tableHead.innerHTML = `<tr>${config.columns.map(([, label]) => `<th>${escapeHtml(label)}</th>`).join("")}<th>Acciones</th></tr>`;
+            const tableBody = activeTableBody();
+            if (!tableBody) {
+                return;
+            }
+
             tableBody.innerHTML = state.records.length ? state.records.map(record => `
                 <tr>
                     ${config.columns.map(column => `<td>${escapeHtml(formatValue(record, column))}</td>`).join("")}
@@ -341,39 +514,36 @@
         }
 
         function renderAdminPagination() {
-            if (state.module === "accesos") {
-                adminPagination.innerHTML = "";
+            const pagination = activePanel()?.querySelector(".admin-pagination");
+            if (!pagination) {
                 return;
             }
 
-            adminPagination.innerHTML = `
-                <span>Pagina ${state.page} de ${state.totalPages}</span>
-                <div class="admin-pagination-actions">
-                    <label>
-                        <span>Registros</span>
-                        <select id="admin-page-size">
-                            <option value="10" ${state.pageSize === 10 ? "selected" : ""}>10</option>
-                            <option value="20" ${state.pageSize === 20 ? "selected" : ""}>20</option>
-                            <option value="50" ${state.pageSize === 50 ? "selected" : ""}>50</option>
-                        </select>
-                    </label>
-                    <button type="button" data-admin-page="previous" ${state.page <= 1 ? "disabled" : ""}>Anterior</button>
-                    <span class="admin-pagination-current">${state.page}</span>
-                    <button type="button" data-admin-page="next" ${state.page >= state.totalPages ? "disabled" : ""}>Siguiente</button>
-                </div>`;
+            if (state.module === "accesos") {
+                pagination.hidden = true;
+                return;
+            }
+
+            pagination.hidden = false;
+            pagination.querySelector("[data-page-summary]").textContent = `Pagina ${state.page} de ${state.totalPages}`;
+            pagination.querySelector("[data-page-current]").textContent = state.page;
+            pagination.querySelector(".admin-page-size").value = String(state.pageSize);
+            pagination.querySelector('[data-admin-page="previous"]').disabled = state.page <= 1;
+            pagination.querySelector('[data-admin-page="next"]').disabled = state.page >= state.totalPages;
         }
 
         function collectPayload() {
             const config = modules[state.module];
+            const form = activeForm();
             const payload = {};
             for (const field of config.fields) {
                 if (field.type === "multiselect") {
-                    payload[field.name] = Array.from(formHost.querySelectorAll(`[data-field="${field.name}"]`))
+                    payload[field.name] = Array.from(form.querySelectorAll(`[data-field="${field.name}"]`))
                         .map(item => coerceOptionValue(item.value));
                     continue;
                 }
 
-                const input = formHost.querySelector(`[data-field="${field.name}"]`);
+                const input = form.querySelector(`[data-field="${field.name}"]`);
                 if (!input) {
                     continue;
                 }
@@ -397,7 +567,7 @@
         }
 
         function closeMultiselects(except = null) {
-            formHost.querySelectorAll("[data-multiselect]").forEach(control => {
+            activeForm()?.querySelectorAll("[data-multiselect]").forEach(control => {
                 if (control === except) {
                     return;
                 }
@@ -407,7 +577,7 @@
             });
         }
 
-        formHost.addEventListener("click", event => {
+        crudPanel.addEventListener("click", event => {
             const toggle = event.target.closest("[data-multiselect-toggle]");
             if (toggle) {
                 const control = toggle.closest("[data-multiselect]");
@@ -431,10 +601,27 @@
             const remove = event.target.closest("[data-remove-multiselect]");
             if (remove) {
                 toggleMultiselectValue(remove.dataset.removeMultiselect, remove.dataset.value);
+                return;
+            }
+
+            if (event.target.closest(".cancel-record-button")) {
+                state.editing = null;
+                renderForm();
+                return;
+            }
+
+            if (event.target.closest(".save-record-button")) {
+                saveRecord();
+                return;
+            }
+
+            if (event.target.closest(".new-record-button")) {
+                state.editing = null;
+                renderForm();
             }
         });
 
-        formHost.addEventListener("input", event => {
+        crudPanel.addEventListener("input", event => {
             if (!event.target.matches("[data-multiselect-search]")) {
                 return;
             }
@@ -463,7 +650,7 @@
             state.editing = state.editing ? { ...state.editing, ...record } : record;
             renderForm();
 
-            const control = formHost.querySelector(`[data-multiselect="${field.name}"]`);
+            const control = activeForm()?.querySelector(`[data-multiselect="${field.name}"]`);
             control?.querySelector("[data-multiselect-dropdown]")?.removeAttribute("hidden");
             control?.querySelector("[data-multiselect-toggle]")?.setAttribute("aria-expanded", "true");
             control?.querySelector("[data-multiselect-search]")?.focus();
@@ -660,37 +847,35 @@
                 state.module = button.dataset.module;
                 state.search = "";
                 state.page = 1;
-                adminSearch.value = "";
+                const search = activeSearch();
+                if (search) {
+                    search.value = "";
+                }
                 crudPanel.hidden = state.module === "accesos";
                 accessPanel.hidden = state.module !== "accesos";
                 await loadRecords();
             });
         });
 
-        document.getElementById("admin-search-button").addEventListener("click", async () => {
-            state.search = adminSearch.value.trim();
-            state.page = 1;
-            await loadRecords();
-        });
-
-        document.getElementById("admin-clear-search-button").addEventListener("click", async () => {
-            adminSearch.value = "";
-            state.search = "";
-            state.page = 1;
-            await loadRecords();
-        });
-
-        adminSearch.addEventListener("keydown", async event => {
-            if (event.key !== "Enter") {
+        crudPanel.addEventListener("click", async event => {
+            if (event.target.closest(".admin-search-button")) {
+                state.search = activeSearch()?.value.trim() || "";
+                state.page = 1;
+                await loadRecords();
                 return;
             }
 
-            state.search = adminSearch.value.trim();
-            state.page = 1;
-            await loadRecords();
-        });
+            if (event.target.closest(".admin-clear-search-button")) {
+                const search = activeSearch();
+                if (search) {
+                    search.value = "";
+                }
+                state.search = "";
+                state.page = 1;
+                await loadRecords();
+                return;
+            }
 
-        adminPagination.addEventListener("click", async event => {
             const button = event.target.closest("[data-admin-page]");
             if (!button) {
                 return;
@@ -700,8 +885,18 @@
             await loadRecords();
         });
 
-        adminPagination.addEventListener("change", async event => {
-            const select = event.target.closest("#admin-page-size");
+        crudPanel.addEventListener("keydown", async event => {
+            if (!event.target.matches(".admin-search") || event.key !== "Enter") {
+                return;
+            }
+
+            state.search = activeSearch()?.value.trim() || "";
+            state.page = 1;
+            await loadRecords();
+        });
+
+        crudPanel.addEventListener("change", async event => {
+            const select = event.target.closest(".admin-page-size");
             if (!select) {
                 return;
             }
@@ -711,10 +906,6 @@
             await loadRecords();
         });
 
-        newButton.addEventListener("click", () => {
-            state.editing = null;
-            renderForm();
-        });
         accessProfile.addEventListener("change", loadAccessTables);
 
         refreshOptions().then(loadRecords);

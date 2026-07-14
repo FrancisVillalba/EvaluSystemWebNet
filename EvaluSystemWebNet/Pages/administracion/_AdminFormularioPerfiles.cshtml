@@ -1,0 +1,9 @@
+<section class="admin-panel" data-module-panel="perfiles" hidden>
+    <div class="admin-panel-header"><div><h2>Perfiles</h2><p>Define los perfiles de trabajo.</p></div><button class="admin-primary new-record-button" type="button"><svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14" /><path d="M5 12h14" /></svg><span>Nuevo</span></button></div>
+    <form class="admin-form" data-admin-form>
+        <label class="admin-field">Nombre<input data-field="nombre" type="text" required /></label>
+        <label class="admin-field">Descripcion<input data-field="descripcion" type="text" /></label>
+        <div class="admin-form-actions"><div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+    </form>
+    <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Descripcion", "Estado" })' />
+</section>

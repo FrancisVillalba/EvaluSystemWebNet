@@ -1,0 +1,30 @@
+@model string[]
+
+<div class="admin-list-toolbar">
+    <label>Buscar<input class="admin-search" type="search" placeholder="Buscar en este modulo" autocomplete="off" /></label>
+    <button class="admin-primary admin-search-button" type="button">Buscar</button>
+    <button class="admin-secondary admin-clear-search-button" type="button">Limpiar</button>
+</div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                @foreach (var column in Model)
+                {
+                    <th>@column</th>
+                }
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody data-admin-table-body></tbody>
+    </table>
+</div>
+<div class="admin-pagination" aria-live="polite">
+    <span data-page-summary>Pagina 1 de 1</span>
+    <div class="admin-pagination-actions">
+        <label><span>Registros</span><select class="admin-page-size"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></label>
+        <button type="button" data-admin-page="previous">Anterior</button>
+        <span class="admin-pagination-current" data-page-current>1</span>
+        <button type="button" data-admin-page="next">Siguiente</button>
+    </div>
+</div>

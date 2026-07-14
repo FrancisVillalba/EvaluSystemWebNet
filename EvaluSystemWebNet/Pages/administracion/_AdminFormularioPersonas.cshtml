@@ -1,0 +1,15 @@
+<section class="admin-panel" data-module-panel="personas" hidden>
+    <div class="admin-panel-header"><div><h2>Personas</h2><p>Datos base de personas vinculadas a usuarios.</p></div><button class="admin-primary new-record-button" type="button"><svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14" /><path d="M5 12h14" /></svg><span>Nuevo</span></button></div>
+    <form class="admin-form" data-admin-form>
+        <label class="admin-field">Primer nombre<input data-field="primerNombre" type="text" /></label>
+        <label class="admin-field">Segundo nombre<input data-field="segundoNombre" type="text" /></label>
+        <label class="admin-field">Primer apellido<input data-field="primerApellido" type="text" /></label>
+        <label class="admin-field">Segundo apellido<input data-field="segundoApellido" type="text" /></label>
+        <label class="admin-field">Tipo documento<select data-field="tipoDocumentoId" data-source="tiposDocumento"><option value="">Seleccionar</option></select></label>
+        <label class="admin-field">Documento<input data-field="documento" type="text" /></label>
+        <label class="admin-field">Telefono / WhatsApp<input data-field="telefono" type="text" /></label>
+        <label class="admin-field">Fecha cumpleanos<input data-field="fechaCumpleanios" type="date" /></label>
+        <div class="admin-form-actions"><div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+    </form>
+    <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Apellido", "Documento", "Telefono", "Estado" })' />
+</section>

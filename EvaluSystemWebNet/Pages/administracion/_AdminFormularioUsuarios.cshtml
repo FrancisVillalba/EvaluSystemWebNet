@@ -1,0 +1,33 @@
+<section class="admin-panel" data-module-panel="usuarios">
+    <div class="admin-panel-header">
+        <div>
+            <h2>Usuarios</h2>
+            <p>Crea y mantiene los usuarios del sistema.</p>
+        </div>
+        <button class="admin-primary new-record-button" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+            <span>Nuevo</span>
+        </button>
+    </div>
+    <form class="admin-form" data-admin-form>
+        <label class="admin-field">Usuario<input data-field="nombreUsuario" type="text" required /></label>
+        <label class="admin-field">Contrasena<input data-field="pass" type="password" /><span>Dejar vacio para no cambiar</span></label>
+        <label class="admin-field">Persona<select data-field="personaId" data-source="personas"><option value="">Seleccionar</option></select></label>
+        <fieldset class="admin-field admin-multi-field" data-multiselect-field="perfilIds">
+            <legend>Perfiles</legend>
+            <div class="admin-multiselect" data-multiselect="perfilIds">
+                <button class="admin-multiselect-button" type="button" data-multiselect-toggle aria-expanded="false"><span data-multiselect-summary>Seleccionar</span></button>
+                <div class="admin-multiselect-values" data-multiselect-values></div>
+                <div class="admin-multiselect-dropdown" data-multiselect-dropdown hidden>
+                    <input class="admin-multiselect-search" type="search" placeholder="Buscar..." data-multiselect-search autocomplete="off">
+                    <div class="admin-multiselect-options" data-multiselect-options></div>
+                </div>
+            </div>
+        </fieldset>
+        <div class="admin-form-actions">
+            <div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div>
+            <div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div>
+        </div>
+    </form>
+    <partial name="_AdminFormularioTabla" model='@(new[] { "Usuario", "Persona", "Perfiles", "Estado" })' />
+</section>
