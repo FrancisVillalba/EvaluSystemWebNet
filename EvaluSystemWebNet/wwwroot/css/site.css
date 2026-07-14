@@ -919,8 +919,58 @@ body.modal-page-body {
   gap: 16px;
 }
 
+.grouped-entry-fields {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.panel-entry-fields {
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 18px;
+}
+
 .entry-fields .field {
   min-width: 0;
+}
+
+.order-field-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 0 16px;
+  border: 0;
+  border-top: 1px solid #d9e8ec;
+}
+
+.order-field-group:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.order-field-group legend {
+  grid-column: 1 / -1;
+  color: #073f45;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.payment-group .compact-proof-field,
+.notes-group .notes-field {
+  grid-column: 1 / -1;
+}
+
+.delivery-group {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.delivery-group .transportadora-fee-message {
+  grid-column: 1 / -1;
 }
 
 .entry-fields .notes-field {
@@ -929,6 +979,22 @@ body.modal-page-body {
 
 .entry-fields .compact-proof-field {
   grid-column: span 3;
+}
+
+.transportadora-fee-message {
+  align-self: end;
+  border: 1px solid #f3b2b2;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #9f1f1f;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 10px 12px;
+}
+
+.transportadora-fee-message strong {
+  white-space: nowrap;
 }
 
 .client-field {
@@ -1074,7 +1140,7 @@ body.modal-page-body {
 
 .entry-top-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 210px);
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 250px) minmax(210px, 250px);
   align-items: stretch;
   gap: 16px;
 }
@@ -1084,6 +1150,34 @@ body.modal-page-body {
   grid-template-columns: 1fr;
   gap: 8px;
   padding: 18px;
+}
+
+.order-actions-section .action-state-field {
+  display: grid;
+  gap: 8px;
+  margin: 0 18px 18px;
+}
+
+.order-delivery-body {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.order-notes-body {
+  padding: 18px;
+}
+
+.order-notes-body .field {
+  min-width: 0;
+}
+
+.order-delivery-body .field {
+  min-width: 0;
+}
+
+.order-delivery-body .transportadora-fee-message {
+  align-self: stretch;
 }
 
 .order-action-button {
@@ -1133,21 +1227,24 @@ body.modal-page-body {
   box-shadow: 0 10px 22px rgba(15, 39, 53, 0.12);
 }
 
-.entry-fields .state-field {
+.entry-fields .state-field,
+.action-state-field {
   background: #eef9f7;
   border: 1px solid #b8e3dd;
   border-radius: 8px;
   padding: 10px;
 }
 
-.entry-fields .state-field select {
+.entry-fields .state-field select,
+.action-state-field select {
   background: #f7fffd;
   border-color: #58bbae;
   color: #073f45;
   font-weight: 800;
 }
 
-.entry-fields .state-field select:disabled {
+.entry-fields .state-field select:disabled,
+.action-state-field select:disabled {
   cursor: not-allowed;
   opacity: 1;
   background: #eef9f7;
@@ -1500,7 +1597,17 @@ body.modal-page-body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .grouped-entry-fields,
+  .order-field-group,
+  .delivery-group {
+    grid-template-columns: 1fr;
+  }
+
   .entry-fields .compact-proof-field {
+    grid-column: 1 / -1;
+  }
+
+  .transportadora-fee-message {
     grid-column: 1 / -1;
   }
 
@@ -2947,6 +3054,17 @@ body.modal-page-body {
 
 .reports-table-wrap {
   overflow-x: auto;
+}
+
+.management-table-section {
+  margin-top: 28px;
+}
+
+.reports-table-title {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .reports-table {

@@ -34,6 +34,7 @@ public record PedidoView(
     string Delivery,
     string DeliveryMethodId,
     string DeliveryMethod,
+    decimal MontoEnvioTransportadora,
     string DeliveryUser,
     string DeliveryTakenAt,
     string PaymentMethod,

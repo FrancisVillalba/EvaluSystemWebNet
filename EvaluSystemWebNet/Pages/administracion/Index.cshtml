@@ -110,12 +110,11 @@
             },
             personas: {
                 title: "Personas",
-                help: "Datos base de personas vinculadas a usuarios y perfiles.",
+                help: "Datos base de personas vinculadas a usuarios.",
                 id: "id",
                 columns: [
                     ["primerNombre", "Nombre"],
                     ["primerApellido", "Apellido"],
-                    ["perfil", "Perfil"],
                     ["documento", "Documento"],
                     ["telefono", "Telefono"],
                     ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
@@ -125,7 +124,6 @@
                     { name: "segundoNombre", label: "Segundo nombre" },
                     { name: "primerApellido", label: "Primer apellido" },
                     { name: "segundoApellido", label: "Segundo apellido" },
-                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre" },
                     { name: "tipoDocumentoId", label: "Tipo documento", type: "select", source: "tiposDocumento", value: "id", text: "nombre" },
                     { name: "documento", label: "Documento" },
                     { name: "telefono", label: "Telefono / WhatsApp" },
@@ -497,9 +495,10 @@
             const config = modules[state.module];
             const payload = collectPayload();
             const id = state.editing?.[config.id];
+            const isEditing = id !== undefined && id !== null;
             const response = await withAppLoading("Guardando...", async function () {
-                return await fetch(id ? `/api/administracion/${state.module}/${encodeURIComponent(id)}` : `/api/administracion/${state.module}`, {
-                    method: id ? "PUT" : "POST",
+                return await fetch(isEditing ? `/api/administracion/${state.module}/${encodeURIComponent(id)}` : `/api/administracion/${state.module}`, {
+                    method: isEditing ? "PUT" : "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });

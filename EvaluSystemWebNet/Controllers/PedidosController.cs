@@ -248,6 +248,7 @@ public class PedidosController : ControllerBase
             delivery,
             pedido.MetodoEntrega ?? string.Empty,
             MetodoEntregaLabel(pedido.MetodoEntrega),
+            pedido.MontoEnvioTransportadora,
             pedido.DeliveryUsuario ?? string.Empty,
             pedido.FechaTomaDelivery?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
             pedido.FormaPago ?? pedido.FormaPagoId,

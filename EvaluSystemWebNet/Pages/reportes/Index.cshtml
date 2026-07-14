@@ -11,8 +11,10 @@
         <aside class="reports-modules" aria-label="Lista de reportes">
             <button class="active" type="button" data-report-module="commissions">Comisiones por vendedor</button>
             <button type="button" data-report-module="external-commissions">Comisiones vendedores externos</button>
+            <button type="button" data-report-module="team-leader-commissions">Comisiones Team Leader</button>
             <button type="button" data-report-module="payment-lots">Pagos generados</button>
             <button type="button" data-report-module="shipping">Envio de pedidos</button>
+            <button type="button" data-report-module="management-summary">Resumen gerencial</button>
         </aside>
 
         <section id="commissions-panel" class="reports-panel">
@@ -49,6 +51,58 @@
             </div>
 
             <div id="seller-summary" class="reports-summary"></div>
+        </section>
+
+        <section id="management-summary-panel" class="reports-panel" hidden>
+            <div class="reports-panel-header">
+                <div>
+                    <h2>Resumen gerencial</h2>
+                    <p>Indicadores generales de ventas, comisiones, pedidos, deuda y entregas.</p>
+                </div>
+            </div>
+
+            <div class="reports-filters">
+                <label for="management-date-from">
+                    Fecha desde
+                    <input id="management-date-from" type="date" />
+                </label>
+                <label for="management-date-to">
+                    Fecha hasta
+                    <input id="management-date-to" type="date" />
+                </label>
+                <button id="search-management-summary" type="button">Buscar</button>
+            </div>
+
+            <div id="management-kpis" class="reports-summary"></div>
+
+            <div class="reports-table-wrap management-table-section">
+                <h3 class="reports-table-title">Total de ventas por maquina</h3>
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Maquina</th>
+                            <th>Pedidos</th>
+                            <th>Cantidad</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="management-machine-body"></tbody>
+                </table>
+            </div>
+
+            <div class="reports-table-wrap management-table-section">
+                <h3 class="reports-table-title">Total de ventas por perfil</h3>
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Perfil</th>
+                            <th>Pedidos</th>
+                            <th>Total vendido</th>
+                        </tr>
+                    </thead>
+                    <tbody id="management-commissions-body"></tbody>
+                </table>
+            </div>
         </section>
 
         <section id="shipping-panel" class="reports-panel" hidden>
@@ -160,9 +214,14 @@
         const shippingDateToInput = document.getElementById("shipping-date-to");
         const shippingClientInput = document.getElementById("shipping-client");
         const shippingMethodInput = document.getElementById("shipping-method");
+        const managementDateFromInput = document.getElementById("management-date-from");
+        const managementDateToInput = document.getElementById("management-date-to");
+        const managementKpis = document.getElementById("management-kpis");
+        const managementMachineBody = document.getElementById("management-machine-body");
+        const managementCommissionsBody = document.getElementById("management-commissions-body");
         const sellerUserNames = new Map();
         let currentCommissionScope = "vendedores";
-        let reportSellerOptions = { vendedores: [], externos: [] };
+        let reportSellerOptions = { vendedores: [], externos: [], teamLeaders: [] };
 
         function localDateValue(date = new Date()) {
             const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -285,6 +344,19 @@
             return params;
         }
 
+        function buildManagementParams() {
+            const params = new URLSearchParams();
+            if (managementDateFromInput.value) {
+                params.set("dateFrom", managementDateFromInput.value);
+            }
+
+            if (managementDateToInput.value) {
+                params.set("dateTo", managementDateToInput.value);
+            }
+
+            return params;
+        }
+
         async function loadOptions() {
             const response = await fetch("/api/reportes/opciones");
             if (!response.ok) {
@@ -295,10 +367,11 @@
             const options = await response.json();
             reportSellerOptions = {
                 vendedores: options.vendedores || [],
-                externos: options.vendedoresExternos || []
+                externos: options.vendedoresExternos || [],
+                teamLeaders: options.teamLeaders || []
             };
             sellerUserNames.clear();
-            [...reportSellerOptions.vendedores, ...reportSellerOptions.externos].forEach(seller => {
+            [...reportSellerOptions.vendedores, ...reportSellerOptions.externos, ...reportSellerOptions.teamLeaders].forEach(seller => {
                 sellerUserNames.set(String(seller.id), seller.nombreUsuario || seller.persona || `vendedor-${seller.id}`);
             });
 
@@ -308,11 +381,14 @@
         function renderSellerFilter() {
             const sellers = currentCommissionScope === "externos"
                 ? reportSellerOptions.externos
-                : reportSellerOptions.vendedores;
+                : currentCommissionScope === "team-leaders"
+                    ? reportSellerOptions.teamLeaders
+                    : reportSellerOptions.vendedores;
 
             sellerFilter.innerHTML = `<option value="">Todos</option>` + sellers
                 .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
                 .join("");
+
         }
 
         async function loadReport() {
@@ -351,6 +427,19 @@
                 }
 
                 renderShippingReport(await response.json());
+            });
+        }
+
+        async function loadManagementSummary() {
+            await withAppLoading("Cargando resumen gerencial...", async function () {
+                const response = await fetch(`/api/reportes/resumen-gerencial?${buildManagementParams().toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo cargar el resumen gerencial.", "error");
+                    return;
+                }
+
+                renderManagementSummary(await response.json());
             });
         }
 
@@ -434,6 +523,55 @@
                 : `<tr><td colspan="8">No hay pedidos para los filtros seleccionados.</td></tr>`;
         }
 
+        function renderManagementSummary(report) {
+            const maquinas = report.ventasPorMaquina || [];
+            const comisiones = report.comisionesPorPerfil || [];
+            const totalNeto = Math.max(Number(report.totalVendido || 0) - Number(report.totalComisionPagada || 0), 0);
+
+            managementKpis.innerHTML = `
+                <article>
+                    <div class="reports-card-info">
+                        <span>Total vendido</span>
+                        <strong>${formatMoney(report.totalVendido)}</strong>
+                        <small>${report.cantidadPedidos || 0} pedidos</small>
+                        <small>Promedio ${formatMoney(report.promedioPedido)}</small>
+                    </div>
+                </article>
+                <article>
+                    <div class="reports-card-info">
+                        <span>Total neto</span>
+                        <strong>${formatMoney(totalNeto)}</strong>
+                        <small>Total vendido menos comision pagada</small>
+                    </div>
+                </article>
+                <article>
+                    <div class="reports-card-info">
+                        <span>Total de comision pagado</span>
+                        <strong>${formatMoney(report.totalComisionPagada)}</strong>
+                        <small>${formatDate(report.fechaDesde)} al ${formatDate(report.fechaHasta)}</small>
+                    </div>
+                </article>`;
+
+            managementMachineBody.innerHTML = maquinas.length
+                ? maquinas.map(item => `
+                    <tr>
+                        <td><strong>${escapeHtml(item.maquina)}</strong></td>
+                        <td>${item.cantidadPedidos}</td>
+                        <td>${Number(item.cantidad || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                        <td>${formatMoney(item.totalVenta)}</td>
+                    </tr>`).join("")
+                : `<tr><td colspan="4">No hay ventas por maquina para los filtros seleccionados.</td></tr>`;
+
+            managementCommissionsBody.innerHTML = comisiones.length
+                ? comisiones.map(item => `
+                    <tr>
+                        <td><strong>${escapeHtml(item.perfil)}</strong></td>
+                        <td>${item.cantidadPedidos}</td>
+                        <td>${formatMoney(item.totalVendido)}</td>
+                    </tr>`).join("")
+                : `<tr><td colspan="3">No hay ventas por perfil para los filtros seleccionados.</td></tr>`;
+        }
+
         function statusClass(value) {
             return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
         }
@@ -509,8 +647,11 @@
         function setReportModule(module) {
             const isLots = module === "payment-lots";
             const isShipping = module === "shipping";
+            const isManagement = module === "management-summary";
             const isExternalCommissions = module === "external-commissions";
-            document.getElementById("commissions-panel").hidden = isLots || isShipping;
+            const isTeamLeaderCommissions = module === "team-leader-commissions";
+            document.getElementById("commissions-panel").hidden = isLots || isShipping || isManagement;
+            document.getElementById("management-summary-panel").hidden = !isManagement;
             document.getElementById("shipping-panel").hidden = !isShipping;
             document.getElementById("payment-lots-panel").hidden = !isLots;
             document.querySelectorAll("[data-report-module]").forEach(button => {
@@ -521,12 +662,24 @@
                 loadPaymentLots();
             } else if (isShipping) {
                 loadShippingReport();
+            } else if (isManagement) {
+                loadManagementSummary();
             } else {
-                currentCommissionScope = isExternalCommissions ? "externos" : "vendedores";
-                commissionsTitle.textContent = isExternalCommissions ? "Comisiones vendedores externos" : "Comisiones por vendedor";
-                commissionsDescription.textContent = isExternalCommissions
-                    ? "Total vendido y detalle de productos para liquidar comisiones de vendedores externos."
-                    : "Total vendido y detalle de productos para liquidar comisiones.";
+                currentCommissionScope = isTeamLeaderCommissions
+                    ? "team-leaders"
+                    : isExternalCommissions
+                        ? "externos"
+                        : "vendedores";
+                commissionsTitle.textContent = isTeamLeaderCommissions
+                    ? "Comisiones Team Leader"
+                    : isExternalCommissions
+                        ? "Comisiones vendedores externos"
+                        : "Comisiones por vendedor";
+                commissionsDescription.textContent = isTeamLeaderCommissions
+                    ? "Comision de Team Leader calculada sobre las ventas de sus vendedores externos."
+                    : isExternalCommissions
+                        ? "Total vendido y detalle de productos para liquidar comisiones de vendedores externos."
+                        : "Total vendido y detalle de productos para liquidar comisiones.";
                 sellerFilter.value = "";
                 renderSellerFilter();
                 loadReport();
@@ -537,9 +690,12 @@
         dateToInput.value = localDateValue();
         shippingDateFromInput.value = localDateValue();
         shippingDateToInput.value = localDateValue();
+        managementDateFromInput.value = monthStartValue();
+        managementDateToInput.value = localDateValue();
 
         document.getElementById("search-report").addEventListener("click", loadReport);
         document.getElementById("search-shipping-report").addEventListener("click", loadShippingReport);
+        document.getElementById("search-management-summary").addEventListener("click", loadManagementSummary);
         document.getElementById("download-bank-txt").addEventListener("click", () => downloadReport("txt", sellerFilter.value, sellerFilter.selectedOptions[0]?.textContent || "todos"));
         document.getElementById("refresh-payment-lots").addEventListener("click", loadPaymentLots);
         document.querySelectorAll("[data-report-module]").forEach(button => {

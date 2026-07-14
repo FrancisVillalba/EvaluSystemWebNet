@@ -38,8 +38,11 @@ public class ReportesController : ControllerBase
         var vendedoresExternos = usuarios
             .Where(vendedor => vendedoresExternosIds.Contains(vendedor.Id))
             .ToList();
+        var teamLeaders = usuarios
+            .Where(IsPerfilTeamLeader)
+            .ToList();
 
-        return Ok(new { vendedores, vendedoresExternos });
+        return Ok(new { vendedores, vendedoresExternos, teamLeaders });
     }
 
     [HttpGet("comisiones-vendedores")]
@@ -118,6 +121,23 @@ public class ReportesController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo cargar el reporte de envios." });
     }
 
+    [HttpGet("resumen-gerencial")]
+    public async Task<ActionResult<ReporteResumenGerencialDto>> GetResumenGerencial(
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] int? vendedorId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId);
+        var result = await _backendApiClient.GetResultAsync<ReporteResumenGerencialDto>(
+            $"api/Reportes/resumen-gerencial?{filters}",
+            cancellationToken);
+
+        return result.IsSuccess && result.Value is not null
+            ? Ok(result.Value)
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo cargar el resumen gerencial." });
+    }
+
     [HttpGet("lotes-pago/{id:int}/txt")]
     public async Task<IActionResult> DownloadLotePagoTxt(int id, CancellationToken cancellationToken)
     {
@@ -181,16 +201,33 @@ public class ReportesController : ControllerBase
             perfil.Contains("ventas", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsPerfilTeamLeader(UsuarioDto usuario)
+    {
+        var perfil = $"{usuario.Perfil} {usuario.Perfiles}";
+        return perfil.Contains("team leader", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsExternalScope(string? scope)
     {
         return scope is not null &&
             (scope.Equals("externos", StringComparison.OrdinalIgnoreCase) ||
              scope.Equals("external", StringComparison.OrdinalIgnoreCase) ||
-             scope.Equals("vendedores-externos", StringComparison.OrdinalIgnoreCase));
+             scope.Equals("vendedores-externos", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("team-leaders", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("teamleader", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("team-leader", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string NormalizeCommissionsScope(string? scope)
     {
+        if (scope is not null &&
+            (scope.Equals("team-leaders", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("teamleader", StringComparison.OrdinalIgnoreCase) ||
+             scope.Equals("team-leader", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "team-leaders";
+        }
+
         return IsExternalScope(scope) ? "externos" : "vendedores";
     }
 

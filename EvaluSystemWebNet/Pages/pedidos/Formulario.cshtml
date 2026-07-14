@@ -20,54 +20,80 @@
                             <button class="back-list-button" type="button" onclick="closeEmbeddedForm()">Volver a la lista</button>
                         </div>
 
-                        <div class="entry-fields">
-                            <label class="field client-field" for="order-client">
-                                Cliente
-                                <select id="order-client" class="select2-hidden-select">
-                                    <option value="">Seleccionar cliente</option>
-                                </select>
-                                <div id="client-select2" class="client-select2">
-                                    <button id="client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
-                                        <span id="client-select2-label">Seleccionar cliente</span>
-                                    </button>
-                                    <div id="client-select2-dropdown" class="client-select2-dropdown" hidden>
-                                        <input id="client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
-                                        <div id="client-select2-options" class="client-select2-options" role="listbox"></div>
+                        <div class="entry-fields panel-entry-fields">
+                            <fieldset class="order-field-group order-data-group">
+                                <legend>Datos del pedido</legend>
+                                <label class="field client-field" for="order-client">
+                                    Cliente
+                                    <select id="order-client" class="select2-hidden-select">
+                                        <option value="">Seleccionar cliente</option>
+                                    </select>
+                                    <div id="client-select2" class="client-select2">
+                                        <button id="client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                            <span id="client-select2-label">Seleccionar cliente</span>
+                                        </button>
+                                        <div id="client-select2-dropdown" class="client-select2-dropdown" hidden>
+                                            <input id="client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                                            <div id="client-select2-options" class="client-select2-options" role="listbox"></div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="field" for="order-seller">
+                                    Vendedor
+                                    <select id="order-seller" required>
+                                        <option value="">Seleccionar vendedor</option>
+                                    </select>
+                                </label>
+
+                                <label class="field" for="order-delivery">
+                                    Fecha entrega
+                                    <input id="order-delivery" required type="date" />
+                                </label>
+                            </fieldset>
+
+                            <fieldset class="order-field-group payment-group">
+                                <legend>Pago</legend>
+                                <label class="field" for="payment-method">
+                                    Forma de pago
+                                    <select id="payment-method">
+                                        <option value="">Seleccionar forma de pago</option>
+                                    </select>
+                                </label>
+
+                                <label class="field" for="payment-status">
+                                    Estado de pago
+                                    <select id="payment-status">
+                                        <option value="">Seleccionar estado de pago</option>
+                                    </select>
+                                </label>
+
+                                <label class="field" for="paid-amount">
+                                    Monto pagado
+                                    <input id="paid-amount" inputmode="numeric" placeholder="0" />
+                                </label>
+
+                                <div class="field payment-proof-field compact-proof-field">
+                                    <label for="payment-proof">Comprobante de pago</label>
+                                    <div class="file-control payment-proof-control">
+                                        <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
+                                        <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
+                                        <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
+                                        <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                                <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
+                                            </svg>
+                                        </a>
                                     </div>
                                 </div>
-                            </label>
+                            </fieldset>
+                        </div>
+                    </section>
 
-                            <label class="field" for="payment-method">
-                                Forma de pago
-                                <select id="payment-method">
-                                    <option value="">Seleccionar forma de pago</option>
-                                </select>
-                            </label>
+                    <section class="entry-section order-delivery-section" aria-label="Entrega del pedido">
+                        <div class="section-title">Entrega</div>
 
-                            <label class="field" for="order-seller">
-                                Vendedor
-                                <select id="order-seller" required>
-                                    <option value="">Seleccionar vendedor</option>
-                                </select>
-                            </label>
-
-                            <label class="field" for="order-delivery">
-                                Fecha entrega
-                                <input id="order-delivery" required type="date" />
-                            </label>
-
-                            <label class="field" for="paid-amount">
-                                Monto pagado
-                                <input id="paid-amount" inputmode="numeric" placeholder="0" />
-                            </label>
-
-                            <label class="field" for="payment-status">
-                                Estado de pago
-                                <select id="payment-status">
-                                    <option value="">Seleccionar estado de pago</option>
-                                </select>
-                            </label>
-
+                        <div class="order-delivery-body">
                             <label class="field" for="delivery-method">
                                 Forma de entrega
                                 <select id="delivery-method">
@@ -84,31 +110,9 @@
                                 <input id="delivery-user" readonly placeholder="Sin tomar" />
                             </label>
 
-                            <label class="field state-field" for="order-sale-status">
-                                Estado
-                                <select id="order-sale-status">
-                                    <option value="">Seleccionar estado</option>
-                                </select>
-                            </label>
-
-                            <div class="field payment-proof-field compact-proof-field">
-                                <label for="payment-proof">Comprobante de pago</label>
-                                <div class="file-control payment-proof-control">
-                                    <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
-                                    <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
-                                    <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
-                                    <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
-                                        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                                            <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
-                                        </svg>
-                                    </a>
-                                </div>
+                            <div id="transportadora-fee-message" class="transportadora-fee-message" aria-live="polite" hidden>
+                                Al ser por transportadora tiene un costo adicional de <strong id="transportadora-fee-label">Gs. 0</strong>.
                             </div>
-
-                            <label class="field notes-field" for="order-notes">
-                                Observacion
-                                <textarea id="order-notes" rows="2" placeholder="Notas del pedido"></textarea>
-                            </label>
                         </div>
                     </section>
 
@@ -121,8 +125,27 @@
                             <button id="state-next-action" class="order-action-button order-action-next" type="button">Siguiente</button>
                             <button id="state-delete-action" class="order-action-button order-action-delete" type="button">Eliminar</button>
                         </div>
+
+                        <label class="field state-field action-state-field" for="order-sale-status">
+                            Estado
+                            <select id="order-sale-status">
+                                <option value="">Seleccionar estado</option>
+                            </select>
+                        </label>
+
                     </section>
                 </div>
+
+                <section class="entry-section order-notes-section" aria-label="Observacion del pedido">
+                    <div class="section-title">Observacion</div>
+
+                    <div class="order-notes-body">
+                        <label class="field notes-field" for="order-notes">
+                            Notas del pedido
+                            <textarea id="order-notes" rows="2" placeholder="Notas del pedido"></textarea>
+                        </label>
+                    </div>
+                </section>
 
                 <section class="entry-section" aria-label="Detalle de productos y disenos">
                     <div class="section-title detail-title">
@@ -184,13 +207,16 @@
             productos: [],
             maquinas: [],
             usuarioActualId: null,
-            puedeVerTodosPedidos: false
+            puedeVerTodosPedidos: false,
+            montoEnvioTransportadora: 10000
         };
 
         const form = document.getElementById("order-form");
         const title = document.getElementById("order-form-title");
         const detailList = document.getElementById("detail-list");
         const estimatedTotal = document.getElementById("estimated-total");
+        const transportadoraFeeMessage = document.getElementById("transportadora-fee-message");
+        const transportadoraFeeLabel = document.getElementById("transportadora-fee-label");
         const proofInput = document.getElementById("payment-proof");
         const proofName = document.getElementById("payment-proof-name");
         const proofDownload = document.getElementById("payment-proof-download");
@@ -212,6 +238,7 @@
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
         let loadedSaleStateId = "";
+        let savedMontoEnvioTransportadora = null;
         let paymentProofPath = "";
         let paymentProofFileName = "";
         let proofUrl = "";
@@ -288,6 +315,7 @@
             const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
             const hasCarrierShipping = Boolean(selectedClient?.datosEnvio || selectedClient?.transportadoraId || selectedClient?.transportadora);
             deliveryMethodSelect.value = hasCarrierShipping ? "TRANSPORTADORA" : "DELIVERY";
+            updateEstimatedTotal();
         }
 
         function renderClientSelect2Options() {
@@ -360,7 +388,12 @@
         }
 
         function previousSaleState() {
-            return null;
+            const flow = Number(currentSaleState()?.numeroFlujo);
+            if (!flow || flow <= 1) {
+                return null;
+            }
+
+            return stateByFlow(flow - 1);
         }
 
         function nextSaleState() {
@@ -409,6 +442,12 @@
             return Number(currentSaleState()?.numeroFlujo) === 1;
         }
 
+        function isDeliveredSaleState(state = currentSaleState()) {
+            const flow = Number(state?.numeroFlujo);
+            const name = String(state?.nombre || state?.id || "").toLowerCase();
+            return flow >= 4 || name.includes("entregado") || name.includes("enviado");
+        }
+
         function isPaidStatusSelected(statusId = paymentStatusSelect.value) {
             return String(statusId || "") === String(findOptionId(formOptions.estadosPago, "pagado") || "");
         }
@@ -445,7 +484,7 @@
             const next = nextSaleState();
             const hasOrder = Boolean(orderId);
 
-            stateBackAction.disabled = !hasOrder || !previous;
+            stateBackAction.disabled = !hasOrder || !previous || isDeliveredSaleState();
             stateNextAction.disabled = !hasOrder || !next;
             stateDeleteAction.disabled = !hasOrder || !canDeleteCurrentOrder();
             stateSaveAction.disabled = false;
@@ -477,16 +516,33 @@
             return numberValue(detail.quantity) * numberValue(detail.unitPrice) + numberValue(detail.extraPrice);
         }
 
+        function transportadoraFee() {
+            if (deliveryMethodSelect.value !== "TRANSPORTADORA") {
+                return 0;
+            }
+
+            return savedMontoEnvioTransportadora && savedMontoEnvioTransportadora > 0
+                ? savedMontoEnvioTransportadora
+                : numberValue(formOptions.montoEnvioTransportadora || 10000);
+        }
+
+        function estimatedOrderTotal() {
+            return details.reduce((sum, detail) => sum + detailTotal(detail), 0) + transportadoraFee();
+        }
+
         function updateEstimatedTotal() {
-            const total = details.reduce((sum, detail) => sum + detailTotal(detail), 0);
+            const total = estimatedOrderTotal();
+            const fee = transportadoraFee();
             estimatedTotal.textContent = `Gs. ${total.toLocaleString("es-PY")}`;
+            transportadoraFeeLabel.textContent = `Gs. ${fee.toLocaleString("es-PY")}`;
+            transportadoraFeeMessage.hidden = fee <= 0;
             updatePaymentStatusFromAmount();
         }
 
         function updatePaymentStatusFromAmount() {
             const statusId = paymentStatusIdByAmount(
                 numberValue(document.getElementById("paid-amount").value),
-                details.reduce((sum, detail) => sum + detailTotal(detail), 0));
+                estimatedOrderTotal());
 
             if (statusId) {
                 paymentStatusSelect.value = statusId;
@@ -747,6 +803,7 @@
                 : formOptions.usuarioActualId || "";
             document.getElementById("order-delivery").value = order.delivery || today;
             deliveryMethodSelect.value = order.deliveryMethodId || "DELIVERY";
+            savedMontoEnvioTransportadora = numberValue(order.montoEnvioTransportadora || 0) || null;
             deliveryUserInput.value = order.deliveryUser ? shortPersonName(order.deliveryUser) : "Sin tomar";
             document.getElementById("paid-amount").value = formatNumber(order.paidAmount || "0");
             document.getElementById("payment-status").value = order.estadoPagadoId || "";
@@ -779,6 +836,8 @@
             updateClientSelect2Label();
             applyDeliveryMethodFromClient();
         });
+
+        deliveryMethodSelect.addEventListener("change", updateEstimatedTotal);
 
         clientSelect2Options.addEventListener("click", function (event) {
             const option = event.target.closest("[data-value]");
@@ -964,7 +1023,23 @@
         }
 
         stateBackAction.addEventListener("click", async function () {
-            await saveWithTargetState(previousSaleState());
+            const previous = previousSaleState();
+            if (!previous || isDeliveredSaleState()) {
+                return;
+            }
+
+            const confirmed = await showConfirmDialog({
+                title: "Devolver pedido",
+                message: `Esta seguro que quiere devolver el pedido al estado ${previous.nombre || previous.id}?`,
+                confirmText: "Devolver pedido",
+                cancelText: "Cancelar"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            await saveWithTargetState(previous);
         });
 
         stateSaveAction.addEventListener("click", async function () {
