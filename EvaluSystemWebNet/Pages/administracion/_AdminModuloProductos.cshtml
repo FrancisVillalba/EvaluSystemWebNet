@@ -1,0 +1,12 @@
+productos: {
+    title: "Productos",
+    help: "Productos disponibles para los pedidos.",
+    id: "id",
+    columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+    fields: [
+        { name: "nombre", label: "Nombre", required: true },
+        { name: "precioBase", label: "Precio base", type: "number", defaultValue: 0 },
+        { name: "maquinaId", label: "Maquina", type: "select", source: "maquinas", value: "id", text: "nombre" },
+        { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+    ]
+},

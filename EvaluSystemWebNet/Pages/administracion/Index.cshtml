@@ -45,12 +45,22 @@
 
             <div id="admin-form" class="admin-form"></div>
 
+            <div class="admin-list-toolbar">
+                <label>
+                    Buscar
+                    <input id="admin-search" type="search" placeholder="Buscar en este modulo" autocomplete="off" />
+                </label>
+                <button id="admin-search-button" class="admin-primary" type="button">Buscar</button>
+                <button id="admin-clear-search-button" class="admin-secondary" type="button">Limpiar</button>
+            </div>
+
             <div class="admin-table-wrap">
                 <table class="admin-table">
                     <thead id="admin-table-head"></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
+            <div id="admin-pagination" class="admin-pagination" aria-live="polite"></div>
         </section>
 
         <section id="access-panel" class="admin-panel" hidden>
@@ -90,176 +100,22 @@
 @section Scripts {
     <script>
         const modules = {
-            usuarios: {
-                title: "Usuarios",
-                help: "Crea y mantiene los usuarios del sistema.",
-                id: "id",
-                columns: [
-                    ["nombreUsuario", "Usuario"],
-                    ["persona", "Persona"],
-                    ["perfiles", "Perfiles"],
-                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
-                ],
-                fields: [
-                    { name: "nombreUsuario", label: "Usuario", required: true },
-                    { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
-                    { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
-                    { name: "perfilIds", label: "Perfiles", type: "multiselect", source: "perfiles", value: "id", text: "nombre" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            personas: {
-                title: "Personas",
-                help: "Datos base de personas vinculadas a usuarios.",
-                id: "id",
-                columns: [
-                    ["primerNombre", "Nombre"],
-                    ["primerApellido", "Apellido"],
-                    ["documento", "Documento"],
-                    ["telefono", "Telefono"],
-                    ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
-                ],
-                fields: [
-                    { name: "primerNombre", label: "Primer nombre" },
-                    { name: "segundoNombre", label: "Segundo nombre" },
-                    { name: "primerApellido", label: "Primer apellido" },
-                    { name: "segundoApellido", label: "Segundo apellido" },
-                    { name: "tipoDocumentoId", label: "Tipo documento", type: "select", source: "tiposDocumento", value: "id", text: "nombre" },
-                    { name: "documento", label: "Documento" },
-                    { name: "telefono", label: "Telefono / WhatsApp" },
-                    { name: "fechaCumpleanios", label: "Fecha cumpleanos", type: "date" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            perfiles: {
-                title: "Perfiles",
-                help: "Define los perfiles de trabajo.",
-                id: "id",
-                columns: [["nombre", "Nombre"], ["descripcion", "Descripcion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
-                fields: [
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "descripcion", label: "Descripcion" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            transportadoras: {
-                title: "Transportadoras",
-                help: "Empresas de transporte para datos de envio.",
-                id: "id",
-                columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
-                fields: [
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "telefono", label: "Telefono" },
-                    { name: "direccion", label: "Direccion" },
-                    { name: "observacion", label: "Observacion", type: "textarea" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            productos: {
-                title: "Productos",
-                help: "Productos disponibles para los pedidos.",
-                id: "id",
-                columns: [["nombre", "Nombre"], ["precioBase", "Precio"], ["maquina", "Maquina"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
-                fields: [
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "precioBase", label: "Precio base", type: "number", defaultValue: 0 },
-                    { name: "maquinaId", label: "Maquina", type: "select", source: "maquinas", value: "id", text: "nombre" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            productoComisiones: {
-                title: "Comisiones por producto",
-                help: "Define la comision por metro de cada producto segun el perfil del vendedor.",
-                id: "id",
-                columns: [
-                    ["producto", "Producto"],
-                    ["perfil", "Perfil"],
-                    ["montoPorMetro", "Monto por metro"],
-                    ["fechaDesde", "Desde", value => formatDate(value)],
-                    ["fechaHasta", "Hasta", value => formatDate(value)],
-                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
-                ],
-                fields: [
-                    { name: "productoId", label: "Producto", type: "select", source: "productos", value: "id", text: "nombre", required: true },
-                    { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre", required: true },
-                    { name: "montoPorMetro", label: "Monto por metro", type: "number", defaultValue: 0 },
-                    { name: "fechaDesde", label: "Fecha desde", type: "date" },
-                    { name: "fechaHasta", label: "Fecha hasta", type: "date" },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            gruposVenta: {
-                title: "Grupo de ventas",
-                help: "Asigna vendedores externos a un Team Leader.",
-                id: "id",
-                columns: [
-                    ["nombre", "Nombre"],
-                    ["teamLeader", "Team Leader"],
-                    ["vendedores", "Vendedores", value => (value || []).map(item => item.vendedor).filter(Boolean).join(", ")],
-                    ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
-                ],
-                fields: [
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "teamLeaderUsuarioId", label: "Team Leader", type: "select", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}`, required: true },
-                    { name: "vendedorUsuarioIds", label: "Vendedores externos", type: "multiselect", source: "usuarios", value: "id", text: item => item.persona || item.nombreUsuario || `Usuario ${item.id}` },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            maquinas: simpleNumberModule("Tipos de maquina", "Maquinas o procesos productivos."),
-            formasPago: simpleStringModule("Formas de pago", "Catalogo de formas de pago."),
-            estadosPago: simpleStringModule("Estados de pago", "Catalogo de estados de pago."),
-            tiposDocumento: simpleStringModule("Tipos documento", "Catalogo de tipos de documento."),
-            tiposCliente: simpleStringModule("Tipos cliente", "Catalogo de tipos de cliente."),
-            estadosVenta: {
-                title: "Estados de venta",
-                help: "Flujo de estados del pedido.",
-                id: "id",
-                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado"], ["numeroFlujo", "Orden"]],
-                fields: [
-                    { name: "id", label: "Codigo", required: true },
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "estado", label: "Estado" },
-                    { name: "numeroFlujo", label: "Orden", type: "number" }
-                ]
-            },
-            configuraciones: {
-                title: "Configuraciones",
-                help: "Valores parametrizables del sistema.",
-                id: "id",
-                columns: [
-                    ["nombre", "Nombre"],
-                    ["nroConfiguracion", "Numero"],
-                    ["valor", "Valor"]
-                ],
-                fields: [
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "nroConfiguracion", label: "Numero", type: "number", defaultValue: 1 },
-                    { name: "valor", label: "Valor", required: true }
-                ]
-            },
-            departamentos: {
-                title: "Departamentos",
-                help: "Crea y mantiene los departamentos disponibles para clientes y envios.",
-                id: "id",
-                columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
-                fields: [
-                    { name: "id", label: "Codigo", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
-                    { name: "nombre", label: "Nombre", required: true },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            },
-            ciudades: {
-                title: "Ciudades",
-                help: "Crea y mantiene las ciudades por departamento.",
-                id: "id",
-                columns: [["id", "Id"], ["departamento", "Departamento"], ["codigoDistrito", "Codigo distrito"], ["nombre", "Ciudad"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
-                fields: [
-                    { name: "departamentoId", label: "Departamento", type: "select", source: "departamentos", value: "id", text: "nombre", required: true },
-                    { name: "codigoDistrito", label: "Codigo distrito", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
-                    { name: "nombre", label: "Ciudad", required: true },
-                    { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
-                ]
-            }
+            @await Html.PartialAsync("_AdminModuloUsuarios")
+            @await Html.PartialAsync("_AdminModuloPersonas")
+            @await Html.PartialAsync("_AdminModuloPerfiles")
+            @await Html.PartialAsync("_AdminModuloTransportadoras")
+            @await Html.PartialAsync("_AdminModuloProductos")
+            @await Html.PartialAsync("_AdminModuloProductoComisiones")
+            @await Html.PartialAsync("_AdminModuloGruposVenta")
+            @await Html.PartialAsync("_AdminModuloMaquinas")
+            @await Html.PartialAsync("_AdminModuloFormasPago")
+            @await Html.PartialAsync("_AdminModuloEstadosPago")
+            @await Html.PartialAsync("_AdminModuloTiposDocumento")
+            @await Html.PartialAsync("_AdminModuloTiposCliente")
+            @await Html.PartialAsync("_AdminModuloEstadosVenta")
+            @await Html.PartialAsync("_AdminModuloConfiguraciones")
+            @await Html.PartialAsync("_AdminModuloDepartamentos")
+            @await Html.PartialAsync("_AdminModuloCiudades")
         };
 
         const state = {
@@ -268,7 +124,12 @@
             editing: null,
             options: { perfiles: [], personas: [], maquinas: [], departamentos: [], tiposDocumento: [], productos: [], usuarios: [] },
             formularios: [],
-            permisos: []
+            permisos: [],
+            search: "",
+            page: 1,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 1
         };
 
         const crudPanel = document.getElementById("crud-panel");
@@ -278,6 +139,8 @@
         const formHost = document.getElementById("admin-form");
         const tableHead = document.getElementById("admin-table-head");
         const tableBody = document.getElementById("admin-table-body");
+        const adminSearch = document.getElementById("admin-search");
+        const adminPagination = document.getElementById("admin-pagination");
         const newButton = document.getElementById("new-record-button");
         const accessProfile = document.getElementById("access-profile");
         const accessTableBody = document.getElementById("access-table-body");
@@ -465,7 +328,7 @@
         function renderTable() {
             const config = modules[state.module];
             tableHead.innerHTML = `<tr>${config.columns.map(([, label]) => `<th>${escapeHtml(label)}</th>`).join("")}<th>Acciones</th></tr>`;
-            tableBody.innerHTML = state.records.map(record => `
+            tableBody.innerHTML = state.records.length ? state.records.map(record => `
                 <tr>
                     ${config.columns.map(column => `<td>${escapeHtml(formatValue(record, column))}</td>`).join("")}
                     <td>
@@ -473,7 +336,31 @@
                             ${config.readonly ? "" : `<button type="button" onclick="editRecord('${escapeHtml(record[config.id])}')">Editar</button><button class="danger" type="button" onclick="deleteRecord('${escapeHtml(record[config.id])}')">Eliminar</button>`}
                         </div>
                     </td>
-                </tr>`).join("");
+                </tr>`).join("") : `<tr><td colspan="${config.columns.length + 1}">No hay registros para los filtros seleccionados.</td></tr>`;
+            renderAdminPagination();
+        }
+
+        function renderAdminPagination() {
+            if (state.module === "accesos") {
+                adminPagination.innerHTML = "";
+                return;
+            }
+
+            adminPagination.innerHTML = `
+                <span>Pagina ${state.page} de ${state.totalPages}</span>
+                <div class="admin-pagination-actions">
+                    <label>
+                        <span>Registros</span>
+                        <select id="admin-page-size">
+                            <option value="10" ${state.pageSize === 10 ? "selected" : ""}>10</option>
+                            <option value="20" ${state.pageSize === 20 ? "selected" : ""}>20</option>
+                            <option value="50" ${state.pageSize === 50 ? "selected" : ""}>50</option>
+                        </select>
+                    </label>
+                    <button type="button" data-admin-page="previous" ${state.page <= 1 ? "disabled" : ""}>Anterior</button>
+                    <span class="admin-pagination-current">${state.page}</span>
+                    <button type="button" data-admin-page="next" ${state.page >= state.totalPages ? "disabled" : ""}>Siguiente</button>
+                </div>`;
         }
 
         function collectPayload() {
@@ -589,14 +476,35 @@
             }
 
             await withAppLoading("Cargando datos...", async function () {
-                const response = await fetch(`/api/administracion/${state.module}`);
+                const params = new URLSearchParams({
+                    page: String(state.page),
+                    pageSize: String(state.pageSize)
+                });
+                if (state.search) {
+                    params.set("search", state.search);
+                }
+
+                const response = await fetch(`/api/administracion/${state.module}?${params.toString()}`);
                 if (!response.ok) {
                     const error = await response.json().catch(() => null);
                     showToast(error?.message || "No se pudo cargar el modulo.", "error");
                     return;
                 }
 
-                state.records = await response.json();
+                const result = await response.json();
+                if (Array.isArray(result)) {
+                    state.records = result;
+                    state.totalItems = result.length;
+                    state.totalPages = 1;
+                    state.page = 1;
+                } else {
+                    state.records = result.items || [];
+                    state.page = result.page || state.page;
+                    state.pageSize = result.pageSize || state.pageSize;
+                    state.totalItems = result.totalItems || 0;
+                    state.totalPages = Math.max(result.totalPages || 1, 1);
+                }
+
                 state.editing = null;
                 renderModule();
             });
@@ -750,10 +658,57 @@
                 document.querySelectorAll(".admin-modules button").forEach(item => item.classList.remove("active"));
                 button.classList.add("active");
                 state.module = button.dataset.module;
+                state.search = "";
+                state.page = 1;
+                adminSearch.value = "";
                 crudPanel.hidden = state.module === "accesos";
                 accessPanel.hidden = state.module !== "accesos";
                 await loadRecords();
             });
+        });
+
+        document.getElementById("admin-search-button").addEventListener("click", async () => {
+            state.search = adminSearch.value.trim();
+            state.page = 1;
+            await loadRecords();
+        });
+
+        document.getElementById("admin-clear-search-button").addEventListener("click", async () => {
+            adminSearch.value = "";
+            state.search = "";
+            state.page = 1;
+            await loadRecords();
+        });
+
+        adminSearch.addEventListener("keydown", async event => {
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            state.search = adminSearch.value.trim();
+            state.page = 1;
+            await loadRecords();
+        });
+
+        adminPagination.addEventListener("click", async event => {
+            const button = event.target.closest("[data-admin-page]");
+            if (!button) {
+                return;
+            }
+
+            state.page += button.dataset.adminPage === "next" ? 1 : -1;
+            await loadRecords();
+        });
+
+        adminPagination.addEventListener("change", async event => {
+            const select = event.target.closest("#admin-page-size");
+            if (!select) {
+                return;
+            }
+
+            state.pageSize = Number(select.value);
+            state.page = 1;
+            await loadRecords();
         });
 
         newButton.addEventListener("click", () => {

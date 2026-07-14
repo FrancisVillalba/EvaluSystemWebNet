@@ -2684,6 +2684,38 @@ body.modal-page-body {
   margin-left: auto;
 }
 
+.admin-list-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: #f7fafb;
+  border: 1px solid #dfe8ed;
+  border-radius: 8px;
+}
+
+.admin-list-toolbar label {
+  display: grid;
+  gap: 7px;
+  color: #203747;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-list-toolbar input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  color: #0f2735;
+  background: #fff;
+  border: 1px solid #bfcbd3;
+  border-radius: 6px;
+  outline: none;
+  font-weight: 700;
+}
+
 .admin-multi-field {
   display: grid;
   align-content: start;
@@ -2915,6 +2947,67 @@ body.modal-page-body {
   color: #b33131;
   background: #fdecec;
   border-color: #efaaaa;
+}
+
+.admin-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: #203747;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.admin-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-pagination-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 4px;
+  color: #203747;
+  font-weight: 800;
+}
+
+.admin-pagination-actions select {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 7px 30px 7px 12px;
+  color: #0f2735;
+  background: #fff;
+  border: 1px solid #cbd8e1;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.admin-pagination-actions button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 14px;
+  color: #075f72;
+  background: #e7f5f3;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.admin-pagination-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-pagination-current {
+  min-width: 18px;
+  color: #203747;
+  text-align: center;
+  font-weight: 850;
 }
 
 .admin-access-filter {
@@ -4097,6 +4190,7 @@ body.modal-page-body {
   .admin-modules,
   .reports-modules,
   .admin-form,
+  .admin-list-toolbar,
   .reports-filters,
   .reports-summary,
   .delivery-filters {
@@ -4104,6 +4198,7 @@ body.modal-page-body {
   }
 
   .admin-panel-header,
+  .admin-pagination,
   .reports-panel-header,
   .reports-pagination,
   .delivery-header,
@@ -4117,6 +4212,10 @@ body.modal-page-body {
   }
 
   .reports-pagination-actions {
+    justify-content: space-between;
+  }
+
+  .admin-pagination-actions {
     justify-content: space-between;
   }
 

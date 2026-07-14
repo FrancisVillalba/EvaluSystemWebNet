@@ -1,0 +1,13 @@
+transportadoras: {
+    title: "Transportadoras",
+    help: "Empresas de transporte para datos de envio.",
+    id: "id",
+    columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+    fields: [
+        { name: "nombre", label: "Nombre", required: true },
+        { name: "telefono", label: "Telefono" },
+        { name: "direccion", label: "Direccion" },
+        { name: "observacion", label: "Observacion", type: "textarea" },
+        { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+    ]
+},

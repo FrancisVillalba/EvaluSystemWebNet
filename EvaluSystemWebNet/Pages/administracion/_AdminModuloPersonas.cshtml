@@ -1,0 +1,23 @@
+personas: {
+    title: "Personas",
+    help: "Datos base de personas vinculadas a usuarios.",
+    id: "id",
+    columns: [
+        ["primerNombre", "Nombre"],
+        ["primerApellido", "Apellido"],
+        ["documento", "Documento"],
+        ["telefono", "Telefono"],
+        ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+    ],
+    fields: [
+        { name: "primerNombre", label: "Primer nombre" },
+        { name: "segundoNombre", label: "Segundo nombre" },
+        { name: "primerApellido", label: "Primer apellido" },
+        { name: "segundoApellido", label: "Segundo apellido" },
+        { name: "tipoDocumentoId", label: "Tipo documento", type: "select", source: "tiposDocumento", value: "id", text: "nombre" },
+        { name: "documento", label: "Documento" },
+        { name: "telefono", label: "Telefono / WhatsApp" },
+        { name: "fechaCumpleanios", label: "Fecha cumpleanos", type: "date" },
+        { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+    ]
+},

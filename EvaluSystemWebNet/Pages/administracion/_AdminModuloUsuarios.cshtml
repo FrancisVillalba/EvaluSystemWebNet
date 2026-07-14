@@ -1,0 +1,18 @@
+usuarios: {
+    title: "Usuarios",
+    help: "Crea y mantiene los usuarios del sistema.",
+    id: "id",
+    columns: [
+        ["nombreUsuario", "Usuario"],
+        ["persona", "Persona"],
+        ["perfiles", "Perfiles"],
+        ["estado", "Estado", value => value === false ? "Inactivo" : "Activo"]
+    ],
+    fields: [
+        { name: "nombreUsuario", label: "Usuario", required: true },
+        { name: "pass", label: "Contrasena", type: "password", createOnlyHint: "Dejar vacio para no cambiar" },
+        { name: "personaId", label: "Persona", type: "select", source: "personas", value: "id", text: item => [item.primerNombre, item.primerApellido, item.documento].filter(Boolean).join(" ") || `Persona ${item.id}` },
+        { name: "perfilIds", label: "Perfiles", type: "multiselect", source: "perfiles", value: "id", text: "nombre" },
+        { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+    ]
+},

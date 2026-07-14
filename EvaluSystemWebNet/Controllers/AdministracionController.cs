@@ -59,15 +59,28 @@ public class AdministracionController : ControllerBase
     }
 
     [HttpGet("{module}")]
-    public async Task<IActionResult> GetAll(string module, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(
+        string module,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         if (!TryGetModule(module, out var config))
         {
             return NotFound(new { message = "Modulo administrativo no encontrado." });
         }
 
-        var result = await _backendApiClient.GetResultAsync<JsonElement>(config.Endpoint, cancellationToken);
-        return ToActionResult(result);
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var query = BuildListQuery(search, page, pageSize);
+        var result = await _backendApiClient.GetResultAsync<JsonElement>($"{config.Endpoint}?{query}", cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+        }
+
+        return Ok(NormalizePagedResult(result.Value, search, page, pageSize));
     }
 
     [HttpPost("{module}")]
@@ -154,6 +167,74 @@ public class AdministracionController : ControllerBase
         return result.IsSuccess
             ? Ok(result.Value)
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+    }
+
+    private static string BuildListQuery(string? search, int page, int pageSize)
+    {
+        var filters = new List<string>
+        {
+            $"page={page}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            filters.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        return string.Join("&", filters);
+    }
+
+    private static object NormalizePagedResult(JsonElement value, string? search, int page, int pageSize)
+    {
+        if (value.ValueKind == JsonValueKind.Object && value.TryGetProperty("items", out _))
+        {
+            return value;
+        }
+
+        if (value.ValueKind != JsonValueKind.Array)
+        {
+            return new PagedResponse<JsonElement>([], page, pageSize, 0, 1);
+        }
+
+        var items = value.EnumerateArray()
+            .Where(item => MatchesSearch(item, search))
+            .ToList();
+        var totalItems = items.Count;
+        var totalPages = Math.Max((int)Math.Ceiling(totalItems / (double)pageSize), 1);
+        page = Math.Min(page, totalPages);
+
+        return new PagedResponse<JsonElement>(
+            items.Skip((page - 1) * pageSize).Take(pageSize),
+            page,
+            pageSize,
+            totalItems,
+            totalPages);
+    }
+
+    private static bool MatchesSearch(JsonElement item, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return true;
+        }
+
+        var term = search.Trim();
+        foreach (var property in item.EnumerateObject())
+        {
+            if (property.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False)
+            {
+                var value = property.Value.ValueKind == JsonValueKind.String
+                    ? property.Value.GetString()
+                    : property.Value.ToString();
+                if (!string.IsNullOrWhiteSpace(value) && value.Contains(term, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private record AdminModule(string Endpoint, bool CanCreate, bool CanEdit, bool CanDelete);

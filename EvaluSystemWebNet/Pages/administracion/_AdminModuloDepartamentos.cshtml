@@ -1,0 +1,11 @@
+departamentos: {
+    title: "Departamentos",
+    help: "Crea y mantiene los departamentos disponibles para clientes y envios.",
+    id: "id",
+    columns: [["id", "Codigo"], ["nombre", "Nombre"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+    fields: [
+        { name: "id", label: "Codigo", type: "number", createOnlyHint: "Opcional, se genera si queda vacio" },
+        { name: "nombre", label: "Nombre", required: true },
+        { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
+    ]
+},
