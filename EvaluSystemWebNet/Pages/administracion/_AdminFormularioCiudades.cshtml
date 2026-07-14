@@ -4,7 +4,7 @@
         <label class="admin-field">Departamento<select data-field="departamentoId" data-source="departamentos" required><option value="">Seleccionar</option></select></label>
         <label class="admin-field">Codigo distrito<input data-field="codigoDistrito" type="number" /><span>Opcional, se genera si queda vacio</span></label>
         <label class="admin-field">Ciudad<input data-field="nombre" type="text" required /></label>
-        <div class="admin-form-actions"><div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+        <label class="admin-check admin-check-field"><input data-field="estado" type="checkbox" checked />Activo</label><div class="admin-form-actions"><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Id", "Departamento", "Codigo distrito", "Ciudad", "Estado" })' />
 </section>

@@ -11,7 +11,7 @@
                 <div class="admin-multiselect-dropdown" data-multiselect-dropdown hidden><input class="admin-multiselect-search" type="search" placeholder="Buscar..." data-multiselect-search autocomplete="off"><div class="admin-multiselect-options" data-multiselect-options></div></div>
             </div>
         </fieldset>
-        <div class="admin-form-actions"><div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+        <label class="admin-check admin-check-field"><input data-field="estado" type="checkbox" checked />Activo</label><div class="admin-form-actions"><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Team Leader", "Vendedores", "Estado" })' />
 </section>

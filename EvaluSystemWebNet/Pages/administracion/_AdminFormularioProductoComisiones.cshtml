@@ -6,7 +6,7 @@
         <label class="admin-field">Monto por metro<input data-field="montoPorMetro" type="number" value="0" /></label>
         <label class="admin-field">Fecha desde<input data-field="fechaDesde" type="date" /></label>
         <label class="admin-field">Fecha hasta<input data-field="fechaHasta" type="date" /></label>
-        <div class="admin-form-actions"><div class="admin-form-checks"><label class="admin-check"><input data-field="estado" type="checkbox" checked />Activo</label></div><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
+        <label class="admin-check admin-check-field"><input data-field="estado" type="checkbox" checked />Activo</label><div class="admin-form-actions"><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
     </form>
     <partial name="_AdminFormularioTabla" model='@(new[] { "Producto", "Perfil", "Monto por metro", "Desde", "Hasta", "Estado" })' />
 </section>
