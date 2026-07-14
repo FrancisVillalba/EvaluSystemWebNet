@@ -1,0 +1,35 @@
+<section id="commissions-panel" class="reports-panel">
+    <div class="reports-panel-header">
+        <div>
+            <h2 id="commissions-title">Comisiones por vendedor</h2>
+            <p id="commissions-description">Total vendido y detalle de productos para liquidar comisiones.</p>
+        </div>
+        <button id="download-bank-txt" class="reports-bank-button" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M14 3v4a2 2 0 0 0 2 2h4" />
+                <path d="M5 3h9l6 6v12H5z" />
+                <path d="M8 16h8" />
+                <path d="M8 12h4" />
+            </svg>
+            <span>Archivo TXT</span>
+        </button>
+    </div>
+
+    <div class="reports-filters">
+        <label for="date-from">
+            Fecha desde
+            <input id="date-from" type="date" />
+        </label>
+        <label for="date-to">
+            Fecha hasta
+            <input id="date-to" type="date" />
+        </label>
+        <label for="seller-filter">
+            Vendedor
+            <select id="seller-filter"></select>
+        </label>
+        <button id="search-report" type="button">Buscar</button>
+    </div>
+
+    <div id="seller-summary" class="reports-summary"></div>
+</section>

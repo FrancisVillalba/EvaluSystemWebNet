@@ -92,10 +92,17 @@ public class ReportesController : ControllerBase
     }
 
     [HttpGet("lotes-pago")]
-    public async Task<ActionResult<IEnumerable<LotePagoDto>>> GetLotesPago(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResponse<LotePagoDto>>> GetLotesPago(
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] string? estado = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _backendApiClient.GetResultAsync<IEnumerable<LotePagoDto>>(
-            "api/Reportes/lotes-pago?tipoPago=COMISIONES",
+        var filters = BuildPaymentLotsFilterQuery(dateFrom, dateTo, estado, page, pageSize);
+        var result = await _backendApiClient.GetResultAsync<PagedResponse<LotePagoDto>>(
+            $"api/Reportes/lotes-pago?{filters}",
             cancellationToken);
 
         return result.IsSuccess && result.Value is not null
@@ -189,6 +196,33 @@ public class ReportesController : ControllerBase
         if (!string.IsNullOrWhiteSpace(scope))
         {
             filters.Add($"scope={Uri.EscapeDataString(scope)}");
+        }
+
+        return string.Join("&", filters);
+    }
+
+    private static string BuildPaymentLotsFilterQuery(DateTime? dateFrom, DateTime? dateTo, string? estado, int page, int pageSize)
+    {
+        var filters = new List<string>
+        {
+            "tipoPago=COMISIONES",
+            $"page={Math.Max(page, 1)}",
+            $"pageSize={Math.Clamp(pageSize, 1, 100)}"
+        };
+
+        if (dateFrom.HasValue)
+        {
+            filters.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+        }
+
+        if (dateTo.HasValue)
+        {
+            filters.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estado))
+        {
+            filters.Add($"estado={Uri.EscapeDataString(estado)}");
         }
 
         return string.Join("&", filters);

@@ -2,6 +2,7 @@
     var activeMenu = ViewData["ActiveMenu"]?.ToString() ?? "";
     var permissionsJson = Context.Session.GetString("BackendPermissions");
     var allowedModules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var allowedParentModules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     if (!string.IsNullOrWhiteSpace(permissionsJson))
     {
         try
@@ -11,9 +12,14 @@
             {
                 var hasCanView = item.TryGetProperty("puedeVer", out var canView) || item.TryGetProperty("PuedeVer", out canView);
                 var hasForm = item.TryGetProperty("formulario", out var form) || item.TryGetProperty("Formulario", out form);
+                var hasParentForm = item.TryGetProperty("formularioPadre", out var parentForm) || item.TryGetProperty("FormularioPadre", out parentForm);
                 if (hasCanView && canView.GetBoolean() && hasForm)
                 {
                     allowedModules.Add(form.GetString() ?? string.Empty);
+                    if (hasParentForm)
+                    {
+                        allowedParentModules.Add(parentForm.GetString() ?? string.Empty);
+                    }
                 }
             }
         }
@@ -24,6 +30,7 @@
     }
 
     bool CanSee(string name) => allowedModules.Count == 0 || allowedModules.Contains(name);
+    var canSeeReportes = CanSee("Reportes") || allowedParentModules.Contains("Reportes");
     var canSeePedidos = CanSee("Pedidos");
     var canSeeGrupoVentas = CanSee("Grupo de ventas");
     var canSeeVentas = canSeePedidos || canSeeGrupoVentas;
@@ -82,7 +89,7 @@
         @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">@AppIcon("clients")<span>Clientes</span></button> }
         @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">@AppIcon("printer")<span>Impresiones</span></button> }
         @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">@AppIcon("delivery")<span>Envio</span></button> }
-        @if (CanSee("Reportes")) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">@AppIcon("reports")<span>Reportes</span></button> }
+        @if (canSeeReportes) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">@AppIcon("reports")<span>Reportes</span></button> }
         @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">@AppIcon("admin")<span>Administracion</span></button> }
 
     </nav>

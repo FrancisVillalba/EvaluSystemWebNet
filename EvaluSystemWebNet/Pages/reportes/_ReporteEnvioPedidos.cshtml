@@ -1,0 +1,55 @@
+<section id="shipping-panel" class="reports-panel" hidden>
+    <div class="reports-panel-header">
+        <div>
+            <h2>Envio de pedidos</h2>
+            <p>Control de pedidos ya enviados por usuario de entrega y metodo de envio.</p>
+        </div>
+    </div>
+
+    <div class="reports-filters reports-shipping-filters">
+        <label for="shipping-date-from">
+            Fecha desde
+            <input id="shipping-date-from" type="date" />
+        </label>
+        <label for="shipping-date-to">
+            Fecha hasta
+            <input id="shipping-date-to" type="date" />
+        </label>
+        <label for="shipping-client">
+            Cliente
+            <input id="shipping-client" type="search" placeholder="Buscar cliente" autocomplete="off" />
+        </label>
+        <label for="shipping-method">
+            Metodo de envio
+            <select id="shipping-method">
+                <option value="">Todos</option>
+                <option value="DELIVERY">Delivery</option>
+                <option value="TRANSPORTADORA">Transportadora</option>
+                <option value="MOTOBOLT">Motobolt</option>
+                <option value="RETIRO_LOCAL">Retiro del local</option>
+                <option value="OTRO">Otro</option>
+            </select>
+        </label>
+        <button id="search-shipping-report" type="button">Buscar</button>
+    </div>
+
+    <div id="shipping-summary" class="reports-summary"></div>
+
+    <div class="reports-table-wrap">
+        <table class="reports-table">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Metodo</th>
+                    <th>Estado</th>
+                    <th>Usuario entrega</th>
+                    <th>Ciudad</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="shipping-detail-body"></tbody>
+        </table>
+    </div>
+</section>

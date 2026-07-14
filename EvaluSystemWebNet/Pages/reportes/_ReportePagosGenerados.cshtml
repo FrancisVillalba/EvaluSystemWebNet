@@ -1,0 +1,59 @@
+<section id="payment-lots-panel" class="reports-panel" hidden>
+    <div class="reports-panel-header">
+        <div>
+            <h2>Pagos generados</h2>
+            <p>Lotes TXT guardados para respaldo y re-descarga.</p>
+        </div>
+        <button id="refresh-payment-lots" class="reports-bank-button" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+                <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+                <path d="M18 3v4h-4" />
+                <path d="M6 21v-4h4" />
+            </svg>
+            <span>Actualizar</span>
+        </button>
+    </div>
+
+    <div class="reports-filters reports-payment-lot-filters">
+        <label>
+            Fecha generado desde
+            <input id="payment-lots-date-from" type="date" />
+        </label>
+        <label>
+            Fecha generado hasta
+            <input id="payment-lots-date-to" type="date" />
+        </label>
+        <label>
+            Estado
+            <select id="payment-lots-status">
+                <option value="">Todos</option>
+                <option value="Generado">Generado</option>
+                <option value="Pagado">Pagado</option>
+                <option value="Anulado">Anulado</option>
+            </select>
+        </label>
+        <input id="payment-lots-page-size" type="hidden" value="10" />
+        <button id="search-payment-lots" type="button">Buscar</button>
+        <button id="clear-payment-lots" class="reports-secondary-button" type="button">Limpiar</button>
+    </div>
+
+    <div class="reports-table-wrap">
+        <table class="reports-table">
+            <thead>
+                <tr>
+                    <th>Lote</th>
+                    <th>Generado</th>
+                    <th>Rango</th>
+                    <th>Vendedor</th>
+                    <th>Personas</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="payment-lots-body"></tbody>
+        </table>
+    </div>
+    <div id="payment-lots-pagination" class="reports-pagination" aria-live="polite"></div>
+</section>

@@ -1,0 +1,51 @@
+<section id="management-summary-panel" class="reports-panel" hidden>
+    <div class="reports-panel-header">
+        <div>
+            <h2>Resumen gerencial</h2>
+            <p>Indicadores generales de ventas, comisiones, pedidos, deuda y entregas.</p>
+        </div>
+    </div>
+
+    <div class="reports-filters">
+        <label for="management-date-from">
+            Fecha desde
+            <input id="management-date-from" type="date" />
+        </label>
+        <label for="management-date-to">
+            Fecha hasta
+            <input id="management-date-to" type="date" />
+        </label>
+        <button id="search-management-summary" type="button">Buscar</button>
+    </div>
+
+    <div id="management-kpis" class="reports-summary"></div>
+
+    <div class="reports-table-wrap management-table-section">
+        <h3 class="reports-table-title">Total de ventas por maquina</h3>
+        <table class="reports-table">
+            <thead>
+                <tr>
+                    <th>Maquina</th>
+                    <th>Pedidos</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="management-machine-body"></tbody>
+        </table>
+    </div>
+
+    <div class="reports-table-wrap management-table-section">
+        <h3 class="reports-table-title">Total de ventas por perfil</h3>
+        <table class="reports-table">
+            <thead>
+                <tr>
+                    <th>Perfil</th>
+                    <th>Pedidos</th>
+                    <th>Total vendido</th>
+                </tr>
+            </thead>
+            <tbody id="management-commissions-body"></tbody>
+        </table>
+    </div>
+</section>

@@ -115,6 +115,12 @@ public class AuthController : ControllerBase
 
     private static string? RouteForPermission(PerfilFormularioPermisoDto permission)
     {
+        if (permission.FormularioPadre?.Equals("Reportes", StringComparison.OrdinalIgnoreCase) == true ||
+            permission.Formulario.StartsWith("Reporte ", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/reportes";
+        }
+
         return permission.Formulario switch
         {
             "Tablero" => "/dashboard",
