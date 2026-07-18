@@ -60,3 +60,9 @@ desktop.ini
 ## Visual Studio publish profiles
 *.pubxml
 *.pubxml.user
+
+## Local .NET tools
+**/.config/dotnet-tools.json
+
+## Temporary build verification output
+tmp/build-verify/

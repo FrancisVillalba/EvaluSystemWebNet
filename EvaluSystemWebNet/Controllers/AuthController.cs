@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
             response.Usuario,
             response.Persona,
             response.ExpiresAt,
-            RedirectUrl = ResolveRedirectUrl(response.Permisos)
+            RedirectUrl = $"{Request.PathBase}{ResolveRedirectUrl(response.Permisos)}"
         });
     }
 

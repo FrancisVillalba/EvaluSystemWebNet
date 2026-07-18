@@ -9,7 +9,7 @@ window.showToast = function (message, type = "success") {
     toast.className = `app-toast ${type === "error" ? "error" : "success"}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
 
-    const icon = type === "error" ? "!" : "âœ“";
+    const icon = type === "error" ? "!" : "Ã¢Å“â€œ";
     toast.innerHTML = `
         <span class="app-toast-icon" aria-hidden="true">${icon}</span>
         <span class="app-toast-message">${message}</span>
@@ -419,7 +419,8 @@ window.showMessageDialog = function ({
     }
 
     async function showPendingMessages() {
-        if (window.location.pathname === "/") {
+        const loginPath = document.querySelector('meta[name="app-base-path"]')?.content || "/";
+        if (window.location.pathname === loginPath) {
             return;
         }
 
