@@ -13,7 +13,7 @@
                         <h2>Clientes cargados</h2>
                         <p id="client-count">0 clientes encontrados</p>
                     </div>
-                    <button class="clients-primary" type="button" onclick="window.location.href='/clientes/formulario'">
+                    <button class="clients-primary" type="button" onclick="window.navigateToApp('/clientes/formulario')">
                         <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <circle cx="12" cy="8" r="4" />
                             <path d="M20 21a8 8 0 0 0-16 0" />
@@ -166,7 +166,7 @@
                     <td><span class="client-status ${client.status.toLowerCase()}">${client.status}</span></td>
                     <td>
                         <div class="client-row-actions">
-                            <button type="button" onclick="window.location.href='/clientes/formulario?id=${client.id}'">Ver</button>
+                            <button type="button" onclick="window.navigateToApp('/clientes/formulario?id=${client.id}')">Ver</button>
                         </div>
                     </td>
                 </tr>

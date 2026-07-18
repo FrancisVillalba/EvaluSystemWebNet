@@ -177,7 +177,7 @@
                 return;
             }
 
-            window.location.href = "/pedidos";
+            window.navigateToApp("/pedidos");
         }
 
         function notifyEmbeddedSaved() {
@@ -1008,7 +1008,7 @@
             showToast("Venta guardada correctamente.", "success");
             window.setTimeout(() => {
                 if (!notifyEmbeddedSaved()) {
-                    window.location.href = "/pedidos";
+                    window.navigateToApp("/pedidos");
                 }
             }, 700);
         }
@@ -1094,7 +1094,7 @@
             showToast("Pedido eliminado correctamente.", "success");
             window.setTimeout(() => {
                 if (!notifyEmbeddedSaved()) {
-                    window.location.href = "/pedidos";
+                    window.navigateToApp("/pedidos");
                 }
             }, 700);
         });

@@ -13,7 +13,7 @@
                 <div>
                     <h2 id="client-form-title">Nuevo cliente</h2>
                 </div>
-                <button class="back-list-button" type="button" onclick="window.location.href='/clientes'">Volver a la lista</button>
+                <button class="back-list-button" type="button" onclick="window.navigateToApp('/clientes')">Volver a la lista</button>
             </div>
 
             <div class="client-entry-grid">
@@ -134,7 +134,7 @@
         </section>
 
         <div class="client-entry-actions">
-            <button class="client-entry-secondary" type="button" onclick="window.location.href='/clientes'">Cancelar</button>
+            <button class="client-entry-secondary" type="button" onclick="window.navigateToApp('/clientes')">Cancelar</button>
             <button class="client-entry-primary" type="submit">Guardar cliente</button>
         </div>
     </form>
@@ -433,7 +433,7 @@
             }
 
             showToast("Cliente guardado correctamente.", "success");
-            window.location.href = "/clientes";
+            window.navigateToApp("/clientes");
         });
 
         setShippingEnabled(false);

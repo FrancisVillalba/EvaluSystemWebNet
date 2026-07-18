@@ -133,7 +133,7 @@
     <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-form-modal-title">
         <header class="order-form-modal-header">
             <h2 id="order-form-modal-title">Pedido</h2>
-            <button id="order-form-modal-close" type="button" aria-label="Cerrar formulario">×</button>
+            <button id="order-form-modal-close" type="button" aria-label="Cerrar formulario">Ã—</button>
         </header>
         <iframe id="order-form-frame" title="Formulario de pedido"></iframe>
     </section>
@@ -352,8 +352,8 @@
             const hasId = Boolean(id);
             orderFormModalTitle.textContent = hasId ? `Pedido ${id}` : "Nuevo pedido";
             orderFormFrame.src = hasId
-                ? `/pedidos/formulario?id=${encodeURIComponent(id)}&embedded=1`
-                : "/pedidos/formulario?embedded=1";
+                ? `${window.appUrl("/pedidos/formulario")}?id=${encodeURIComponent(id)}&embedded=1`
+                : window.appUrl("/pedidos/formulario?embedded=1");
             orderFormModal.hidden = false;
             document.body.classList.add("is-order-modal-open");
             orderFormModalClose.focus();

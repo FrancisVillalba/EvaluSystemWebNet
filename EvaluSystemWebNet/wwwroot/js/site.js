@@ -9,7 +9,7 @@ window.showToast = function (message, type = "success") {
     toast.className = `app-toast ${type === "error" ? "error" : "success"}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
 
-    const icon = type === "error" ? "!" : "Ã¢Å“â€œ";
+    const icon = type === "error" ? "!" : "\u2713";
     toast.innerHTML = `
         <span class="app-toast-icon" aria-hidden="true">${icon}</span>
         <span class="app-toast-message">${message}</span>
@@ -21,6 +21,21 @@ window.showToast = function (message, type = "success") {
         toast.classList.add("leaving");
         toast.addEventListener("transitionend", () => toast.remove(), { once: true });
     }, 4200);
+};
+
+window.appUrl = function (path) {
+    const basePath = (document.querySelector('meta[name="app-base-path"]')?.content || "/").replace(/\/$/, "");
+    const value = String(path || "");
+
+    if (/^https?:\/\//i.test(value) || value === basePath || value.startsWith(`${basePath}/`)) {
+        return value;
+    }
+
+    return `${basePath}/${value.replace(/^\/+/, "")}`;
+};
+
+window.navigateToApp = function (path) {
+    window.location.href = window.appUrl(path);
 };
 
 (function () {

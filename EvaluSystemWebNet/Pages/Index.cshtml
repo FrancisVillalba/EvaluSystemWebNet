@@ -137,7 +137,7 @@
 
             showToast("Inicio de sesion correcto.", "success");
             window.setTimeout(() => {
-                window.location.href = loginData.redirectUrl || "/dashboard";
+                window.navigateToApp(loginData.redirectUrl || "/dashboard");
             }, 600);
         });
     </script>

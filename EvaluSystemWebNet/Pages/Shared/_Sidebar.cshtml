@@ -72,7 +72,7 @@
     </div>
 
     <nav aria-label="Menu principal">
-        @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.location.href='/dashboard'">@AppIcon("dashboard")<span>Tablero</span></button> }
+        @if (CanSee("Tablero")) { <button class="@(activeMenu == "dashboard" ? "active" : "")" type="button" onclick="window.navigateToApp('/dashboard')">@AppIcon("dashboard")<span>Tablero</span></button> }
         @if (canSeeVentas)
         {
             <div class="sidebar-group @(ventasActive ? "open active" : "")" data-sidebar-group>
@@ -81,16 +81,16 @@
                     <span class="sidebar-group-arrow" aria-hidden="true">&#9662;</span>
                 </button>
                 <div class="sidebar-submenu">
-                    @if (canSeePedidos) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.location.href='/pedidos'">@AppIcon("orders")<span>Pedidos</span></button> }
-                    @if (canSeeGrupoVentas) { <button class="@(activeMenu == "grupo-ventas" ? "active" : "")" type="button" onclick="window.location.href='/grupo-ventas'">@AppIcon("team")<span>Grupo de ventas</span></button> }
+                    @if (canSeePedidos) { <button class="@(activeMenu == "pedidos" ? "active" : "")" type="button" onclick="window.navigateToApp('/pedidos')">@AppIcon("orders")<span>Pedidos</span></button> }
+                    @if (canSeeGrupoVentas) { <button class="@(activeMenu == "grupo-ventas" ? "active" : "")" type="button" onclick="window.navigateToApp('/grupo-ventas')">@AppIcon("team")<span>Grupo de ventas</span></button> }
                 </div>
             </div>
         }
-        @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.location.href='/clientes'">@AppIcon("clients")<span>Clientes</span></button> }
-        @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.location.href='/impresiones'">@AppIcon("printer")<span>Impresiones</span></button> }
-        @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.location.href='/delivery'">@AppIcon("delivery")<span>Envio</span></button> }
-        @if (canSeeReportes) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.location.href='/reportes'">@AppIcon("reports")<span>Reportes</span></button> }
-        @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.location.href='/administracion'">@AppIcon("admin")<span>Administracion</span></button> }
+        @if (CanSee("Clientes")) { <button class="@(activeMenu == "clientes" ? "active" : "")" type="button" onclick="window.navigateToApp('/clientes')">@AppIcon("clients")<span>Clientes</span></button> }
+        @if (CanSee("Impresiones")) { <button class="@(activeMenu == "impresiones" ? "active" : "")" type="button" onclick="window.navigateToApp('/impresiones')">@AppIcon("printer")<span>Impresiones</span></button> }
+        @if (CanSee("Envio")) { <button class="@(activeMenu == "delivery" ? "active" : "")" type="button" onclick="window.navigateToApp('/delivery')">@AppIcon("delivery")<span>Envio</span></button> }
+        @if (canSeeReportes) { <button class="@(activeMenu == "reportes" ? "active" : "")" type="button" onclick="window.navigateToApp('/reportes')">@AppIcon("reports")<span>Reportes</span></button> }
+        @if (CanSee("Administracion")) { <button class="@(activeMenu == "administracion" ? "active" : "")" type="button" onclick="window.navigateToApp('/administracion')">@AppIcon("admin")<span>Administracion</span></button> }
 
     </nav>
 </aside>
