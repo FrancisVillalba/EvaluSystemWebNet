@@ -9,7 +9,7 @@ window.showToast = function (message, type = "success") {
     toast.className = `app-toast ${type === "error" ? "error" : "success"}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
 
-    const icon = type === "error" ? "!" : "✓";
+    const icon = type === "error" ? "!" : "âœ“";
     toast.innerHTML = `
         <span class="app-toast-icon" aria-hidden="true">${icon}</span>
         <span class="app-toast-message">${message}</span>
@@ -25,7 +25,17 @@ window.showToast = function (message, type = "success") {
 
 (function () {
     const nativeFetch = window.fetch.bind(window);
+    const appBasePath = (document.querySelector('meta[name="app-base-path"]')?.content || "/" ).replace(/\/$/, "" );
+    const apiRoot = `${appBasePath}/api/`.toLowerCase();
     let redirectingToLogin = false;
+
+    function withAppBasePath(input) {
+        if (typeof input === "string" && input.startsWith("/api/")) {
+            return `${appBasePath}${input}`;
+        }
+
+        return input;
+    }
 
     function requestPath(input) {
         const rawUrl = typeof input === "string" ? input : input?.url || "";
@@ -43,26 +53,27 @@ window.showToast = function (message, type = "success") {
         }
 
         const path = requestPath(input);
-        return path.startsWith("/api/") && !path.startsWith("/api/auth/");
+        return path.startsWith(apiRoot) && !path.startsWith(`${apiRoot}auth/`);
     }
 
     function redirectToLogin() {
         redirectingToLogin = true;
 
-        if (window.location.pathname !== "/") {
+        if (window.location.pathname !== `${appBasePath}/`) {
             window.showToast?.("La sesion caduco. Inicie sesion nuevamente.", "error");
         }
 
         window.setTimeout(() => {
             const target = window.top || window;
-            target.location.href = "/";
+            target.location.href = document.querySelector('meta[name="app-base-path"]')?.content || "/";
         }, 600);
     }
 
     window.fetch = async function (input, init) {
-        const response = await nativeFetch(input, init);
+        const resolvedInput = withAppBasePath(input);
+        const response = await nativeFetch(resolvedInput, init);
 
-        if (shouldRedirectToLogin(input, response)) {
+        if (shouldRedirectToLogin(resolvedInput, response)) {
             redirectToLogin();
         }
 
@@ -281,7 +292,7 @@ window.showMessageDialog = function ({
             await fetch("/api/auth/logout", { method: "POST" });
         } finally {
             const target = window.top || window;
-            target.location.href = "/";
+            target.location.href = document.querySelector('meta[name="app-base-path"]')?.content || "/";
         }
     }
 
