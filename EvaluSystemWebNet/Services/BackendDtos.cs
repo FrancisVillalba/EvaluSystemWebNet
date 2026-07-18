@@ -31,9 +31,13 @@ public record DashboardSellerDto(string Nombre, decimal Monto);
 
 public record LoginRequest(string Usuario, string Pass);
 
+public record RefreshTokenRequest(string RefreshToken);
+
 public record LoginResponse(
     string Token,
     DateTime ExpiresAt,
+    string RefreshToken,
+    DateTime RefreshExpiresAt,
     int UsuarioId,
     string Usuario,
     int? PersonaId,

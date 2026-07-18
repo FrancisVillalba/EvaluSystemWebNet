@@ -30,6 +30,8 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString("BackendUserName", response.Usuario);
         HttpContext.Session.SetInt32("BackendUserId", response.UsuarioId);
         HttpContext.Session.SetString("BackendExpiresAt", response.ExpiresAt.ToString("O"));
+        HttpContext.Session.SetString("BackendRefreshToken", response.RefreshToken);
+        HttpContext.Session.SetString("BackendRefreshExpiresAt", response.RefreshExpiresAt.ToString("O"));
         HttpContext.Session.SetString("BackendPermissions", JsonSerializer.Serialize(response.Permisos));
 
         return Ok(new
