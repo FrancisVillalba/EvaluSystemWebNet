@@ -1,0 +1,190 @@
+@page
+@model EvaluSystemWebNet.Pages.control.IndexModel
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Control";
+    ViewData["ActiveMenu"] = "control";
+    ViewData["ShellClass"] = "control-shell";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/control.css" asp-append-version="true" />
+}
+
+<section class="control-main">
+    <header class="control-header">
+        <div>
+            <h1>Control</h1>
+            <p>Revisa los pedidos impresos por maquina antes de pasarlos a pendiente de envio.</p>
+        </div>
+        <button id="refresh-control" class="control-secondary" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+                <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+                <path d="M18 3v4h-4" />
+                <path d="M6 21v-4h4" />
+            </svg>
+            <span>Actualizar</span>
+        </button>
+    </header>
+
+    <section class="control-summary" aria-label="Resumen de control">
+        <article><span>Pedidos</span><strong id="control-total">0</strong></article>
+        <article><span>Maquinas</span><strong id="control-machines">0</strong></article>
+        <article><span>Items</span><strong id="control-items">0</strong></article>
+    </section>
+
+    <section class="control-filter" aria-label="Filtros de control">
+        <label for="control-search">Buscar<input id="control-search" type="search" placeholder="Pedido, cliente, producto o maquina" /></label>
+    </section>
+
+    <section id="control-board" class="control-board" aria-live="polite"></section>
+</section>
+
+@section Scripts {
+    <script>
+        const board = document.getElementById("control-board");
+        const search = document.getElementById("control-search");
+        const total = document.getElementById("control-total");
+        const machines = document.getElementById("control-machines");
+        const items = document.getElementById("control-items");
+        let pedidos = [];
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" });
+        }
+
+        function formatMoney(value) {
+            return `Gs. ${Number(value || 0).toLocaleString("es-PY")}`;
+        }
+
+        function normalized(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        function matchesSearch(pedido) {
+            const term = normalized(search.value);
+            if (!term) return true;
+            const haystack = [
+                pedido.id,
+                pedido.cliente,
+                pedido.estadoVenta,
+                pedido.metodoEntrega,
+                ...(pedido.detalles || []).flatMap(detalle => [detalle.tipoMaquina, detalle.producto, detalle.observacion])
+            ].join(" ");
+            return normalized(haystack).includes(term);
+        }
+
+        function groupedByMachine() {
+            const groups = new Map();
+            pedidos.filter(matchesSearch).forEach(pedido => {
+                (pedido.detalles || []).forEach(detalle => {
+                    const key = detalle.tipoMaquina || `Maquina ${detalle.tipoMaquinaId}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push({ pedido, detalle });
+                });
+            });
+            return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+        }
+
+        function renderPedido(pedido, detalles) {
+            return `
+                <article class="control-order">
+                    <div class="control-order-head">
+                        <div><span>Pedido #${pedido.id}</span><h3>${escapeHtml(pedido.cliente)}</h3></div>
+                        <button class="control-primary" type="button" data-approve-id="${pedido.id}">Aprobar control</button>
+                    </div>
+                    <dl class="control-order-meta">
+                        <div><dt>Entrega</dt><dd>${formatDate(pedido.fechaEntrega)}</dd></div>
+                        <div><dt>Metodo</dt><dd>${escapeHtml(pedido.metodoEntrega || "-")}</dd></div>
+                        <div><dt>Total</dt><dd>${formatMoney(pedido.totalVenta)}</dd></div>
+                    </dl>
+                    <div class="control-detail-list">
+                        ${detalles.map(detalle => `
+                            <div class="control-detail">
+                                <span>${escapeHtml(detalle.producto)}</span>
+                                <strong>${Number(detalle.cantidad || 0).toLocaleString("es-PY")}</strong>
+                                <em>${detalle.impreso ? "Impreso" : "Pendiente"}</em>
+                            </div>
+                        `).join("")}
+                    </div>
+                </article>`;
+        }
+
+        function render() {
+            const groups = groupedByMachine();
+            const visiblePedidos = pedidos.filter(matchesSearch);
+            const itemCount = visiblePedidos.reduce((sum, pedido) => sum + (pedido.detalles || []).length, 0);
+            total.textContent = visiblePedidos.length;
+            machines.textContent = groups.length;
+            items.textContent = itemCount;
+
+            if (!groups.length) {
+                board.innerHTML = `<div class="control-empty">No hay pedidos para controlar.</div>`;
+                return;
+            }
+
+            board.innerHTML = groups.map(([machine, entries]) => {
+                const orders = new Map();
+                entries.forEach(({ pedido, detalle }) => {
+                    if (!orders.has(pedido.id)) orders.set(pedido.id, { pedido, detalles: [] });
+                    orders.get(pedido.id).detalles.push(detalle);
+                });
+                return `
+                    <section class="control-machine">
+                        <header><div><span>Maquina</span><h2>${escapeHtml(machine)}</h2></div><strong>${orders.size} pedidos</strong></header>
+                        <div class="control-orders">${[...orders.values()].map(group => renderPedido(group.pedido, group.detalles)).join("")}</div>
+                    </section>`;
+            }).join("");
+        }
+
+        async function loadControl() {
+            await withAppLoading("Cargando control...", async function () {
+                const response = await fetch("/api/control");
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudieron cargar pedidos en control.", "error");
+                    return;
+                }
+                pedidos = await response.json();
+                render();
+            });
+        }
+
+        async function approvePedido(id) {
+            const confirmed = await showConfirmation({ title: `Aprobar pedido #${id}`, message: "El pedido pasara a Pendiente de envio.", confirmText: "Aprobar" });
+            if (!confirmed) return;
+
+            await withAppLoading("Aprobando control...", async function () {
+                const response = await fetch(`/api/control/${id}/aprobar`, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo aprobar el pedido.", "error");
+                    return;
+                }
+                showToast("Pedido enviado a pendiente de envio.", "success");
+                await loadControl();
+            });
+        }
+
+        document.getElementById("refresh-control").addEventListener("click", loadControl);
+        search.addEventListener("input", render);
+        board.addEventListener("click", event => {
+            const button = event.target.closest("[data-approve-id]");
+            if (button) approvePedido(button.dataset.approveId);
+        });
+
+        loadControl();
+    </script>
+}

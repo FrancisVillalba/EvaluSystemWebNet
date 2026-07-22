@@ -130,6 +130,7 @@ public class AuthController : ControllerBase
             "Grupo de ventas" => "/grupo-ventas",
             "Clientes" => "/clientes",
             "Impresiones" => "/impresiones",
+            "Control" => "/control",
             "Envio" => "/delivery",
             "Reportes" => "/reportes",
             "Administracion" => "/administracion",

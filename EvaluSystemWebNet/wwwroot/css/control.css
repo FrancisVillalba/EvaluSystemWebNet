@@ -1,0 +1,257 @@
+.control-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100svh;
+  background: #eef3f5;
+}
+
+.control-main {
+  min-width: 0;
+  padding: 30px;
+}
+
+.control-header,
+.control-summary,
+.control-filter,
+.control-machine {
+  background: #fff;
+  border: 1px solid #d7e5eb;
+  border-radius: 8px;
+  box-shadow: 0 16px 30px rgb(5 60 76 / 0.06);
+}
+
+.control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
+}
+
+.control-header h1 {
+  margin: 0;
+  color: #001f35;
+  font-size: 28px;
+}
+
+.control-header p {
+  margin: 10px 0 0;
+  color: #5f7385;
+}
+
+.control-primary,
+.control-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 7px;
+  border: 1px solid #0b6375;
+  padding: 0 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.control-primary {
+  background: #0b6375;
+  color: #fff;
+}
+
+.control-secondary {
+  background: #fff;
+  color: #075f72;
+}
+
+.control-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 18px;
+  overflow: hidden;
+}
+
+.control-summary article {
+  padding: 18px 22px;
+  background: #f8fbfc;
+}
+
+.control-summary span,
+.control-machine header span,
+.control-order-head span,
+.control-order-meta dt {
+  display: block;
+  color: #63788b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.control-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: #002840;
+  font-size: 26px;
+}
+
+.control-filter {
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.control-filter label {
+  display: grid;
+  gap: 8px;
+  color: #001f35;
+  font-weight: 800;
+}
+
+.control-filter input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #b9ccd8;
+  border-radius: 7px;
+  padding: 0 14px;
+  color: #001f35;
+}
+
+.control-board {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.control-machine {
+  overflow: hidden;
+}
+
+.control-machine > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e2edf1;
+}
+
+.control-machine h2 {
+  margin: 4px 0 0;
+  color: #002840;
+  font-size: 20px;
+}
+
+.control-machine header strong {
+  color: #075f72;
+}
+
+.control-orders {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.control-order {
+  border: 1px solid #dbe7ec;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.control-order-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.control-order h3 {
+  margin: 4px 0 0;
+  color: #001f35;
+  font-size: 18px;
+}
+
+.control-order-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+.control-order-meta div {
+  margin: 0;
+}
+
+.control-order-meta dd {
+  margin: 4px 0 0;
+  color: #001f35;
+  font-weight: 700;
+}
+
+.control-detail-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.control-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 110px;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  border-radius: 7px;
+  background: #f7fbfc;
+  padding: 8px 12px;
+  color: #002840;
+}
+
+.control-detail strong,
+.control-detail em {
+  justify-self: end;
+}
+
+.control-detail em {
+  color: #0b6375;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.control-empty {
+  border: 1px dashed #b9ccd8;
+  border-radius: 8px;
+  background: #fff;
+  padding: 34px;
+  color: #5f7385;
+  text-align: center;
+  font-weight: 800;
+}
+
+@media (width <= 920px) {
+  .control-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .control-main {
+    padding: 22px;
+  }
+
+  .control-header,
+  .control-order-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .control-summary,
+  .control-order-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .control-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .control-detail strong,
+  .control-detail em {
+    justify-self: start;
+  }
+}
