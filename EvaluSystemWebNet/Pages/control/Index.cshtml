@@ -302,10 +302,12 @@
         }
 
         async function approvePedido(id) {
-            const confirmed = await showConfirmation({
-                title: `Aprobar detalle #${id}`,
-                message: "Si todos los detalles quedan controlados, el pedido avanzara de estado.",
-                confirmText: "Aprobado"
+            const confirmed = await showConfirmDialog({
+                title: "Aprobar item",
+                message: `Seguro que desea aprobar este item? Si todos los detalles quedan controlados, el pedido avanzara de estado.`,
+                confirmText: "Aprobado",
+                cancelText: "Cancelar",
+                tone: "info"
             });
             if (!confirmed) return;
 
@@ -317,7 +319,7 @@
                     return;
                 }
 
-                showToast("Pedido enviado a pendiente de envio.", "success");
+                showToast("Detalle aprobado correctamente.", "success");
                 await loadControl();
             });
         }

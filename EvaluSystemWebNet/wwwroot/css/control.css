@@ -168,6 +168,17 @@
   margin-top: 18px;
 }
 
+.control-modal-card footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 102px;
+  min-height: 42px;
+  border-radius: 7px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
 @media (width <= 1180px) {
   .control-row-actions {
     align-items: stretch;

@@ -72,7 +72,10 @@
         const dateFrom = document.getElementById("print-date-from");
         const dateTo = document.getElementById("print-date-to");
 
+        const knownMachinesStorageKey = "evalu-print-known-machines";
+
         let files = [];
+        let knownMachines = loadKnownMachines();
         let selectedMachine = "";
 
         function localDateValue(date = new Date()) {
@@ -100,11 +103,32 @@
             return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
         }
 
+        function loadKnownMachines() {
+            try {
+                return new Map(JSON.parse(localStorage.getItem(knownMachinesStorageKey) || "[]"));
+            } catch {
+                return new Map();
+            }
+        }
+
+        function saveKnownMachines() {
+            localStorage.setItem(knownMachinesStorageKey, JSON.stringify([...knownMachines.entries()]));
+        }
+
+        function registerKnownMachines() {
+            files.forEach(item => {
+                const key = String(item.tipoMaquinaId);
+                knownMachines.set(key, item.tipoMaquina || "Sin maquina");
+            });
+            saveKnownMachines();
+        }
+
         function getMachineGroups() {
-            const groups = new Map();
+            const groups = new Map([...knownMachines.entries()].map(([id, name]) => [id, { id, name, count: 0 }]));
             files.forEach(item => {
                 const key = String(item.tipoMaquinaId);
                 const current = groups.get(key) || { id: key, name: item.tipoMaquina || "Sin maquina", count: 0 };
+                current.name = item.tipoMaquina || current.name;
                 current.count += 1;
                 groups.set(key, current);
             });
@@ -144,10 +168,8 @@
 
         function renderTable() {
             const rows = filteredFiles();
-            const title = selectedMachine
-                ? rows[0]?.tipoMaquina || "Maquina"
-                : "Maquina";
-            machineTitle.textContent = title;
+            const selectedMachineData = getMachineGroups().find(machine => machine.id === selectedMachine);
+            machineTitle.textContent = selectedMachineData?.name || "Maquina";
             machineCount.textContent = `${rows.length} archivos`;
             tableBody.innerHTML = rows.length
                 ? rows.map(item => `
