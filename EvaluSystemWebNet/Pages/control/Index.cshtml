@@ -4,149 +4,264 @@
     Layout = "_AppLayout";
     ViewData["Title"] = "Control";
     ViewData["ActiveMenu"] = "control";
-    ViewData["ShellClass"] = "control-shell";
+    ViewData["ShellClass"] = "reports-shell";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/control.css" asp-append-version="true" />
 }
 
-<section class="control-main">
-    <header class="control-header">
+<section class="reports-main control-main">
+    <header class="reports-header">
         <div>
-            <h1>Control</h1>
-            <p>Revisa los pedidos impresos por maquina antes de pasarlos a pendiente de envio.</p>
+            <p class="eyebrow">Control</p>
+            <h1>Pedidos para controlar</h1>
+            <p>Revisa los pedidos impresos agrupados por maquina antes de pasarlos a pendiente de envio.</p>
         </div>
-        <button id="refresh-control" class="control-secondary" type="button">
-            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M21 12a9 9 0 0 1-15.5 6.2" />
-                <path d="M3 12a9 9 0 0 1 15.5-6.2" />
-                <path d="M18 3v4h-4" />
-                <path d="M6 21v-4h4" />
-            </svg>
-            <span>Actualizar</span>
-        </button>
+        <button id="refresh-control" class="admin-primary" type="button">Actualizar</button>
     </header>
 
-    <section class="control-summary" aria-label="Resumen de control">
-        <article><span>Pedidos</span><strong id="control-total">0</strong></article>
-        <article><span>Maquinas</span><strong id="control-machines">0</strong></article>
-        <article><span>Items</span><strong id="control-items">0</strong></article>
-    </section>
+    <div class="reports-workspace">
+        <aside id="control-machine-menu" class="reports-modules" aria-label="Maquinas"></aside>
 
-    <section class="control-filter" aria-label="Filtros de control">
-        <label for="control-search">Buscar<input id="control-search" type="search" placeholder="Pedido, cliente, producto o maquina" /></label>
-    </section>
+        <section class="reports-panel">
+            <div class="reports-panel-header">
+                <div>
+                    <h2 id="control-machine-title">Maquina</h2>
+                    <p id="control-machine-help">Pedidos impresos pendientes de control.</p>
+                </div>
+                <div class="panel-heading-actions">
+                    <span id="control-machine-count" class="delivery-route-count">0 items</span>
+                    <button id="refresh-control-panel" class="admin-primary" type="button">Actualizar</button>
+                </div>
+            </div>
 
-    <section id="control-board" class="control-board" aria-live="polite"></section>
+            <div class="reports-filters control-filters">
+                <label for="control-date-from">
+                    Fecha desde
+                    <input id="control-date-from" type="date" />
+                </label>
+                <label for="control-date-to">
+                    Fecha hasta
+                    <input id="control-date-to" type="date" />
+                </label>
+                <label for="control-search">
+                    Buscar
+                    <input id="control-search" type="search" placeholder="Pedido, cliente o producto" />
+                </label>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table control-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="control-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 </section>
+
+<div id="reject-modal" class="control-modal" hidden>
+    <form id="reject-form" class="control-modal-card">
+        <header>
+            <div>
+                <span>Rechazar archivo</span>
+                <h2 id="reject-title">Pedido</h2>
+            </div>
+            <button id="reject-close" class="control-modal-close" type="button" aria-label="Cerrar">x</button>
+        </header>
+        <label for="reject-comment">
+            Comentario
+            <textarea id="reject-comment" maxlength="500" required placeholder="Indica el motivo del rechazo"></textarea>
+        </label>
+        <footer>
+            <button id="reject-cancel" class="admin-secondary" type="button">Cancelar</button>
+            <button class="admin-danger" type="submit">Rechazado</button>
+        </footer>
+    </form>
+</div>
 
 @section Scripts {
     <script>
-        const board = document.getElementById("control-board");
+        const machineMenu = document.getElementById("control-machine-menu");
+        const machineTitle = document.getElementById("control-machine-title");
+        const machineCount = document.getElementById("control-machine-count");
+        const tableBody = document.getElementById("control-body");
         const search = document.getElementById("control-search");
-        const total = document.getElementById("control-total");
-        const machines = document.getElementById("control-machines");
-        const items = document.getElementById("control-items");
+        const dateFrom = document.getElementById("control-date-from");
+        const dateTo = document.getElementById("control-date-to");
+        const rejectModal = document.getElementById("reject-modal");
+        const rejectForm = document.getElementById("reject-form");
+        const rejectTitle = document.getElementById("reject-title");
+        const rejectComment = document.getElementById("reject-comment");
+        const knownMachinesStorageKey = "evalu-control-known-machines";
+
         let pedidos = [];
+        let knownMachines = loadKnownMachines();
+        let selectedMachine = "";
+        let rejectPedidoId = null;
+
+        function localDateValue(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
 
         function escapeHtml(value) {
-            return String(value ?? "")
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function formatDate(value) {
-            if (!value) return "-";
-            const date = new Date(value);
-            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" });
-        }
-
-        function formatMoney(value) {
-            return `Gs. ${Number(value || 0).toLocaleString("es-PY")}`;
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
         }
 
         function normalized(value) {
             return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         }
 
-        function matchesSearch(pedido) {
+        function formatDate(value) {
+            if (!value) return "-";
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-PY");
+        }
+
+        function formatQuantity(value) {
+            return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
+        }
+
+        function loadKnownMachines() {
+            try {
+                return new Map(JSON.parse(localStorage.getItem(knownMachinesStorageKey) || "[]"));
+            } catch {
+                return new Map();
+            }
+        }
+
+        function saveKnownMachines() {
+            localStorage.setItem(knownMachinesStorageKey, JSON.stringify([...knownMachines.entries()]));
+        }
+
+        function getRows() {
             const term = normalized(search.value);
-            if (!term) return true;
-            const haystack = [
-                pedido.id,
-                pedido.cliente,
-                pedido.estadoVenta,
-                pedido.metodoEntrega,
-                ...(pedido.detalles || []).flatMap(detalle => [detalle.tipoMaquina, detalle.producto, detalle.observacion])
-            ].join(" ");
-            return normalized(haystack).includes(term);
-        }
+            const from = dateFrom.value ? new Date(`${dateFrom.value}T00:00:00`) : null;
+            const to = dateTo.value ? new Date(`${dateTo.value}T23:59:59`) : null;
 
-        function groupedByMachine() {
-            const groups = new Map();
-            pedidos.filter(matchesSearch).forEach(pedido => {
-                (pedido.detalles || []).forEach(detalle => {
-                    const key = detalle.tipoMaquina || `Maquina ${detalle.tipoMaquinaId}`;
-                    if (!groups.has(key)) groups.set(key, []);
-                    groups.get(key).push({ pedido, detalle });
-                });
+            return pedidos.flatMap(pedido => (pedido.detalles || []).filter(detalle => !["AP", "RE"].includes(String(detalle.estadoItem || "").trim().toUpperCase())).map(detalle => ({
+                pedido,
+                detalle,
+                machineId: String(detalle.tipoMaquinaId),
+                machineName: detalle.tipoMaquina || `Maquina ${detalle.tipoMaquinaId}`
+            }))).filter(row => {
+                const rowDate = new Date(row.pedido.fechaEntrega || row.pedido.fechaCreacion);
+                const matchesDate = (!from || rowDate >= from) && (!to || rowDate <= to);
+                const haystack = [
+                    row.pedido.id,
+                    row.pedido.cliente,
+                    row.pedido.estadoVenta,
+                    row.pedido.metodoEntrega,
+                    row.detalle.producto,
+                    row.detalle.observacion,
+                    row.machineName
+                ].join(" ");
+                return matchesDate && (!term || normalized(haystack).includes(term));
             });
-            return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
         }
 
-        function renderPedido(pedido, detalles) {
-            return `
-                <article class="control-order">
-                    <div class="control-order-head">
-                        <div><span>Pedido #${pedido.id}</span><h3>${escapeHtml(pedido.cliente)}</h3></div>
-                        <button class="control-primary" type="button" data-approve-id="${pedido.id}">Aprobar control</button>
-                    </div>
-                    <dl class="control-order-meta">
-                        <div><dt>Entrega</dt><dd>${formatDate(pedido.fechaEntrega)}</dd></div>
-                        <div><dt>Metodo</dt><dd>${escapeHtml(pedido.metodoEntrega || "-")}</dd></div>
-                        <div><dt>Total</dt><dd>${formatMoney(pedido.totalVenta)}</dd></div>
-                    </dl>
-                    <div class="control-detail-list">
-                        ${detalles.map(detalle => `
-                            <div class="control-detail">
-                                <span>${escapeHtml(detalle.producto)}</span>
-                                <strong>${Number(detalle.cantidad || 0).toLocaleString("es-PY")}</strong>
-                                <em>${detalle.impreso ? "Impreso" : "Pendiente"}</em>
-                            </div>
-                        `).join("")}
-                    </div>
-                </article>`;
+        function registerKnownMachines(rows) {
+            rows.forEach(row => knownMachines.set(row.machineId, row.machineName));
+            saveKnownMachines();
         }
 
-        function render() {
-            const groups = groupedByMachine();
-            const visiblePedidos = pedidos.filter(matchesSearch);
-            const itemCount = visiblePedidos.reduce((sum, pedido) => sum + (pedido.detalles || []).length, 0);
-            total.textContent = visiblePedidos.length;
-            machines.textContent = groups.length;
-            items.textContent = itemCount;
+        function getMachineGroups(rows) {
+            const groups = new Map([...knownMachines.entries()].map(([id, name]) => [id, { id, name, count: 0 }]));
+            rows.forEach(row => {
+                const current = groups.get(row.machineId) || { id: row.machineId, name: row.machineName, count: 0 };
+                current.name = row.machineName;
+                current.count += 1;
+                groups.set(row.machineId, current);
+            });
 
-            if (!groups.length) {
-                board.innerHTML = `<div class="control-empty">No hay pedidos para controlar.</div>`;
+            return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function ensureSelectedMachine(machines) {
+            if (!machines.length) {
+                selectedMachine = "";
                 return;
             }
 
-            board.innerHTML = groups.map(([machine, entries]) => {
-                const orders = new Map();
-                entries.forEach(({ pedido, detalle }) => {
-                    if (!orders.has(pedido.id)) orders.set(pedido.id, { pedido, detalles: [] });
-                    orders.get(pedido.id).detalles.push(detalle);
-                });
-                return `
-                    <section class="control-machine">
-                        <header><div><span>Maquina</span><h2>${escapeHtml(machine)}</h2></div><strong>${orders.size} pedidos</strong></header>
-                        <div class="control-orders">${[...orders.values()].map(group => renderPedido(group.pedido, group.detalles)).join("")}</div>
-                    </section>`;
-            }).join("");
+            if (!selectedMachine || !machines.some(machine => machine.id === selectedMachine)) {
+                selectedMachine = machines[0].id;
+            }
+        }
+
+        function selectedRows(rows) {
+            return selectedMachine ? rows.filter(row => row.machineId === selectedMachine) : [];
+        }
+
+        function renderMachineMenu(rows) {
+            const machines = getMachineGroups(rows);
+            ensureSelectedMachine(machines);
+
+            machineMenu.innerHTML = machines.length
+                ? machines.map(machine => `
+                    <button class="${selectedMachine === machine.id ? "active" : ""}" type="button" data-machine="${machine.id}">
+                        <span>${escapeHtml(machine.name)}</span><strong class="print-count-badge">${machine.count}</strong>
+                    </button>
+                `).join("")
+                : `<div class="empty-state">No hay maquinas para controlar.</div>`;
+        }
+
+        function renderTable(rows) {
+            const selected = selectedRows(rows);
+            const selectedMachineData = getMachineGroups(rows).find(machine => machine.id === selectedMachine);
+            machineTitle.textContent = selectedMachineData?.name || "Maquina";
+            machineCount.textContent = `${selected.length} items`;
+            tableBody.innerHTML = selected.length
+                ? selected.map(row => `
+                    <tr>
+                        <td>#${row.pedido.id}</td>
+                        <td>${formatDate(row.pedido.fechaEntrega || row.pedido.fechaCreacion)}</td>
+                        <td><strong>${escapeHtml(row.pedido.cliente)}</strong></td>
+                        <td>${escapeHtml(row.detalle.producto)}</td>
+                        <td>${formatQuantity(row.detalle.cantidad)}</td>
+                        <td><span class="control-status">${row.detalle.impreso ? "Impreso" : "Pendiente"}</span></td>
+                        <td>
+                            <div class="control-row-actions">
+                                <button class="control-download-button" type="button" data-download-id="${row.detalle.id}" title="Descargar" aria-label="Descargar archivo">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M12 3v12"></path>
+                                        <path d="m7 10 5 5 5-5"></path>
+                                        <path d="M5 21h14"></path>
+                                    </svg>
+                                </button>
+                                <button class="control-approve-button" type="button" data-approve-id="${row.detalle.id}">Aprobado</button>
+                                <button class="control-reject-button" type="button" data-reject-id="${row.detalle.id}" data-reject-pedido="${row.pedido.id}">Rechazado</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join("")
+                : `<tr><td colspan="7">No hay pedidos para esta maquina.</td></tr>`;
+        }
+
+        function render() {
+            const rows = getRows();
+            registerKnownMachines(rows);
+            renderMachineMenu(rows);
+            renderTable(rows);
         }
 
         async function loadControl() {
@@ -157,13 +272,41 @@
                     showToast(error?.message || "No se pudieron cargar pedidos en control.", "error");
                     return;
                 }
-                pedidos = await response.json();
+
+                pedidos = await response.json() || [];
                 render();
             });
         }
 
+        async function downloadFile(id) {
+            await withAppLoading("Descargando archivo...", async function () {
+                const response = await fetch(`/api/control/${id}/archivo`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo descargar el archivo.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get("content-disposition") || "";
+                const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+                const fileName = match ? decodeURIComponent(match[1] || match[2]) : `archivo-${id}`;
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
         async function approvePedido(id) {
-            const confirmed = await showConfirmation({ title: `Aprobar pedido #${id}`, message: "El pedido pasara a Pendiente de envio.", confirmText: "Aprobar" });
+            const confirmed = await showConfirmation({
+                title: `Aprobar detalle #${id}`,
+                message: "Si todos los detalles quedan controlados, el pedido avanzara de estado.",
+                confirmText: "Aprobado"
+            });
             if (!confirmed) return;
 
             await withAppLoading("Aprobando control...", async function () {
@@ -173,18 +316,103 @@
                     showToast(error?.message || "No se pudo aprobar el pedido.", "error");
                     return;
                 }
+
                 showToast("Pedido enviado a pendiente de envio.", "success");
                 await loadControl();
             });
         }
 
-        document.getElementById("refresh-control").addEventListener("click", loadControl);
-        search.addEventListener("input", render);
-        board.addEventListener("click", event => {
-            const button = event.target.closest("[data-approve-id]");
-            if (button) approvePedido(button.dataset.approveId);
+        function openRejectModal(id, pedidoId) {
+            rejectPedidoId = id;
+            rejectTitle.textContent = `Pedido #${pedidoId} - detalle #${id}`;
+            rejectComment.value = "";
+            rejectModal.hidden = false;
+            rejectComment.focus();
+        }
+
+        function closeRejectModal() {
+            rejectModal.hidden = true;
+            rejectPedidoId = null;
+            rejectComment.value = "";
+        }
+
+        async function rejectPedido(id, observacion) {
+            await withAppLoading("Rechazando archivo...", async function () {
+                const response = await fetch(`/api/control/${id}/rechazar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ observacion })
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo rechazar el pedido.", "error");
+                    return;
+                }
+
+                showToast("Pedido rechazado y marcado como eliminado.", "success");
+                closeRejectModal();
+                await loadControl();
+            });
+        }
+
+        machineMenu.addEventListener("click", event => {
+            const button = event.target.closest("[data-machine]");
+            if (!button) return;
+
+            selectedMachine = button.dataset.machine || "";
+            render();
         });
 
+        tableBody.addEventListener("click", event => {
+            const downloadButton = event.target.closest("[data-download-id]");
+            if (downloadButton) {
+                downloadFile(downloadButton.dataset.downloadId);
+                return;
+            }
+
+            const approveButton = event.target.closest("[data-approve-id]");
+            if (approveButton) {
+                approvePedido(approveButton.dataset.approveId);
+                return;
+            }
+
+            const rejectButton = event.target.closest("[data-reject-id]");
+            if (rejectButton) {
+                openRejectModal(rejectButton.dataset.rejectId, rejectButton.dataset.rejectPedido);
+            }
+        });
+
+        rejectForm.addEventListener("submit", event => {
+            event.preventDefault();
+            const observacion = rejectComment.value.trim();
+            if (!observacion) {
+                showToast("Debe agregar un comentario para rechazar.", "error");
+                rejectComment.focus();
+                return;
+            }
+            rejectPedido(rejectPedidoId, observacion);
+        });
+
+        document.getElementById("reject-close").addEventListener("click", closeRejectModal);
+        document.getElementById("reject-cancel").addEventListener("click", closeRejectModal);
+        rejectModal.addEventListener("click", event => {
+            if (event.target === rejectModal) closeRejectModal();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !rejectModal.hidden) closeRejectModal();
+        });
+
+        document.getElementById("refresh-control").addEventListener("click", loadControl);
+        document.getElementById("refresh-control-panel").addEventListener("click", loadControl);
+        search.addEventListener("input", render);
+        dateFrom.addEventListener("change", render);
+        dateTo.addEventListener("change", render);
+
+        const today = new Date();
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(today.getDate() - 5);
+        dateFrom.value = localDateValue(fiveDaysAgo);
+        dateTo.value = localDateValue(today);
         loadControl();
     </script>
 }

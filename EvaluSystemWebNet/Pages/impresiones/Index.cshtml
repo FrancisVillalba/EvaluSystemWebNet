@@ -268,8 +268,11 @@
         document.getElementById("refresh-print-files-panel")?.addEventListener("click", loadFiles);
         [dateFrom, dateTo].forEach(input => input.addEventListener("change", loadFiles));
 
-        dateFrom.value = localDateValue();
-        dateTo.value = localDateValue();
+        const today = new Date();
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(today.getDate() - 5);
+        dateFrom.value = localDateValue(fiveDaysAgo);
+        dateTo.value = localDateValue(today);
         loadFiles();
     </script>
 }
