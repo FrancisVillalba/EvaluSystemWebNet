@@ -43,6 +43,7 @@ public record PedidoView(
     string ProofPath,
     string ProofName,
     string Notes,
+    bool Reposicion,
     List<PedidoDetalleView> Details);
 
 public record PedidoDetalleView(

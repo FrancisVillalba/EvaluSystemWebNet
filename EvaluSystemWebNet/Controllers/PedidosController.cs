@@ -257,6 +257,7 @@ public class PedidosController : ControllerBase
             pedido.ComprobantePago ?? string.Empty,
             pedido.ComprobantePagoNombre ?? string.Empty,
             pedido.Observacion ?? string.Empty,
+            pedido.Reposicion,
             pedido.Detalles.Select(ToDetailView).ToList());
     }
 

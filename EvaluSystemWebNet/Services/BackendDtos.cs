@@ -483,6 +483,7 @@ public record VentaImpresionCompletaRequest(
     string? ComprobantePagoNombre,
     string? Observacion,
     string? MetodoEntrega,
+    bool Reposicion,
     string? EstadoVentaId,
     IEnumerable<VentaImpresionDetalleCreateRequest> Detalles);
 
@@ -509,6 +510,7 @@ public record VentaImpresionCompletaUpdateRequest(
     string? ComprobantePagoNombre,
     string? Observacion,
     string? MetodoEntrega,
+    bool Reposicion,
     string? EstadoVentaId,
     IEnumerable<VentaImpresionDetalleUpdateRequest> Detalles);
 
@@ -548,6 +550,7 @@ public record VentaImpresionCabDto(
     string? ComprobantePagoNombre,
     string? Observacion,
     string? MetodoEntrega,
+    bool Reposicion,
     int? DeliveryUsuarioId,
     string? DeliveryUsuario,
     DateTime? FechaTomaDelivery,

@@ -950,6 +950,9 @@ body.modal-page-body {
   padding-top: 0;
 }
 
+.order-data-group {
+  grid-template-columns: minmax(190px, 1.05fr) minmax(190px, 1.05fr) minmax(170px, 0.95fr) minmax(118px, 0.42fr);
+}
 .order-field-group legend {
   grid-column: 1 / -1;
   color: #073f45;
@@ -4585,4 +4588,22 @@ body.modal-page-body {
   .panel-heading-actions > button {
     width: 100%;
   }
+}
+
+.order-reposition-check {
+  display: inline-flex;
+  align-items: center;
+  align-self: end;
+  min-height: 44px;
+  gap: 9px;
+  color: #0f2735;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.order-reposition-check input {
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  accent-color: #0c5f72;
 }

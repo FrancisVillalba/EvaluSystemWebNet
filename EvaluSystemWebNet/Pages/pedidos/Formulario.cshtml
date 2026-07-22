@@ -50,6 +50,10 @@
                                     Fecha entrega
                                     <input id="order-delivery" required type="date" />
                                 </label>
+                                <label class="order-reposition-check" for="order-reposicion">
+                                    <input id="order-reposicion" type="checkbox" />
+                                    <span>Reposición </span>
+                                </label>
                             </fieldset>
 
                             <fieldset class="order-field-group payment-group">
@@ -811,6 +815,7 @@
             loadedSaleStateId = order.estadoVentaId || saleStatusSelect.value || initialSaleState()?.id || "";
             renderSaleStatusOptions(order.estadoVentaId || loadedSaleStateId);
             document.getElementById("order-notes").value = order.notes || "";
+            document.getElementById("order-reposicion").checked = order.reposicion === true;
             setPaymentProof(order.proofName || "", downloadUrl(order.proofPath, order.proofName), order.proofPath || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
@@ -932,6 +937,7 @@
                 comprobantePago: paymentProofPath || null,
                 comprobantePagoNombre: paymentProofFileName || null,
                 observacion: document.getElementById("order-notes").value || null,
+                reposicion: document.getElementById("order-reposicion").checked,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
                 estadoVentaId: isStateChange ? targetStateId : currentStateId,
                 detalles: details.map(detail => ({
