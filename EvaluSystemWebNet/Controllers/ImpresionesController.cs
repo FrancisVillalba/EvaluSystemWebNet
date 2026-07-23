@@ -14,6 +14,15 @@ public class ImpresionesController : ControllerBase
         _backendApiClient = backendApiClient;
     }
 
+    [HttpGet("maquinas")]
+    public async Task<ActionResult<IEnumerable<TipoMaquinaDto>>> GetMaquinas(CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.GetResultAsync<IEnumerable<TipoMaquinaDto>>("api/TiposMaquina", cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage ?? "No se pudieron cargar las maquinas." });
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ImpresionArchivoDto>>> GetAll(
         [FromQuery] string? fechaDesde,

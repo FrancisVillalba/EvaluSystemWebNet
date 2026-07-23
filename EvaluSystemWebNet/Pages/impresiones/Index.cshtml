@@ -72,10 +72,8 @@
         const dateFrom = document.getElementById("print-date-from");
         const dateTo = document.getElementById("print-date-to");
 
-        const knownMachinesStorageKey = "evalu-print-known-machines";
-
         let files = [];
-        let knownMachines = loadKnownMachines();
+        let machines = [];
         let selectedMachine = "";
 
         function localDateValue(date = new Date()) {
@@ -103,28 +101,12 @@
             return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
         }
 
-        function loadKnownMachines() {
-            try {
-                return new Map(JSON.parse(localStorage.getItem(knownMachinesStorageKey) || "[]"));
-            } catch {
-                return new Map();
-            }
-        }
-
-        function saveKnownMachines() {
-            localStorage.setItem(knownMachinesStorageKey, JSON.stringify([...knownMachines.entries()]));
-        }
-
-        function registerKnownMachines() {
-            files.forEach(item => {
-                const key = String(item.tipoMaquinaId);
-                knownMachines.set(key, item.tipoMaquina || "Sin maquina");
-            });
-            saveKnownMachines();
-        }
-
         function getMachineGroups() {
-            const groups = new Map([...knownMachines.entries()].map(([id, name]) => [id, { id, name, count: 0 }]));
+            const groups = new Map(machines.map(machine => [String(machine.id), {
+                id: String(machine.id),
+                name: machine.nombre || `Maquina ${machine.id}`,
+                count: 0
+            }]));
             files.forEach(item => {
                 const key = String(item.tipoMaquinaId);
                 const current = groups.get(key) || { id: key, name: item.tipoMaquina || "Sin maquina", count: 0 };
@@ -163,7 +145,7 @@
                         <span>${escapeHtml(machine.name)}</span><strong class="print-count-badge">${machine.count}</strong>
                     </button>
                 `).join("")
-                : `<div class="empty-state">No hay maquinas con archivos.</div>`;
+                : `<div class="empty-state">No hay maquinas activas.</div>`;
         }
 
         function renderTable() {
@@ -208,15 +190,21 @@
                     params.set("fechaHasta", dateTo.value);
                 }
 
-                const response = await fetch(`/api/impresiones?${params.toString()}`);
-                if (!response.ok) {
-                    const error = await response.json().catch(() => null);
+                const [filesResponse, machinesResponse] = await Promise.all([
+                    fetch(`/api/impresiones?${params.toString()}`),
+                    fetch("/api/impresiones/maquinas")
+                ]);
+                if (!filesResponse.ok || !machinesResponse.ok) {
+                    const errorResponse = !filesResponse.ok ? filesResponse : machinesResponse;
+                    const error = await errorResponse.json().catch(() => null);
                     showToast(error?.message || "No se pudieron cargar los archivos.", "error");
                     return;
                 }
 
-                const result = await response.json() || [];
+                const result = await filesResponse.json() || [];
                 files = result.filter(item => item.impreso !== true);
+                const machineResult = await machinesResponse.json() || [];
+                machines = machineResult.filter(machine => machine.estado !== false);
                 renderMachineMenu();
                 renderTable();
             });
