@@ -29,6 +29,18 @@ public record DashboardMoneyDto(string Nombre, decimal Monto);
 
 public record DashboardSellerDto(string Nombre, decimal Monto);
 
+public record DashboardPedidoDto(
+    int Id,
+    DateTime Fecha,
+    string Cliente,
+    string Vendedor,
+    string Estado,
+    string FormaPago,
+    string MetodoEntrega,
+    decimal TotalVenta,
+    decimal MontoPagado,
+    decimal SaldoPendiente);
+
 public record LoginRequest(string Usuario, string Pass);
 
 public record RefreshTokenRequest(string RefreshToken);

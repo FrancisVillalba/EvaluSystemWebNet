@@ -28,7 +28,7 @@
         </article>
 
         <section class="summary-card-grid" aria-label="Indicadores principales">
-            <article class="summary-tile tile-green">
+            <article class="summary-tile tile-green dashboard-detail-trigger" data-dashboard-detail="cargados" data-dashboard-title="Pedidos cargados hoy" role="button" tabindex="0">
                 <span class="summary-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" focusable="false">
                         <path d="M7 3h7l4 4v14H7z" />
@@ -45,7 +45,7 @@
                 </div>
             </article>
 
-            <article class="summary-tile tile-blue">
+            <article class="summary-tile tile-blue dashboard-detail-trigger" data-dashboard-detail="impresos" data-dashboard-title="Pedidos impresos" role="button" tabindex="0">
                 <span class="summary-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" focusable="false">
                         <path d="M7 8V3h10v5" />
@@ -59,7 +59,7 @@
                 </div>
             </article>
 
-            <article class="summary-tile tile-orange">
+            <article class="summary-tile tile-orange dashboard-detail-trigger" data-dashboard-detail="pendientes-impresion" data-dashboard-title="Pedidos pendientes de impresion" role="button" tabindex="0">
                 <span class="summary-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" focusable="false">
                         <path d="M12 7v5l4 2" />
@@ -73,7 +73,7 @@
                 </div>
             </article>
 
-            <article class="summary-tile tile-teal">
+            <article class="summary-tile tile-teal dashboard-detail-trigger" data-dashboard-detail="enviados" data-dashboard-title="Pedidos enviados" role="button" tabindex="0">
                 <span class="summary-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" focusable="false">
                         <path d="M3 6h11v10H3z" />
@@ -85,7 +85,7 @@
                 </span>
                 <div>
                     <p>PEDIDOS ENVIADOS</p>
-                    <strong id="metric-delivered">0/0</strong>
+                    <strong id="metric-delivered">0</strong>
                 </div>
             </article>
         </section>
@@ -108,9 +108,40 @@
     </section>
 </section>
 
+<div id="dashboard-detail-modal" class="dashboard-detail-modal" hidden>
+    <div class="dashboard-detail-backdrop" data-dashboard-close></div>
+    <section class="dashboard-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-detail-title">
+        <header>
+            <div>
+                <h2 id="dashboard-detail-title">Detalle de pedidos</h2>
+                <p id="dashboard-detail-caption"></p>
+            </div>
+            <button id="dashboard-detail-close" type="button" aria-label="Cerrar">&times;</button>
+        </header>
+        <div id="dashboard-detail-summary" class="dashboard-detail-summary"></div>
+        <div class="admin-table-wrap dashboard-detail-table-wrap">
+            <table class="admin-table dashboard-detail-table">
+                <thead><tr><th>Pedido</th><th>Fecha y hora</th><th>Cliente</th><th>Vendedor</th><th>Estado</th><th>Forma de pago</th><th>Entrega</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+                <tbody id="dashboard-detail-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
 @section Scripts {
     <script>
         const chartColors = ["#20b85a", "#0f7cf2", "#ff9800", "#7545c9", "#10aeb8", "#ff2f21", "#e543a4"];
+        const detailModal = document.getElementById("dashboard-detail-modal");
+        const detailTitle = document.getElementById("dashboard-detail-title");
+        const detailCaption = document.getElementById("dashboard-detail-caption");
+        const detailBody = document.getElementById("dashboard-detail-body");
+        const detailSummary = document.getElementById("dashboard-detail-summary");
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;"
+            })[character]);
+        }
 
         function formatInteger(value) {
             return Number(value || 0).toLocaleString("es-PY");
@@ -199,7 +230,9 @@
                 const width = Math.max((value / max) * 100, 3);
                 return `
                     <div class="bar-row">
-                        <span title="${item.nombre}">${item.nombre}</span>
+                        ${containerId === "payment-bars"
+                            ? `<button type="button" class="dashboard-client-trigger" data-dashboard-client="${escapeHtml(item.nombre)}">${escapeHtml(item.nombre)}</button>`
+                            : `<span title="${escapeHtml(item.nombre)}">${escapeHtml(item.nombre)}</span>`}
                         <div class="bar-track">
                             <i style="width:${width}%; background:${chartColors[index % chartColors.length]}"></i>
                         </div>
@@ -207,6 +240,60 @@
                 `;
             }).join("");
         }
+
+        async function openDashboardDetail(tipo, title, cliente = "") {
+            const params = new URLSearchParams({ tipo });
+            if (cliente) params.set("cliente", cliente);
+            detailTitle.textContent = title;
+            detailCaption.textContent = cliente ? `Cliente: ${cliente}` : "Ventas relacionadas con este indicador";
+            detailSummary.innerHTML = "";
+            detailBody.innerHTML = `<tr><td colspan="10" class="dashboard-detail-message">Cargando pedidos...</td></tr>`;
+            detailModal.hidden = false;
+
+            const response = await fetch(`/api/dashboard/pedidos?${params.toString()}`);
+            if (!response.ok) {
+                detailBody.innerHTML = `<tr><td colspan="10" class="dashboard-detail-message dashboard-detail-error">No se pudo cargar el detalle.</td></tr>`;
+                return;
+            }
+
+            const rows = await response.json() || [];
+            const total = rows.reduce((sum, row) => sum + Number(row.totalVenta || 0), 0);
+            const pendiente = rows.reduce((sum, row) => sum + Number(row.saldoPendiente || 0), 0);
+            detailSummary.innerHTML = `
+                <div><span>Pedidos</span><strong>${formatInteger(rows.length)}</strong></div>
+                <div><span>Total vendido</span><strong>Gs. ${formatInteger(total)}</strong></div>
+                <div><span>Saldo pendiente</span><strong>Gs. ${formatInteger(pendiente)}</strong></div>`;
+            detailBody.innerHTML = rows.length ? rows.map(row => `
+                <tr>
+                    <td><strong class="dashboard-order-number">#${row.id}</strong></td>
+                    <td><span class="dashboard-date">${new Date(row.fecha).toLocaleDateString("es-PY")}</span><small>${new Date(row.fecha).toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" })}</small></td>
+                    <td><strong>${escapeHtml(row.cliente)}</strong></td>
+                    <td>${escapeHtml(row.vendedor)}</td>
+                    <td><span class="dashboard-status">${escapeHtml(row.estado)}</span></td>
+                    <td>${escapeHtml(row.formaPago)}</td>
+                    <td>${escapeHtml(row.metodoEntrega)}</td>
+                    <td class="dashboard-money">Gs. ${formatInteger(row.totalVenta)}</td>
+                    <td class="dashboard-money dashboard-money-paid">Gs. ${formatInteger(row.montoPagado)}</td>
+                    <td class="dashboard-money ${Number(row.saldoPendiente || 0) > 0 ? "dashboard-money-due" : "dashboard-money-zero"}">Gs. ${formatInteger(row.saldoPendiente)}</td>
+                </tr>`).join("") : `<tr><td colspan="10" class="dashboard-detail-message">No hay pedidos para mostrar.</td></tr>`;
+        }
+
+        function closeDashboardDetail() {
+            detailModal.hidden = true;
+        }
+
+        document.addEventListener("click", event => {
+            const metric = event.target.closest("[data-dashboard-detail]");
+            if (metric) openDashboardDetail(metric.dataset.dashboardDetail, metric.dataset.dashboardTitle || "Detalle de pedidos");
+            const client = event.target.closest("[data-dashboard-client]");
+            if (client) openDashboardDetail("pendientes-pago", "Pedidos pendientes de pago", client.dataset.dashboardClient || "");
+            if (event.target.closest("[data-dashboard-close]")) closeDashboardDetail();
+        });
+        document.addEventListener("keydown", event => {
+            if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-dashboard-detail]")) event.target.click();
+            if (event.key === "Escape" && !detailModal.hidden) closeDashboardDetail();
+        });
+        document.getElementById("dashboard-detail-close").addEventListener("click", closeDashboardDetail);
 
         async function loadDashboard() {
             const response = await fetch("/api/dashboard");
@@ -224,7 +311,7 @@
             document.getElementById("metric-loaded-today").textContent = formatInteger(dashboard.pedidosCargados);
             document.getElementById("metric-printed").textContent = formatInteger(dashboard.pedidosImpresos);
             document.getElementById("metric-missing-print").textContent = formatInteger(dashboard.pedidosPendientesImpresion);
-            document.getElementById("metric-delivered").textContent = `${formatInteger(dashboard.pedidosEntregados)}/${formatInteger(dashboard.totalPedidos)}`;
+            document.getElementById("metric-delivered").textContent = formatInteger(dashboard.pedidosEntregados);
             document.getElementById("machine-total").textContent = "";
             document.getElementById("machine-period-caption").textContent = `Facturacion de ${monthLabel} contra metas configuradas`;
 

@@ -78,17 +78,12 @@
                                 </label>
 
                                 <div class="field payment-proof-field compact-proof-field">
-                                    <label for="payment-proof">Comprobante de pago</label>
+                                    <label for="payment-proof">Comprobantes de pago</label>
                                     <div class="file-control payment-proof-control">
-                                        <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" />
-                                        <label class="file-control-picker" for="payment-proof">Seleccionar archivo</label>
-                                        <span class="file-control-name" id="payment-proof-name">Sin comprobante adjunto</span>
-                                        <a class="file-control-download" id="payment-proof-download" href="#" download title="Descargar comprobante" aria-label="Descargar comprobante" hidden>
-                                            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                                                <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
-                                            </svg>
-                                        </a>
+                                        <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" multiple />
+                                        <label class="file-control-picker" for="payment-proof">Agregar archivos</label>
                                     </div>
+                                    <div id="payment-proof-list" class="payment-proof-list"></div>
                                 </div>
                             </fieldset>
                         </div>
@@ -222,8 +217,7 @@
         const transportadoraFeeMessage = document.getElementById("transportadora-fee-message");
         const transportadoraFeeLabel = document.getElementById("transportadora-fee-label");
         const proofInput = document.getElementById("payment-proof");
-        const proofName = document.getElementById("payment-proof-name");
-        const proofDownload = document.getElementById("payment-proof-download");
+        const proofList = document.getElementById("payment-proof-list");
         const clientSelect = document.getElementById("order-client");
         const clientSelect2 = document.getElementById("client-select2");
         const clientSelect2Button = document.getElementById("client-select2-button");
@@ -243,9 +237,7 @@
         const stateDeleteAction = document.getElementById("state-delete-action");
         let loadedSaleStateId = "";
         let savedMontoEnvioTransportadora = null;
-        let paymentProofPath = "";
-        let paymentProofFileName = "";
-        let proofUrl = "";
+        let paymentProofs = [];
 
         function numberValue(value) {
             return Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
@@ -566,19 +558,57 @@
             return url;
         }
 
-        function setPaymentProof(name, url = "", path = "") {
-            if (proofUrl && proofUrl.startsWith("blob:")) {
-                URL.revokeObjectURL(proofUrl);
+        function parseStoredValues(value) {
+            if (!value) return [];
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [value];
+            } catch {
+                return [value];
             }
+        }
 
-            proofUrl = url;
-            paymentProofPath = path || "";
-            paymentProofFileName = name || "";
-            proofName.textContent = name || "Sin comprobante adjunto";
-            proofName.title = name || "";
-            proofDownload.hidden = !url;
-            proofDownload.href = url || "#";
-            proofDownload.download = name || "";
+        function loadPaymentProofs(pathsValue, namesValue) {
+            const paths = parseStoredValues(pathsValue);
+            const names = parseStoredValues(namesValue);
+            paymentProofs = paths.map((path, index) => ({
+                id: `${Date.now()}-${index}`,
+                path,
+                name: names[index] || `Comprobante ${index + 1}`,
+                url: downloadUrl(path, names[index]),
+                file: null
+            }));
+            renderPaymentProofs();
+        }
+
+        function renderPaymentProofs() {
+            proofList.innerHTML = paymentProofs.length
+                ? paymentProofs.map((proof, index) => `
+                    <div class="payment-proof-item">
+                        <span title="${escapeHtml(proof.name)}">${escapeHtml(proof.name)}</span>
+                        <div class="payment-proof-actions">
+                            ${proof.url ? `<a class="file-control-download" href="${escapeHtml(proof.url)}" download="${escapeHtml(proof.name)}" title="Descargar comprobante" aria-label="Descargar comprobante">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                    <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14"></path>
+                                </svg>
+                            </a>` : ""}
+                            <button type="button" class="admin-secondary" data-remove-proof="${index}">Quitar</button>
+                        </div>
+                    </div>`).join("")
+                : `<span class="file-control-name">Sin comprobantes adjuntos</span>`;
+        }
+
+        function removePaymentProof(index) {
+            const proof = paymentProofs[index];
+            if (proof?.url?.startsWith("blob:")) URL.revokeObjectURL(proof.url);
+            paymentProofs.splice(index, 1);
+            renderPaymentProofs();
+        }
+
+        function serializedProofs(field) {
+            const values = paymentProofs.map(proof => proof[field]).filter(Boolean);
+            if (!values.length) return null;
+            return values.length === 1 ? values[0] : JSON.stringify(values);
         }
 
         function renderDetails() {
@@ -816,7 +846,7 @@
             renderSaleStatusOptions(order.estadoVentaId || loadedSaleStateId);
             document.getElementById("order-notes").value = order.notes || "";
             document.getElementById("order-reposicion").checked = order.reposicion === true;
-            setPaymentProof(order.proofName || "", downloadUrl(order.proofPath, order.proofName), order.proofPath || "");
+            loadPaymentProofs(order.proofPath || "", order.proofName || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
             renderDetails();
@@ -828,8 +858,20 @@
         });
 
         proofInput.addEventListener("change", function () {
-            const file = proofInput.files[0];
-            setPaymentProof(file?.name || "", file ? URL.createObjectURL(file) : "", "");
+            Array.from(proofInput.files || []).forEach(file => paymentProofs.push({
+                id: `${Date.now()}-${Math.random()}`,
+                path: "",
+                name: file.name,
+                url: URL.createObjectURL(file),
+                file
+            }));
+            proofInput.value = "";
+            renderPaymentProofs();
+        });
+
+        proofList.addEventListener("click", function (event) {
+            const button = event.target.closest("[data-remove-proof]");
+            if (button) removePaymentProof(Number(button.dataset.removeProof));
         });
 
         clientSelect2Button.addEventListener("click", function () {
@@ -887,13 +929,19 @@
         }
 
         async function prepareFilesForSave(payload) {
-            const proofFile = proofInput.files[0];
-            if (proofFile) {
-                const uploaded = await uploadFile(proofFile, "comprobantes-pago");
-                paymentProofPath = uploaded.ruta || "";
-                paymentProofFileName = uploaded.nombreDescarga || uploaded.nombreOriginal || proofFile.name;
-                payload.comprobantePago = paymentProofPath || null;
-                payload.comprobantePagoNombre = paymentProofFileName || null;
+            for (const proof of paymentProofs) {
+                if (!proof.file) continue;
+                const uploaded = await uploadFile(proof.file, "comprobantes-pago");
+                proof.path = uploaded.ruta || "";
+                proof.name = uploaded.nombreDescarga || uploaded.nombreOriginal || proof.file.name;
+                proof.file = null;
+                proof.url = downloadUrl(proof.path, proof.name);
+            }
+
+            payload.comprobantePago = serializedProofs("path");
+            payload.comprobantePagoNombre = serializedProofs("name");
+            if ((payload.comprobantePago?.length || 0) > 5000 || (payload.comprobantePagoNombre?.length || 0) > 255) {
+                throw new Error("Los comprobantes superan el limite permitido. Quite archivos o use nombres mas cortos.");
             }
 
             for (let index = 0; index < details.length; index++) {
@@ -934,8 +982,8 @@
                 montoPagado: numberValue(document.getElementById("paid-amount").value),
                 estadoPagadoId: paymentStatusSelect.value || null,
                 fechaEntrega: document.getElementById("order-delivery").value || null,
-                comprobantePago: paymentProofPath || null,
-                comprobantePagoNombre: paymentProofFileName || null,
+                comprobantePago: serializedProofs("path"),
+                comprobantePagoNombre: serializedProofs("name"),
                 observacion: document.getElementById("order-notes").value || null,
                 reposicion: document.getElementById("order-reposicion").checked,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
@@ -973,7 +1021,7 @@
                 return;
             }
 
-            if (isPaidStatusSelected(payload.estadoPagadoId) && !paymentProofFileName) {
+            if (isPaidStatusSelected(payload.estadoPagadoId) && paymentProofs.length === 0) {
                 saleStatusSelect.value = previousStateId;
                 showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
                 return;

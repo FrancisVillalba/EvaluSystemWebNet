@@ -28,4 +28,23 @@ public class DashboardController : ControllerBase
 
         return Ok(dashboard);
     }
+
+    [HttpGet("pedidos")]
+    public async Task<IActionResult> GetPedidos(
+        [FromQuery] string tipo,
+        [FromQuery] string? cliente,
+        CancellationToken cancellationToken)
+    {
+        var query = $"tipo={Uri.EscapeDataString(tipo ?? string.Empty)}";
+        if (!string.IsNullOrWhiteSpace(cliente))
+        {
+            query += $"&cliente={Uri.EscapeDataString(cliente)}";
+        }
+
+        var result = await _backendApiClient.GetResultAsync<IEnumerable<DashboardPedidoDto>>(
+            $"api/VentasImpresion/dashboard/pedidos?{query}", cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage ?? "No se pudo cargar el detalle." });
+    }
 }
