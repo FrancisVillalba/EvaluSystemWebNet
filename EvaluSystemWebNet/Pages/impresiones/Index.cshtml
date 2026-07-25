@@ -7,6 +7,10 @@
     ViewData["ShellClass"] = "reports-shell";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/control.css" asp-append-version="true" />
+}
+
 <section class="reports-main">
     <header class="reports-header">
         <div>
@@ -63,6 +67,25 @@
     </div>
 </section>
 
+<div id="return-modal" class="control-modal" hidden>
+    <form id="return-form" class="control-modal-card">
+        <header>
+            <div>
+                <span>Devolver a carga</span>
+                <h2 id="return-title">Pedido</h2>
+            </div>
+            <button id="return-close" class="control-modal-close" type="button" aria-label="Cerrar">&times;</button>
+        </header>
+        <label for="return-comment">
+            Comentario
+            <textarea id="return-comment" maxlength="500" required placeholder="Indica el motivo de la devolución"></textarea>
+        </label>
+        <footer>
+            <button id="return-cancel" class="admin-secondary" type="button">Cancelar</button>
+            <button class="admin-danger" type="submit">Devolver a carga</button>
+        </footer>
+    </form>
+</div>
 @section Scripts {
     <script>
         const machineMenu = document.getElementById("machine-menu");
@@ -71,10 +94,15 @@
         const tableBody = document.getElementById("print-files-body");
         const dateFrom = document.getElementById("print-date-from");
         const dateTo = document.getElementById("print-date-to");
+        const returnModal = document.getElementById("return-modal");
+        const returnForm = document.getElementById("return-form");
+        const returnTitle = document.getElementById("return-title");
+        const returnComment = document.getElementById("return-comment");
 
         let files = [];
         let machines = [];
         let selectedMachine = "";
+        let returnDetailId = null;
 
         function localDateValue(date = new Date()) {
             const year = date.getFullYear();
@@ -172,6 +200,7 @@
                                     </svg>
                                 </button>
                                 <button class="admin-primary print-mark-button" type="button" data-print="${item.detalleId}" ${item.impreso ? "disabled" : ""}>${item.impreso ? "Impreso" : "Marcar impreso"}</button>
+                                <button class="admin-danger" type="button" data-return="${item.detalleId}" data-return-order="${item.pedidoId}">Devolver</button>
                             </div>
                         </td>
                     </tr>
@@ -250,6 +279,38 @@
             });
         }
 
+        function openReturnModal(detailId, orderId) {
+            returnDetailId = detailId;
+            returnTitle.textContent = `Pedido #${orderId} - detalle #${detailId}`;
+            returnComment.value = "";
+            returnModal.hidden = false;
+            returnComment.focus();
+        }
+
+        function closeReturnModal() {
+            returnModal.hidden = true;
+            returnDetailId = null;
+            returnComment.value = "";
+        }
+
+        async function returnToCarga(id, observacion) {
+            await withAppLoading("Devolviendo pedido a carga...", async function () {
+                const response = await fetch(`/api/impresiones/${id}/devolver-carga`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ observacion })
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo devolver el pedido a carga.", "error");
+                    return;
+                }
+
+                showToast("Pedido devuelto a carga con el comentario registrado.", "success");
+                closeReturnModal();
+                await loadFiles();
+            });
+        }
         machineMenu.addEventListener("click", event => {
             const button = event.target.closest("[data-machine]");
             if (!button) {
@@ -271,7 +332,34 @@
             const printButton = event.target.closest("[data-print]");
             if (printButton) {
                 markPrinted(printButton.dataset.print);
+                return;
             }
+
+            const returnButton = event.target.closest("[data-return]");
+            if (returnButton) {
+                openReturnModal(returnButton.dataset.return, returnButton.dataset.returnOrder);
+            }
+        });
+
+        returnForm.addEventListener("submit", event => {
+            event.preventDefault();
+            const observacion = returnComment.value.trim();
+            if (!observacion) {
+                showToast("Debe agregar un comentario para devolver el pedido.", "error");
+                returnComment.focus();
+                return;
+            }
+
+            returnToCarga(returnDetailId, observacion);
+        });
+
+        document.getElementById("return-close").addEventListener("click", closeReturnModal);
+        document.getElementById("return-cancel").addEventListener("click", closeReturnModal);
+        returnModal.addEventListener("click", event => {
+            if (event.target === returnModal) closeReturnModal();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !returnModal.hidden) closeReturnModal();
         });
 
         document.getElementById("refresh-print-files")?.addEventListener("click", loadFiles);

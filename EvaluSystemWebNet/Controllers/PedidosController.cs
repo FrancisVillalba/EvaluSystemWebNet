@@ -328,6 +328,7 @@ public class PedidosController : ControllerBase
             detalle.PrecioUnitario.ToString("N0"),
             detalle.PrecioExtra?.ToString("N0") ?? string.Empty,
             detalle.ArchivoDisenio ?? string.Empty,
-            detalle.ArchivoDisenioNombre ?? string.Empty);
+            detalle.ArchivoDisenioNombre ?? string.Empty,
+            detalle.CheckImpresion == true);
     }
 }

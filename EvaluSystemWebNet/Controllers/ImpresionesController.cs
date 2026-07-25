@@ -75,4 +75,20 @@ public class ImpresionesController : ControllerBase
             ? Ok(result.Value)
             : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
     }
+
+    [HttpPut("{detalleId:int}/devolver-carga")]
+    public async Task<ActionResult<ImpresionDevolverDto>> DevolverACarga(
+        int detalleId,
+        [FromBody] ImpresionDevolverRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.PutResultAsync<ImpresionDevolverDto>(
+            $"api/Impresiones/{detalleId}/devolver-carga",
+            request,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+    }
 }

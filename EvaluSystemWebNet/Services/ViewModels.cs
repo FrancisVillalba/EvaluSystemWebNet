@@ -56,7 +56,8 @@ public record PedidoDetalleView(
     string UnitPrice,
     string ExtraPrice,
     string DesignPath,
-    string DesignName);
+    string DesignName,
+    bool CheckImpresion);
 
 public record DashboardView(
     DashboardMetrics Metrics,

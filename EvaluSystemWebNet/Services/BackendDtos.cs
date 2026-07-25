@@ -609,3 +609,12 @@ public record ImpresionMarcarDto(
     bool PedidoCompleto,
     string EstadoVentaId,
     string? EstadoVenta);
+
+public record ImpresionDevolverRequest(string? Observacion);
+
+public record ImpresionDevolverDto(
+    int DetalleId,
+    int PedidoId,
+    string EstadoVentaId,
+    string? EstadoVenta,
+    string Observacion);

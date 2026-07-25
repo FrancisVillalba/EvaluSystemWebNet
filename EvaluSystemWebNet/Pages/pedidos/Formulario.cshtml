@@ -505,7 +505,8 @@
                 designPath: seed.designPath || "",
                 designName: seed.designName || "",
                 designUrl: seed.designUrl || "",
-                designFile: seed.designFile || null
+                designFile: seed.designFile || null,
+                checkImpresion: seed.checkImpresion === true
             };
         }
 
@@ -1003,7 +1004,7 @@
                     archivoDisenioNombre: detail.designName || null,
                     observacion: null,
                     estadoItem: null,
-                    checkImpresion: false
+                    checkImpresion: detail.checkImpresion === true
                 }))
             };
 
