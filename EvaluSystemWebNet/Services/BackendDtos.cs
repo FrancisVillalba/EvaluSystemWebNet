@@ -79,6 +79,7 @@ public record ClienteDatosEnvioDto(
     int ClienteId,
     int TransportadoraId,
     string? Transportadora,
+    decimal MontoTransportadora,
     string NombreReceptor,
     string DocumentoReceptor,
     string TelefonoReceptor,
@@ -120,7 +121,7 @@ public record DepartamentoDto(int Id, string Nombre, bool Estado);
 
 public record CiudadDto(int Id, int DepartamentoId, string? Departamento, int CodigoDistrito, string Nombre, bool Estado);
 
-public record TransportadoraDto(int Id, string Nombre, string? Telefono, string? Direccion, string? Observacion, bool Estado);
+public record TransportadoraDto(int Id, string Nombre, string? Telefono, string? Direccion, string? Observacion, decimal Monto, bool Estado);
 
 public record ClienteOptionsDto(
     IEnumerable<CatalogStringDto> TiposDocumento,
@@ -419,7 +420,8 @@ public record ReporteEnvioResumenDto(
     string UsuarioEntrega,
     int CantidadPedidos,
     int CantidadTransportadora,
-    decimal TotalPedidos);
+    decimal TotalPedidos,
+    decimal TotalComisionDelivery);
 
 public record ReporteEnvioDetalleDto(
     int PedidoId,
@@ -430,7 +432,8 @@ public record ReporteEnvioDetalleDto(
     string Estado,
     string? UsuarioEntrega,
     string? Ciudad,
-    decimal TotalPedido);
+    decimal TotalPedido,
+    decimal ComisionDelivery);
 
 public record ReporteResumenGerencialDto(
     DateTime FechaDesde,

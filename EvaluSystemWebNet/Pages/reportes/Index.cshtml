@@ -388,6 +388,7 @@
                             <strong>${item.cantidadPedidos} envios</strong>
                             <small>${item.cantidadTransportadora} transportadora</small>
                             <small>Total pedidos ${formatMoney(item.totalPedidos)}</small>
+                            <small>Comision delivery ${formatMoney(item.totalComisionDelivery)}</small>
                         </div>
                     </article>`).join("")
                 : `<p>No hay envios para los filtros seleccionados.</p>`;
@@ -403,8 +404,9 @@
                         <td>${escapeHtml(item.usuarioEntrega || "-")}</td>
                         <td>${escapeHtml(item.ciudad || "-")}</td>
                         <td>${formatMoney(item.totalPedido)}</td>
+                        <td>${formatMoney(item.comisionDelivery)}</td>
                     </tr>`).join("")
-                : `<tr><td colspan="8">No hay pedidos para los filtros seleccionados.</td></tr>`;
+                : `<tr><td colspan="9">No hay pedidos para los filtros seleccionados.</td></tr>`;
         }
 
         function renderManagementSummary(report) {

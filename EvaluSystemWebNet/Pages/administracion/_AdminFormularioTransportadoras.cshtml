@@ -5,9 +5,10 @@
         <label class="admin-field">Telefono<input data-field="telefono" type="text" /></label>
         <label class="admin-field">Direccion<input data-field="direccion" type="text" /></label>
         <label class="admin-field">Observacion<textarea data-field="observacion" rows="2"></textarea></label>
+        <label class="admin-field">Monto comision delivery<input data-field="monto" type="number" min="0" step="1" required /></label>
         <label class="admin-check admin-check-field">Activo<input data-field="estado" type="checkbox" checked /></label><div class="admin-form-actions"><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
     </form>
-    <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Telefono", "Direccion", "Estado" })' />
+    <partial name="_AdminFormularioTabla" model='@(new[] { "Nombre", "Telefono", "Direccion", "Monto", "Estado" })' />
 </section>
 <script>
     window.adminModuleDefinitions = window.adminModuleDefinitions || {};
@@ -15,12 +16,13 @@
                 title: "Transportadoras",
                 help: "Empresas de transporte para datos de envio.",
                 id: "id",
-                columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
+                columns: [["nombre", "Nombre"], ["telefono", "Telefono"], ["direccion", "Direccion"], ["monto", "Monto", value => `Gs. ${Number(value || 0).toLocaleString("es-PY")}`], ["estado", "Estado", value => value ? "Activo" : "Inactivo"]],
                 fields: [
                     { name: "nombre", label: "Nombre", required: true },
                     { name: "telefono", label: "Telefono" },
                     { name: "direccion", label: "Direccion" },
                     { name: "observacion", label: "Observacion", type: "textarea" },
+                    { name: "monto", label: "Monto comision delivery", type: "number", required: true, defaultValue: 0 },
                     { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }
                 ]
             };

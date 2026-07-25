@@ -207,8 +207,7 @@
             productos: [],
             maquinas: [],
             usuarioActualId: null,
-            puedeVerTodosPedidos: false,
-            montoEnvioTransportadora: 10000
+            puedeVerTodosPedidos: false
         };
 
         const form = document.getElementById("order-form");
@@ -312,6 +311,7 @@
             const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
             const hasCarrierShipping = Boolean(selectedClient?.datosEnvio || selectedClient?.transportadoraId || selectedClient?.transportadora);
             deliveryMethodSelect.value = hasCarrierShipping ? "TRANSPORTADORA" : "DELIVERY";
+            savedMontoEnvioTransportadora = null;
             updateEstimatedTotal();
         }
 
@@ -518,9 +518,12 @@
                 return 0;
             }
 
-            return savedMontoEnvioTransportadora && savedMontoEnvioTransportadora > 0
-                ? savedMontoEnvioTransportadora
-                : numberValue(formOptions.montoEnvioTransportadora || 10000);
+            if (savedMontoEnvioTransportadora !== null) {
+                return savedMontoEnvioTransportadora;
+            }
+
+            const selectedClient = formOptions.clientes.find(client => String(client.id) === String(clientSelect.value));
+            return numberValue(selectedClient?.datosEnvio?.montoTransportadora || 0);
         }
 
         function estimatedOrderTotal() {
