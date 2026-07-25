@@ -60,7 +60,16 @@
         <div class="app-content">
             <header class="app-topbar">
                 <div class="app-topbar-spacer"></div>
-                <div class="app-user-menu" data-user-menu>
+                <div class="app-notifications" data-notifications>
+                    <button class="app-notification-button" type="button" aria-label="Notificaciones" aria-expanded="false" data-notification-toggle>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                        <span class="app-notification-count" data-notification-count hidden>0</span>
+                    </button>
+                    <section class="app-notification-panel" data-notification-panel hidden>
+                        <header><div><h2>Notificaciones</h2><p data-notification-summary>Sin novedades</p></div><button type="button" data-notification-read-all>Marcar todas como leídas</button></header>
+                        <div class="app-notification-list" data-notification-list><p class="app-notification-empty">No hay notificaciones.</p></div>
+                    </section>
+                </div>                <div class="app-user-menu" data-user-menu>
                     <button class="app-user-button" type="button" aria-haspopup="true" aria-expanded="false" data-user-menu-toggle>
                         <span class="app-user-avatar" aria-hidden="true">@userInitial</span>
                         <span class="app-user-name">@userName</span>

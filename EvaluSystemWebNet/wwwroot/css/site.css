@@ -4944,3 +4944,27 @@ body.modal-page-body {
 @media (width <= 720px) {
   .summary-card-grid { grid-template-columns: 1fr; }
 }
+.app-notifications { position: relative; margin-left: auto; margin-right: 12px; }
+.app-notification-button { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #cfe0e7; border-radius: 12px; background: #fff; color: #075f72; cursor: pointer; }
+.app-notification-button:hover { background: #eef8f8; }
+.app-notification-button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-notification-count { position: absolute; top: -6px; right: -6px; min-width: 21px; height: 21px; padding: 0 5px; border: 2px solid #fff; border-radius: 999px; background: #d7393f; color: #fff; font-size: .68rem; font-weight: 900; line-height: 17px; text-align: center; }
+.app-notification-panel { position: absolute; z-index: 1200; top: calc(100% + 10px); right: 0; width: min(410px, calc(100vw - 28px)); overflow: hidden; border: 1px solid #d6e3e8; border-radius: 14px; background: #fff; box-shadow: 0 18px 45px rgb(16 46 60 / 24%); }
+.app-notification-panel header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid #e3ecef; }
+.app-notification-panel h2 { margin: 0 0 3px; color: #102c3a; font-size: 1rem; font-weight: 900; }
+.app-notification-panel header p { margin: 0; color: #718794; font-size: .76rem; }
+.app-notification-panel header button { border: 0; background: transparent; color: #087087; font-size: .72rem; font-weight: 850; cursor: pointer; }
+.app-notification-panel header button:disabled { color: #9dafb7; cursor: default; }
+.app-notification-list { max-height: 430px; overflow-y: auto; }
+.app-notification-item { display: grid; width: 100%; gap: 4px; padding: 14px 16px; border: 0; border-bottom: 1px solid #e7eef1; background: #fff; color: #213b48; text-align: left; cursor: pointer; }
+.app-notification-item.is-unread { background: #f0fafb; box-shadow: inset 4px 0 #0b8da1; }
+.app-notification-item:hover { background: #eaf6f7; }
+.app-notification-item strong { color: #102c3a; font-size: .88rem; }
+.app-notification-item span:not(.app-notification-type) { font-size: .8rem; }
+.app-notification-item em { color: #596f7b; font-size: .76rem; font-style: normal; }
+.app-notification-item time { color: #899ba4; font-size: .68rem; }
+.app-notification-type { justify-self: start; border-radius: 999px; padding: 3px 7px; color: #fff; font-size: .62rem; font-weight: 900; text-transform: uppercase; }
+.app-notification-type.rejected { background: #cf3f3f; }
+.app-notification-type.returned { background: #d89a16; }
+.app-notification-empty { margin: 0; padding: 30px 16px; color: #758b96; text-align: center; }
+@media (width <= 600px) { .app-notifications { margin-right: 7px; } .app-notification-panel { right: -68px; } }

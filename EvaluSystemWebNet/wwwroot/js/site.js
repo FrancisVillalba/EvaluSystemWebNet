@@ -467,3 +467,75 @@ window.showMessageDialog = function ({
         showPendingMessages();
     }
 })();
+(function initializeNotifications() {
+    const root = document.querySelector("[data-notifications]");
+    if (!root) return;
+
+    const toggle = root.querySelector("[data-notification-toggle]");
+    const panel = root.querySelector("[data-notification-panel]");
+    const count = root.querySelector("[data-notification-count]");
+    const summary = root.querySelector("[data-notification-summary]");
+    const list = root.querySelector("[data-notification-list]");
+    const readAll = root.querySelector("[data-notification-read-all]");
+    let initialized = false;
+    let knownIds = new Set();
+
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[character]);
+    const formatDate = value => value ? new Date(value).toLocaleString("es-PY", { dateStyle: "short", timeStyle: "short" }) : "";
+
+    function render(data) {
+        const items = Array.isArray(data?.items) ? data.items : [];
+        const unread = Number(data?.noLeidas || 0);
+        count.textContent = unread > 99 ? "99+" : String(unread);
+        count.hidden = unread === 0;
+        summary.textContent = unread === 0 ? "Sin novedades pendientes" : `${unread} sin leer`;
+        readAll.disabled = unread === 0;
+        list.innerHTML = items.length === 0 ? '<p class="app-notification-empty">No hay notificaciones.</p>' : items.map(item => `
+            <button type="button" class="app-notification-item ${item.leida ? "is-read" : "is-unread"}" data-notification-id="${item.id}">
+                <span class="app-notification-type ${item.tipo === "RE" ? "rejected" : "returned"}">${item.tipo === "RE" ? "Rechazado" : "Devuelto"}</span>
+                <strong>${escapeHtml(item.titulo)}</strong>
+                <span>${escapeHtml(item.mensaje)}</span>
+                ${item.comentario ? `<em>“${escapeHtml(item.comentario)}”</em>` : ""}
+                <time>${escapeHtml(formatDate(item.fechaCreacion))}</time>
+            </button>`).join("");
+
+        const currentIds = new Set(items.map(item => Number(item.id)));
+        if (initialized) {
+            const newest = items.find(item => !item.leida && !knownIds.has(Number(item.id)));
+            if (newest) window.showToast?.(`${newest.titulo}: ${newest.mensaje}`, "error");
+        }
+        knownIds = currentIds;
+        initialized = true;
+    }
+
+    async function load() {
+        try {
+            const response = await fetch("/api/Notificaciones", { cache: "no-store" });
+            if (response.ok) render(await response.json());
+        } catch { }
+    }
+
+    toggle.addEventListener("click", event => {
+        event.stopPropagation();
+        panel.hidden = !panel.hidden;
+        toggle.setAttribute("aria-expanded", String(!panel.hidden));
+        if (!panel.hidden) load();
+    });
+    panel.addEventListener("click", event => event.stopPropagation());
+    document.addEventListener("click", () => { panel.hidden = true; toggle.setAttribute("aria-expanded", "false"); });
+
+    list.addEventListener("click", async event => {
+        const item = event.target.closest("[data-notification-id]");
+        if (!item || item.classList.contains("is-read")) return;
+        await fetch(`/api/Notificaciones/${item.dataset.notificationId}/leer`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: "{}" });
+        await load();
+    });
+    readAll.addEventListener("click", async () => {
+        await fetch("/api/Notificaciones/leer-todas", { method: "PUT", headers: { "Content-Type": "application/json" }, body: "{}" });
+        await load();
+    });
+
+    load();
+    window.setInterval(load, 10000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+})();
