@@ -352,6 +352,7 @@
                         <p><b>Usuario:</b> ${escapeHtml(event.usuario || "Sistema")}</p>
                         <p><b>Estado:</b> ${escapeHtml(event.estadoAnterior || "Sin estado")} → ${escapeHtml(event.estadoNuevo || "Sin estado")}</p>
                         ${event.detalleId ? `<p><b>Detalle:</b> #${escapeHtml(event.detalleId)}</p>` : ""}
+                        ${event.producto ? `<p><b>Producto:</b> ${escapeHtml(event.producto)}</p>` : ""}
                         ${event.comentario ? `<div class="order-flow-comment"><b>Comentario:</b> ${escapeHtml(event.comentario)}</div>` : ""}
                     </div>
                 </article>`).join("") : `<div class="empty-state">Este pedido todavía no tiene eventos registrados.</div>`;

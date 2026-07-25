@@ -506,7 +506,9 @@
                 designName: seed.designName || "",
                 designUrl: seed.designUrl || "",
                 designFile: seed.designFile || null,
-                checkImpresion: seed.checkImpresion === true
+                checkImpresion: seed.checkImpresion === true,
+                stateItem: seed.stateItem || "",
+                observation: seed.observation || ""
             };
         }
 
@@ -618,11 +620,12 @@
 
         function renderDetails() {
             detailList.innerHTML = details.map((detail, index) => `
-                <article class="detail-row">
+                <article class="detail-row ${String(detail.stateItem || "").trim().toUpperCase() === "RE" ? "detail-row-rejected" : String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-row-returned" : ""}">
                     <div class="detail-row-header">
-                        <span>Detalle #${index + 1}</span>
+                        <span>Detalle #${index + 1} ${String(detail.stateItem || "").trim().toUpperCase() === "RE" ? `<small class="detail-rejected-badge">Rechazado</small>` : String(detail.stateItem || "").trim().toUpperCase() === "DV" ? `<small class="detail-returned-badge">Devuelto</small>` : ""}</span>
                         <button class="row-remove" type="button" onclick="removeDetail(${detail.id})">Quitar</button>
                     </div>
+                    ${["RE", "DV"].includes(String(detail.stateItem || "").trim().toUpperCase()) && detail.observation ? `<div class="${String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-returned-comment" : "detail-rejected-comment"}">${escapeHtml(detail.observation)}</div>` : ""}
 
                     <div class="detail-grid">
                         <label class="detail-field product-field">

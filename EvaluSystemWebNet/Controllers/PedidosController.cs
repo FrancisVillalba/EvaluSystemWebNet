@@ -329,7 +329,9 @@ public class PedidosController : ControllerBase
             detalle.PrecioExtra?.ToString("N0") ?? string.Empty,
             detalle.ArchivoDisenio ?? string.Empty,
             detalle.ArchivoDisenioNombre ?? string.Empty,
-            detalle.CheckImpresion == true);
+            detalle.CheckImpresion == true,
+            detalle.EstadoItem ?? string.Empty,
+            detalle.Observacion ?? string.Empty);
     }
 
     [HttpGet("{id:int}/flujo")]
