@@ -331,4 +331,15 @@ public class PedidosController : ControllerBase
             detalle.ArchivoDisenioNombre ?? string.Empty,
             detalle.CheckImpresion == true);
     }
-}
+
+    [HttpGet("{id:int}/flujo")]
+    public async Task<ActionResult<IEnumerable<PedidoFlujoEventoDto>>> GetFlujo(int id, CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.GetResultAsync<IEnumerable<PedidoFlujoEventoDto>>(
+            $"api/VentasImpresion/{id}/flujo",
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage ?? "No se pudo cargar el flujo del pedido." });
+    }}

@@ -771,8 +771,11 @@
             renderAvailable();
         });
 
-        dateFrom.value = localDateValue();
-        dateTo.value = localDateValue();
+        const today = new Date();
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(today.getDate() - 5);
+        dateFrom.value = localDateValue(fiveDaysAgo);
+        dateTo.value = localDateValue(today);
         loadDelivery();
     </script>
 }

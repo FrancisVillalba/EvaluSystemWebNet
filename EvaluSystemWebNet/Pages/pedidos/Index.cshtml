@@ -6,6 +6,10 @@
     ViewData["ShellClass"] = "orders-shell";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/control.css" asp-append-version="true" />
+}
+
 <section class="orders-main">
             <section class="orders-panel">
                 <div class="orders-panel-heading">
@@ -139,6 +143,16 @@
     </section>
 </div>
 
+<div id="flow-modal" class="control-modal" hidden>
+    <section class="control-modal-card order-flow-modal-card" role="dialog" aria-modal="true" aria-labelledby="flow-title">
+        <header>
+            <div><span>Historial completo</span><h2 id="flow-title">Flujo del pedido</h2></div>
+            <button id="flow-close" class="control-modal-close" type="button" aria-label="Cerrar">&times;</button>
+        </header>
+        <div id="flow-content" class="order-flow-timeline"></div>
+        <footer><button id="flow-close-footer" class="admin-secondary" type="button">Cerrar</button></footer>
+    </section>
+</div>
 @section Scripts {
     <script>
         function localDateValue(date = new Date()) {
@@ -187,6 +201,9 @@
         const orderFormFrame = document.getElementById("order-form-frame");
         const orderFormModalTitle = document.getElementById("order-form-modal-title");
         const orderFormModalClose = document.getElementById("order-form-modal-close");
+        const flowModal = document.getElementById("flow-modal");
+        const flowTitle = document.getElementById("flow-title");
+        const flowContent = document.getElementById("flow-content");
 
         function statusClass(status) {
             return String(status || "")
@@ -291,6 +308,7 @@
                     <td>${escapeHtml(order.delivery)}</td>
                     <td class="orders-actions">
                         <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
+                        <button class="orders-edit order-flow-button" type="button" onclick="openOrderFlow('${escapeHtml(order.id)}')">Flujo</button>
                     </td>
                 </tr>
                     `;
@@ -304,6 +322,40 @@
             nextPageButton.disabled = currentPage >= totalPages;
         }
 
+        function formatFlowDate(value) {
+            if (!value) return "-";
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("es-PY", { dateStyle: "short", timeStyle: "medium" });
+        }
+
+        function closeOrderFlow() {
+            flowModal.hidden = true;
+            flowContent.innerHTML = "";
+        }
+
+        async function openOrderFlow(orderId) {
+            flowTitle.textContent = `Flujo del pedido #${orderId}`;
+            flowContent.innerHTML = `<div class="empty-state">Cargando historial...</div>`;
+            flowModal.hidden = false;
+            const response = await fetch(`/api/pedidos/${orderId}/flujo`);
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                flowContent.innerHTML = `<div class="empty-state">${escapeHtml(error?.message || "No se pudo cargar el flujo del pedido.")}</div>`;
+                return;
+            }
+            const events = await response.json() || [];
+            flowContent.innerHTML = events.length ? events.map(event => `
+                <article class="order-flow-event">
+                    <span class="order-flow-dot" aria-hidden="true"></span>
+                    <div class="order-flow-event-card">
+                        <div class="order-flow-event-heading"><strong>${escapeHtml(event.accion)}</strong><time>${escapeHtml(formatFlowDate(event.fechaHora))}</time></div>
+                        <p><b>Usuario:</b> ${escapeHtml(event.usuario || "Sistema")}</p>
+                        <p><b>Estado:</b> ${escapeHtml(event.estadoAnterior || "Sin estado")} → ${escapeHtml(event.estadoNuevo || "Sin estado")}</p>
+                        ${event.detalleId ? `<p><b>Detalle:</b> #${escapeHtml(event.detalleId)}</p>` : ""}
+                        ${event.comentario ? `<div class="order-flow-comment"><b>Comentario:</b> ${escapeHtml(event.comentario)}</div>` : ""}
+                    </div>
+                </article>`).join("") : `<div class="empty-state">Este pedido todavía no tiene eventos registrados.</div>`;
+        }
         function renderUserSalesSummary(data) {
             if (!data?.puedeVerVentasUsuario) {
                 sellerOrdersSummary.innerHTML = "";
@@ -554,6 +606,10 @@
             });
         });
         orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        document.getElementById("flow-close").addEventListener("click", closeOrderFlow);
+        document.getElementById("flow-close-footer").addEventListener("click", closeOrderFlow);
+        flowModal.addEventListener("click", event => { if (event.target === flowModal) closeOrderFlow(); });
+        document.addEventListener("keydown", event => { if (event.key === "Escape" && !flowModal.hidden) closeOrderFlow(); });
         orderFormModal.addEventListener("click", function (event) {
             if (event.target.closest("[data-order-modal-close]")) {
                 closeOrderModal();

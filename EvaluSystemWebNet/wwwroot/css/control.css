@@ -202,3 +202,47 @@
     grid-template-columns: 1fr;
   }
 }
+.order-flow-modal-card {
+  width: min(760px, 100%);
+  max-height: min(820px, 90vh);
+  display: flex;
+  flex-direction: column;
+}
+
+.order-flow-timeline {
+  overflow-y: auto;
+  padding: 4px 4px 4px 14px;
+}
+
+.order-flow-event {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.order-flow-event::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 16px;
+  bottom: -2px;
+  width: 2px;
+  background: #d7e5eb;
+}
+
+.order-flow-event:last-child::before { display: none; }
+.order-flow-dot { width: 16px; height: 16px; margin-top: 3px; border: 4px solid #d8f0ed; border-radius: 50%; background: #087386; z-index: 1; }
+.order-flow-event-card { border: 1px solid #dce8ed; border-radius: 8px; background: #f9fbfc; padding: 14px 16px; }
+.order-flow-event-heading { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 9px; }
+.order-flow-event-heading strong { color: #002840; }
+.order-flow-event-heading time { color: #63788b; font-size: 12px; white-space: nowrap; }
+.order-flow-event-card p { margin: 5px 0; color: #496273; font-size: 14px; }
+.order-flow-comment { margin-top: 10px; border-left: 3px solid #d7901f; border-radius: 4px; background: #fff7e8; padding: 10px 12px; color: #664b1e; font-size: 14px; }
+.orders-actions { display: flex; gap: 7px; }
+.order-flow-button { color: #65429a; background: #f0e9fb; }
+
+@media (width <= 620px) {
+  .order-flow-event-heading { flex-direction: column; gap: 4px; }
+}
