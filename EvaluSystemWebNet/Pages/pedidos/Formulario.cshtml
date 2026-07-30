@@ -482,7 +482,7 @@
             const hasOrder = Boolean(orderId);
 
             stateBackAction.disabled = !hasOrder || !previous || isDeliveredSaleState();
-            stateNextAction.disabled = !hasOrder || !next;
+            stateNextAction.disabled = !next;
             stateDeleteAction.disabled = !hasOrder || !canDeleteCurrentOrder();
             stateSaveAction.disabled = false;
 
