@@ -96,6 +96,8 @@
 .dashboard-money-zero { color: #71818c; }
 .dashboard-detail-message { padding: 34px !important; text-align: center; color: #6d7f8a; }
 .dashboard-detail-error { color: #b93434; }
+.order-form-modal.dashboard-order-form-modal { z-index: 1300; }
+.dashboard-order-open { min-width: 92px; white-space: nowrap; }
 
 @media (max-width: 700px) {
   .dashboard-detail-modal { padding: 10px; }

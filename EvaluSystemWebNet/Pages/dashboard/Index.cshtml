@@ -84,10 +84,21 @@
         <div id="dashboard-detail-summary" class="dashboard-detail-summary"></div>
         <div class="admin-table-wrap dashboard-detail-table-wrap">
             <table class="admin-table dashboard-detail-table">
-                <thead><tr><th>Pedido</th><th>Fecha y hora</th><th>Cliente</th><th>Vendedor</th><th>Estado</th><th>Forma de pago</th><th>Entrega</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+                <thead><tr><th>Pedido</th><th>Fecha y hora</th><th>Cliente</th><th>Vendedor</th><th>Estado</th><th>Forma de pago</th><th>Entrega</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Acciones</th></tr></thead>
                 <tbody id="dashboard-detail-body"></tbody>
             </table>
         </div>
+    </section>
+</div>
+
+<div id="dashboard-order-form-modal" class="order-form-modal dashboard-order-form-modal" hidden>
+    <div class="order-form-modal-backdrop" data-dashboard-order-close></div>
+    <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-order-form-title">
+        <header class="order-form-modal-header">
+            <h2 id="dashboard-order-form-title">Venta</h2>
+            <button id="dashboard-order-form-close" type="button" aria-label="Cerrar formulario">&times;</button>
+        </header>
+        <iframe id="dashboard-order-form-frame" title="Formulario de venta"></iframe>
     </section>
 </div>
 
@@ -99,6 +110,10 @@
         const detailCaption = document.getElementById("dashboard-detail-caption");
         const detailBody = document.getElementById("dashboard-detail-body");
         const detailSummary = document.getElementById("dashboard-detail-summary");
+        const orderFormModal = document.getElementById("dashboard-order-form-modal");
+        const orderFormFrame = document.getElementById("dashboard-order-form-frame");
+        const orderFormTitle = document.getElementById("dashboard-order-form-title");
+        let activeDetail = null;
 
         function escapeHtml(value) {
             return String(value ?? "").replace(/[&<>"']/g, character => ({
@@ -205,17 +220,18 @@
         }
 
         async function openDashboardDetail(tipo, title, cliente = "") {
+            activeDetail = { tipo, title, cliente };
             const params = new URLSearchParams({ tipo });
             if (cliente) params.set("cliente", cliente);
             detailTitle.textContent = title;
             detailCaption.textContent = cliente ? `Cliente: ${cliente}` : "Ventas relacionadas con este indicador";
             detailSummary.innerHTML = "";
-            detailBody.innerHTML = `<tr><td colspan="10" class="dashboard-detail-message">Cargando pedidos...</td></tr>`;
+            detailBody.innerHTML = `<tr><td colspan="11" class="dashboard-detail-message">Cargando pedidos...</td></tr>`;
             detailModal.hidden = false;
 
             const response = await fetch(`/api/dashboard/pedidos?${params.toString()}`);
             if (!response.ok) {
-                detailBody.innerHTML = `<tr><td colspan="10" class="dashboard-detail-message dashboard-detail-error">No se pudo cargar el detalle.</td></tr>`;
+                detailBody.innerHTML = `<tr><td colspan="11" class="dashboard-detail-message dashboard-detail-error">No se pudo cargar el detalle.</td></tr>`;
                 return;
             }
 
@@ -238,7 +254,26 @@
                     <td class="dashboard-money">Gs. ${formatInteger(row.totalVenta)}</td>
                     <td class="dashboard-money dashboard-money-paid">Gs. ${formatInteger(row.montoPagado)}</td>
                     <td class="dashboard-money ${Number(row.saldoPendiente || 0) > 0 ? "dashboard-money-due" : "dashboard-money-zero"}">Gs. ${formatInteger(row.saldoPendiente)}</td>
-                </tr>`).join("") : `<tr><td colspan="10" class="dashboard-detail-message">No hay pedidos para mostrar.</td></tr>`;
+                    <td><button type="button" class="orders-edit dashboard-order-open" data-dashboard-order-id="${row.id}">Ver venta</button></td>
+                </tr>`).join("") : `<tr><td colspan="11" class="dashboard-detail-message">No hay pedidos para mostrar.</td></tr>`;
+        }
+
+        function openDashboardOrder(orderId) {
+            orderFormTitle.textContent = `Venta ${orderId}`;
+            orderFormFrame.src = `${window.appUrl("/pedidos/formulario")}?id=${encodeURIComponent(orderId)}&embedded=1`;
+            orderFormModal.hidden = false;
+            document.body.classList.add("is-order-modal-open");
+            document.getElementById("dashboard-order-form-close").focus();
+        }
+
+        function closeDashboardOrder(shouldRefresh = false) {
+            orderFormModal.hidden = true;
+            orderFormFrame.src = "about:blank";
+            document.body.classList.remove("is-order-modal-open");
+            if (shouldRefresh) {
+                loadDashboard();
+                if (activeDetail) openDashboardDetail(activeDetail.tipo, activeDetail.title, activeDetail.cliente);
+            }
         }
 
         function closeDashboardDetail() {
@@ -250,13 +285,26 @@
             if (metric) openDashboardDetail(metric.dataset.dashboardDetail, metric.dataset.dashboardTitle || "Detalle de pedidos");
             const client = event.target.closest("[data-dashboard-client]");
             if (client) openDashboardDetail("pendientes-pago", "Pedidos pendientes de pago", client.dataset.dashboardClient || "");
+            const order = event.target.closest("[data-dashboard-order-id]");
+            if (order) openDashboardOrder(order.dataset.dashboardOrderId);
             if (event.target.closest("[data-dashboard-close]")) closeDashboardDetail();
+            if (event.target.closest("[data-dashboard-order-close]")) closeDashboardOrder();
         });
         document.addEventListener("keydown", event => {
             if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-dashboard-detail]")) event.target.click();
-            if (event.key === "Escape" && !detailModal.hidden) closeDashboardDetail();
+            if (event.key === "Escape" && !orderFormModal.hidden) {
+                closeDashboardOrder();
+            } else if (event.key === "Escape" && !detailModal.hidden) {
+                closeDashboardDetail();
+            }
         });
         document.getElementById("dashboard-detail-close").addEventListener("click", closeDashboardDetail);
+        document.getElementById("dashboard-order-form-close").addEventListener("click", () => closeDashboardOrder());
+        window.addEventListener("message", function (event) {
+            if (event.origin !== window.location.origin) return;
+            if (event.data?.type === "order-modal-close") closeDashboardOrder();
+            if (event.data?.type === "order-modal-saved") closeDashboardOrder(true);
+        });
 
         function renderStage(stageKey, totalId, todayId, data) {
             data = data || {};

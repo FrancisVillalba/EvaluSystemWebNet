@@ -449,6 +449,12 @@
             return String(statusId || "") === String(findOptionId(formOptions.estadosPago, "pagado") || "");
         }
 
+        function isCashPaymentSelected(paymentMethodId = paymentMethodSelect.value) {
+            const paymentMethod = formOptions.formasPago.find(item =>
+                String(item.id) === String(paymentMethodId || ""));
+            return String(paymentMethod?.nombre || "").toLowerCase().includes("efectivo");
+        }
+
         function workflowStateOptions() {
             const current = currentSaleState();
             const flow = Number(current?.numeroFlujo);
@@ -1029,7 +1035,9 @@
                 return;
             }
 
-            if (isPaidStatusSelected(payload.estadoPagadoId) && paymentProofs.length === 0) {
+            if (isPaidStatusSelected(payload.estadoPagadoId)
+                && !isCashPaymentSelected(payload.formaPagoId)
+                && paymentProofs.length === 0) {
                 saleStatusSelect.value = previousStateId;
                 showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
                 return;
