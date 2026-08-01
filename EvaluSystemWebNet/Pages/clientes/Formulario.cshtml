@@ -41,7 +41,7 @@
 
                 <label for="client-phone">
                     Telefono
-                    <input id="client-phone" required inputmode="numeric" minlength="10" maxlength="10" pattern="09[0-9]{8}" title="Ingrese 10 digitos comenzando con 09. Ejemplo: 0982161888" placeholder="0982161888" />
+                    <input id="client-phone" required inputmode="numeric" minlength="10" maxlength="10" pattern="09[0-9]{8}" title="Ingrese 10 digitos comenzando con 09. Ejemplo: 0982161888" placeholder="0982000000" />
                 </label>
 
                 <label for="client-email">
@@ -56,12 +56,12 @@
 
                 <label for="client-department">
                     Departamento
-                    <select id="client-department"></select>
+                    <select id="client-department" required></select>
                 </label>
 
                 <label for="client-city">
                     Ciudad
-                    <select id="client-city"></select>
+                    <select id="client-city" required></select>
                 </label>
 
                 <label for="client-status">
@@ -385,6 +385,24 @@
 
             if (!payload.cliente.nroTelefono) {
                 showToast("El telefono del cliente es obligatorio.", "error");
+                return;
+            }
+
+            if (!/^09\d{8}$/.test(payload.cliente.nroTelefono)) {
+                showToast("El telefono debe tener 10 digitos, comenzar con 09 y no contener espacios ni guiones. Ejemplo: 0982161888.", "error");
+                document.getElementById("client-phone").focus();
+                return;
+            }
+
+            if (!payload.cliente.departamentoId) {
+                showToast("Seleccione el departamento del cliente.", "error");
+                clientDepartmentSelect.focus();
+                return;
+            }
+
+            if (!payload.cliente.ciudadId) {
+                showToast("Seleccione la ciudad del cliente.", "error");
+                clientCitySelect.focus();
                 return;
             }
 

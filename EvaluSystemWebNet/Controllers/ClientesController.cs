@@ -102,6 +102,11 @@ public class ClientesController : ControllerBase
         [FromBody] ClienteSaveRequest request,
         CancellationToken cancellationToken)
     {
+        var locationValidation = ValidateClientLocation(request.Cliente);
+        if (locationValidation is not null)
+        {
+            return locationValidation;
+        }
         var result = await _backendApiClient.PostResultAsync<ClienteDto>(
             "api/Clientes",
             request.Cliente,
@@ -109,7 +114,7 @@ public class ClientesController : ControllerBase
 
         if (!result.IsSuccess || result.Value is null)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo crear el cliente." });
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage ?? "No se pudo crear el cliente." });
         }
 
         var cliente = result.Value;
@@ -130,6 +135,11 @@ public class ClientesController : ControllerBase
         [FromBody] ClienteSaveRequest request,
         CancellationToken cancellationToken)
     {
+        var locationValidation = ValidateClientLocation(request.Cliente);
+        if (locationValidation is not null)
+        {
+            return locationValidation;
+        }
         var result = await _backendApiClient.PutResultAsync<ClienteDto>(
             $"api/Clientes/{id}",
             request.Cliente,
@@ -137,7 +147,7 @@ public class ClientesController : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
         }
 
         if (request.DatosEnvio is not null)
@@ -194,6 +204,20 @@ public class ClientesController : ControllerBase
             cliente.Estado == false ? "Inactivo" : "Activo");
     }
 
+    private BadRequestObjectResult? ValidateClientLocation(ClienteRequest cliente)
+    {
+        if (cliente.DepartamentoId is null or <= 0)
+        {
+            return BadRequest(new { message = "El departamento del cliente es obligatorio." });
+        }
+
+        if (cliente.CiudadId is null or <= 0)
+        {
+            return BadRequest(new { message = "La ciudad del cliente es obligatoria." });
+        }
+
+        return null;
+    }
 }
 
 public record ClienteSaveRequest(ClienteRequest Cliente, ClienteDatosEnvioRequest? DatosEnvio);
