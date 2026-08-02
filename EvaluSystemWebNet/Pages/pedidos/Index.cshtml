@@ -241,7 +241,7 @@
         function metersFromDetails(orderDetails) {
             orderDetails = Array.isArray(orderDetails) ? orderDetails : [];
             const total = orderDetails.reduce((sum, detail) => sum + numberValue(detail.quantity), 0);
-            return total ? `${total} m` : "0 m";
+            return total ? `${total.toLocaleString("es-PY", { maximumFractionDigits: 2 })} m` : "0 m";
         }
 
         function sellerColorClass(value) {

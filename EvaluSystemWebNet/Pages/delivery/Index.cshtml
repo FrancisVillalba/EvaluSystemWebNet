@@ -368,15 +368,17 @@
                             <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
-                        <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
-                            ${method.actionText}
-                        </button>
+                        <div class="delivery-card-side-actions">
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Imprimir etiqueta</button>
+                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
+                                ${method.actionText}
+                            </button>
+                        </div>
                     </div>
                 </article>`;
         }
 
         function renderAssignedCard(order) {
-            const isTransportadora = String(order.metodoEntregaId || "").toUpperCase() === "TRANSPORTADORA";
             return `
                 <article class="delivery-card delivery-card-compact">
                     <div class="delivery-card-head">
@@ -391,7 +393,7 @@
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
-                            ${isTransportadora ? `<button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>` : ""}
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Imprimir etiqueta</button>
                             <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
                         </div>
                     </div>
@@ -643,23 +645,29 @@
             });
         }
 
-        async function downloadTransportadoraLabel(id) {
+        async function printTransportadoraLabel(id) {
+            const labelWindow = window.open("", "_blank");
+            if (!labelWindow) {
+                showToast("El navegador bloqueo la nueva pestaña. Habilita las ventanas emergentes e intenta nuevamente.", "error");
+                return;
+            }
+
+            labelWindow.document.title = "Preparando etiqueta";
+            labelWindow.document.body.innerHTML = "<p style='font-family: sans-serif; padding: 24px'>Preparando etiqueta...</p>";
+
             await withAppLoading("Preparando etiqueta...", async function () {
                 const response = await fetch(`/api/delivery/${id}/transportadora-etiqueta/pdf`);
                 if (!response.ok) {
                     const error = await response.json().catch(() => null);
+                    labelWindow.close();
                     showToast(error?.message || "No se pudo preparar la etiqueta.", "error");
                     return;
                 }
 
                 const blob = await response.blob();
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `envio-transportadora-${id}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(link.href);
+                const labelUrl = URL.createObjectURL(blob);
+                labelWindow.location.replace(labelUrl);
+                window.setTimeout(() => URL.revokeObjectURL(labelUrl), 60000);
             });
         }
 
@@ -752,7 +760,7 @@
             }
 
             if (labelButton) {
-                downloadTransportadoraLabel(labelButton.dataset.labelId);
+                printTransportadoraLabel(labelButton.dataset.labelId);
                 return;
             }
 

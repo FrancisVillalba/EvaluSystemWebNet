@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            <div class="reports-filters">
+            <div class="reports-filters control-filters">
                 <label for="print-date-from">
                     Fecha desde
                     <input id="print-date-from" type="date" />
@@ -44,6 +44,10 @@
                 <label for="print-date-to">
                     Fecha hasta
                     <input id="print-date-to" type="date" />
+                </label>
+                <label for="print-search">
+                    Buscar
+                    <input id="print-search" type="search" placeholder="Pedido, cliente o producto" />
                 </label>
             </div>
 
@@ -54,9 +58,10 @@
                             <th>Pedido</th>
                             <th>Fecha</th>
                             <th>Cliente</th>
+                            <th>Vendedor</th>
                             <th>Producto</th>
                             <th>Cantidad</th>
-                            <th>Archivo</th>
+                            <th class="print-file-column">Archivo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -92,6 +97,7 @@
         const machineTitle = document.getElementById("machine-title");
         const machineCount = document.getElementById("machine-count");
         const tableBody = document.getElementById("print-files-body");
+        const search = document.getElementById("print-search");
         const dateFrom = document.getElementById("print-date-from");
         const dateTo = document.getElementById("print-date-to");
         const returnModal = document.getElementById("return-modal");
@@ -121,12 +127,36 @@
             })[character]);
         }
 
+        function normalized(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
         function formatDate(value) {
             return value ? new Date(value).toLocaleDateString("es-PY") : "-";
         }
 
         function formatQuantity(value) {
             return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
+        }
+
+        function shortPersonName(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 3) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+
+            return parts.length > 1 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
+        }
+
+        function sellerColorClass(value) {
+            const text = String(value || "").trim().toLowerCase();
+            let hash = 0;
+
+            for (let index = 0; index < text.length; index += 1) {
+                hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+            }
+
+            return `seller-color-${Math.abs(hash) % 7}`;
         }
 
         function getMachineGroups() {
@@ -158,8 +188,20 @@
         }
 
         function filteredFiles() {
+            const term = normalized(search.value);
             return selectedMachine
-                ? files.filter(item => String(item.tipoMaquinaId) === selectedMachine)
+                ? files.filter(item => {
+                    if (String(item.tipoMaquinaId) !== selectedMachine) return false;
+                    const haystack = [
+                        item.pedidoId,
+                        item.cliente,
+                        item.vendedor,
+                        item.producto,
+                        item.archivoDisenioNombre,
+                        item.tipoMaquina
+                    ].join(" ");
+                    return !term || normalized(haystack).includes(term);
+                })
                 : [];
         }
 
@@ -187,9 +229,10 @@
                         <td>#${item.pedidoId}</td>
                         <td>${formatDate(item.fechaEntrega || item.fechaCarga)}</td>
                         <td><strong>${escapeHtml(item.cliente)}</strong></td>
+                        <td><span class="orders-seller ${sellerColorClass(item.vendedor)}">${escapeHtml(shortPersonName(item.vendedor) || "Sin vendedor")}</span></td>
                         <td>${escapeHtml(item.producto)}</td>
                         <td>${formatQuantity(item.cantidad)}</td>
-                        <td>${escapeHtml(item.archivoDisenioNombre || "Archivo de diseno")}</td>
+                        <td class="print-file-column">${escapeHtml(item.archivoDisenioNombre || "Archivo de diseno")}</td>
                         <td>
                             <div class="print-row-actions">
                                 <button class="admin-secondary print-icon-button" type="button" data-download="${item.detalleId}" title="Descargar" aria-label="Descargar">
@@ -199,13 +242,13 @@
                                         <path d="M5 21h14"></path>
                                     </svg>
                                 </button>
-                                <button class="admin-primary print-mark-button" type="button" data-print="${item.detalleId}" ${item.impreso ? "disabled" : ""}>${item.impreso ? "Impreso" : "Marcar impreso"}</button>
+                                <button class="admin-primary print-mark-button" type="button" data-print="${item.detalleId}" ${item.impreso ? "disabled" : ""}>Impreso</button>
                                 <button class="admin-danger" type="button" data-return="${item.detalleId}" data-return-order="${item.pedidoId}">Devolver</button>
                             </div>
                         </td>
                     </tr>
                 `).join("")
-                : `<tr><td colspan="7">No hay archivos para los filtros seleccionados.</td></tr>`;
+                : `<tr><td colspan="8">No hay archivos para los filtros seleccionados.</td></tr>`;
         }
 
         async function loadFiles() {
@@ -364,6 +407,7 @@
 
         document.getElementById("refresh-print-files")?.addEventListener("click", loadFiles);
         document.getElementById("refresh-print-files-panel")?.addEventListener("click", loadFiles);
+        search.addEventListener("input", renderTable);
         [dateFrom, dateTo].forEach(input => input.addEventListener("change", loadFiles));
 
         const today = new Date();

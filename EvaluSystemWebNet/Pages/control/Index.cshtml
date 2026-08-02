@@ -58,9 +58,10 @@
                             <th>Pedido</th>
                             <th>Fecha</th>
                             <th>Cliente</th>
+                            <th>Vendedor</th>
                             <th>Producto</th>
                             <th>Cantidad</th>
-                            <th>Estado</th>
+                            <th class="print-file-column">Archivo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -142,6 +143,26 @@
             return Number(value || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 });
         }
 
+        function shortPersonName(value) {
+            const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 3) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+
+            return parts.length > 1 ? `${parts[0]} ${parts[1]}` : parts[0] || "";
+        }
+
+        function sellerColorClass(value) {
+            const text = String(value || "").trim().toLowerCase();
+            let hash = 0;
+
+            for (let index = 0; index < text.length; index += 1) {
+                hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+            }
+
+            return `seller-color-${Math.abs(hash) % 7}`;
+        }
+
         function loadKnownMachines() {
             try {
                 return new Map(JSON.parse(localStorage.getItem(knownMachinesStorageKey) || "[]"));
@@ -170,9 +191,11 @@
                 const haystack = [
                     row.pedido.id,
                     row.pedido.cliente,
+                    row.pedido.vendedor,
                     row.pedido.estadoVenta,
                     row.pedido.metodoEntrega,
                     row.detalle.producto,
+                    row.detalle.archivoDisenioNombre,
                     row.detalle.observacion,
                     row.machineName
                 ].join(" ");
@@ -236,16 +259,23 @@
                         <td>#${row.pedido.id}</td>
                         <td>${formatDate(row.pedido.fechaEntrega || row.pedido.fechaCreacion)}</td>
                         <td><strong>${escapeHtml(row.pedido.cliente)}</strong></td>
+                        <td><span class="orders-seller ${sellerColorClass(row.pedido.vendedor)}">${escapeHtml(shortPersonName(row.pedido.vendedor) || "Sin vendedor")}</span></td>
                         <td>${escapeHtml(row.detalle.producto)}</td>
                         <td>${formatQuantity(row.detalle.cantidad)}</td>
-                        <td><span class="control-status">${row.detalle.impreso ? "Impreso" : "Pendiente"}</span></td>
+                        <td class="print-file-column">${escapeHtml(row.detalle.archivoDisenioNombre || "Archivo de diseno")}</td>
                         <td>
                             <div class="control-row-actions">
-                                <button class="control-download-button" type="button" data-download-id="${row.detalle.id}" title="Descargar" aria-label="Descargar archivo">
+                                <button class="control-download-button" type="button" data-download-id="${row.detalle.id}" title="Descargar archivo" aria-label="Descargar archivo">
                                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                         <path d="M12 3v12"></path>
                                         <path d="m7 10 5 5 5-5"></path>
                                         <path d="M5 21h14"></path>
+                                    </svg>
+                                </button>
+                                <button class="delivery-label-button control-label-icon-button" type="button" data-label-id="${row.pedido.id}" title="Imprimir etiqueta" aria-label="Imprimir etiqueta">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M20.6 13.4 11.2 4H4v7.2l9.4 9.4a2 2 0 0 0 2.8 0l4.4-4.4a2 2 0 0 0 0-2.8Z"></path>
+                                        <circle cx="7.5" cy="7.5" r="1.25"></circle>
                                     </svg>
                                 </button>
                                 <button class="control-approve-button" type="button" data-approve-id="${row.detalle.id}">Aprobado</button>
@@ -254,7 +284,7 @@
                         </td>
                     </tr>
                 `).join("")
-                : `<tr><td colspan="7">No hay pedidos para esta maquina.</td></tr>`;
+                : `<tr><td colspan="8">No hay pedidos para esta maquina.</td></tr>`;
         }
 
         function render() {
@@ -301,6 +331,31 @@
             });
         }
 
+        async function printDeliveryLabel(id) {
+            const labelWindow = window.open("", "_blank");
+            if (!labelWindow) {
+                showToast("El navegador bloqueo la nueva pestaña. Habilita las ventanas emergentes e intenta nuevamente.", "error");
+                return;
+            }
+
+            labelWindow.document.title = "Preparando etiqueta";
+            labelWindow.document.body.innerHTML = "<p style='font-family: sans-serif; padding: 24px'>Preparando etiqueta...</p>";
+
+            await withAppLoading("Preparando etiqueta...", async function () {
+                const response = await fetch(`/api/delivery/${id}/transportadora-etiqueta/pdf`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    labelWindow.close();
+                    showToast(error?.message || "No se pudo preparar la etiqueta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const labelUrl = URL.createObjectURL(blob);
+                labelWindow.location.replace(labelUrl);
+                window.setTimeout(() => URL.revokeObjectURL(labelUrl), 60000);
+            });
+        }
         async function approvePedido(id) {
             const confirmed = await showConfirmDialog({
                 title: "Aprobar item",
@@ -369,6 +424,12 @@
             const downloadButton = event.target.closest("[data-download-id]");
             if (downloadButton) {
                 downloadFile(downloadButton.dataset.downloadId);
+                return;
+            }
+
+            const labelButton = event.target.closest("[data-label-id]");
+            if (labelButton) {
+                printDeliveryLabel(labelButton.dataset.labelId);
                 return;
             }
 

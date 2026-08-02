@@ -17,7 +17,6 @@
                     <section class="entry-section" aria-label="Carga de ventas impresiones">
                         <div class="section-title detail-title">
                             <span id="order-form-title">Nuevo pedido</span>
-                            <button class="back-list-button" type="button" onclick="closeEmbeddedForm()">Volver a la lista</button>
                         </div>
 
                         <div class="entry-fields panel-entry-fields">
@@ -207,7 +206,9 @@
             productos: [],
             maquinas: [],
             usuarioActualId: null,
-            puedeVerTodosPedidos: false
+            puedeVerTodosPedidos: false,
+            cmPrecioMayorOMenor: 0.5,
+            compraMinimaCm: 0.2
         };
 
         const form = document.getElementById("order-form");
@@ -283,9 +284,8 @@
         }
 
         function clientOptionLabel(client) {
-            return client.documento
-                ? `${client.nombre || `Cliente ${client.id}`} - ${client.documento}`
-                : client.nombre || `Cliente ${client.id}`;
+            const name = client.nombre || `Cliente ${client.id}`;
+            return client.nroTelefono ? `${name} - ${client.nroTelefono}` : name;
         }
 
         function renderClientOptions(selectedValue = clientSelect.value) {
@@ -319,7 +319,7 @@
             const search = clientSelect2Search.value.trim().toLowerCase();
             const selected = String(clientSelect.value || "");
             const clientes = formOptions.clientes.filter(client => {
-                const text = `${client.nombre || ""} ${client.documento || ""}`.toLowerCase();
+                const text = `${client.nombre || ""} ${client.nroTelefono || ""} ${client.documento || ""}`.toLowerCase();
                 return !search || text.includes(search);
             });
 
@@ -345,6 +345,19 @@
 
         function getProduct(productId) {
             return formOptions.productos.find(product => String(product.id) === String(productId));
+        }
+
+        function minimumPurchaseQuantity() {
+            return Number(formOptions.compraMinimaCm) || 0.2;
+        }
+
+        function productPriceForQuantity(product, quantity) {
+            if (!product) return 0;
+            const amount = numberValue(String(quantity || ""));
+            const limit = Number(formOptions.cmPrecioMayorOMenor) || 0.5;
+            return amount > 0 && amount < limit
+                ? numberValue(String(product.precioMenor || 200000))
+                : numberValue(String(product.precioBase || 0));
         }
 
         function getMachine(machineId) {
@@ -741,12 +754,28 @@
                         ...detail,
                         productId: value,
                         machineId: product?.maquinaId || detail.machineId,
-                        unitPrice: product ? formatNumber(product.precioBase) : detail.unitPrice
+                        unitPrice: product ? formatNumber(productPriceForQuantity(product, detail.quantity)) : detail.unitPrice
+                    };
+                }
+
+                if (field === "quantity") {
+                    const product = getProduct(detail.productId);
+                    return {
+                        ...detail,
+                        quantity: value,
+                        unitPrice: product ? formatNumber(productPriceForQuantity(product, value)) : detail.unitPrice
                     };
                 }
 
                 return { ...detail, [field]: value };
             });
+
+            if (event.type === "change"
+                && field === "quantity"
+                && numberValue(value) > 0
+                && numberValue(value) < minimumPurchaseQuantity()) {
+                showToast(`La compra minima es de ${minimumPurchaseQuantity().toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
+            }
 
             if (event.type === "input" && ["quantity", "unitPrice", "extraPrice"].includes(field)) {
                 const detail = details.find(item => item.id === id);
@@ -1026,6 +1055,12 @@
             if (!payload.detalles.length || payload.detalles.some(detail => !detail.productoId || !detail.tipoMaquinaId || detail.cantidad <= 0)) {
                 saleStatusSelect.value = previousStateId;
                 showToast("Complete producto, maquina y cantidad en todos los detalles.", "error");
+                return;
+            }
+
+            if (payload.detalles.some(detail => detail.cantidad < minimumPurchaseQuantity())) {
+                saleStatusSelect.value = previousStateId;
+                showToast(`La compra minima es de ${minimumPurchaseQuantity().toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
                 return;
             }
 

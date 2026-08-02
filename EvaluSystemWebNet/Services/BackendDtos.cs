@@ -211,7 +211,7 @@ public record UsuarioDto(
     string? Perfiles,
     bool? Estado);
 
-public record ProductoDto(int Id, string Nombre, decimal PrecioBase, int? MaquinaId, string? Maquina, bool Estado);
+public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal PrecioMenor, int? MaquinaId, string? Maquina, bool Estado);
 
 public record ProductoComisionDto(
     int Id,
@@ -276,7 +276,9 @@ public record PedidoFormOptionsDto(
     int? UsuarioActualId,
     bool PuedeVerTodosPedidos,
     bool PuedeVerVentasUsuario,
-    decimal MontoEnvioTransportadora);
+    decimal MontoEnvioTransportadora,
+    decimal CmPrecioMayorOMenor,
+    decimal CompraMinimaCm);
 
 public record VentaUsuarioResumenDto(
     DateTime FechaDesde,
@@ -321,6 +323,7 @@ public record ControlPedidoDto(
     DateTime FechaCreacion,
     DateTime? FechaEntrega,
     string Cliente,
+    string Vendedor,
     string EstadoVentaId,
     string? EstadoVenta,
     string? MetodoEntregaId,
@@ -335,6 +338,7 @@ public record ControlPedidoDetalleDto(
     string TipoMaquina,
     string Producto,
     decimal Cantidad,
+    string? ArchivoDisenioNombre,
     string? Observacion,
     string EstadoItem,
     bool Impreso);
@@ -603,6 +607,7 @@ public record ImpresionArchivoDto(
     DateTime FechaCarga,
     DateTime? FechaEntrega,
     string Cliente,
+    string Vendedor,
     int TipoMaquinaId,
     string TipoMaquina,
     string Producto,

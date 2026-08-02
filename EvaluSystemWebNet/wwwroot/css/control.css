@@ -246,3 +246,28 @@
 @media (width <= 620px) {
   .order-flow-event-heading { flex-direction: column; gap: 4px; }
 }
+.admin-table .print-file-column {
+  width: 22%;
+  min-width: 170px;
+  max-width: 280px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.control-row-actions .control-label-icon-button {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+.control-label-icon-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
