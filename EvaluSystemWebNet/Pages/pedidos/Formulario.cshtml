@@ -452,6 +452,10 @@
             return Number(currentSaleState()?.numeroFlujo) === 1;
         }
 
+        function canEditOrderDetails() {
+            return !orderId || Number(currentSaleState()?.numeroFlujo) === 1;
+        }
+
         function isDeliveredSaleState(state = currentSaleState()) {
             const flow = Number(state?.numeroFlujo);
             const name = String(state?.nombre || state?.id || "").toLowerCase();
@@ -638,18 +642,21 @@
         }
 
         function renderDetails() {
+            const detailReadonly = !canEditOrderDetails();
+            document.getElementById("add-detail-button").hidden = detailReadonly;
+
             detailList.innerHTML = details.map((detail, index) => `
                 <article class="detail-row ${String(detail.stateItem || "").trim().toUpperCase() === "RE" ? "detail-row-rejected" : String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-row-returned" : ""}">
                     <div class="detail-row-header">
                         <span>Detalle #${index + 1} ${String(detail.stateItem || "").trim().toUpperCase() === "RE" ? `<small class="detail-rejected-badge">Rechazado</small>` : String(detail.stateItem || "").trim().toUpperCase() === "DV" ? `<small class="detail-returned-badge">Devuelto</small>` : ""}</span>
-                        <button class="row-remove" type="button" onclick="removeDetail(${detail.id})">Quitar</button>
+                        <button class="row-remove" type="button" onclick="removeDetail(${detail.id})" ${detailReadonly ? "hidden" : ""}>Quitar</button>
                     </div>
                     ${["RE", "DV"].includes(String(detail.stateItem || "").trim().toUpperCase()) && detail.observation ? `<div class="${String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-returned-comment" : "detail-rejected-comment"}">${escapeHtml(detail.observation)}</div>` : ""}
 
                     <div class="detail-grid">
                         <label class="detail-field product-field">
                             Producto
-                            <select data-id="${detail.id}" data-field="productId">
+                            <select data-id="${detail.id}" data-field="productId" ${detailReadonly ? "disabled" : ""}>
                                 ${selectOptions(
                                     formOptions.productos.map(product => ({
                                         value: product.id,
@@ -663,7 +670,7 @@
 
                         <label class="detail-field machine-field">
                             Maquina
-                            <select data-id="${detail.id}" data-field="machineId">
+                            <select data-id="${detail.id}" data-field="machineId" ${detailReadonly ? "disabled" : ""}>
                                 ${selectOptions(
                                     formOptions.maquinas.map(machine => ({
                                         value: machine.id,
@@ -677,23 +684,23 @@
 
                         <label class="detail-field quantity-field">
                             Cantidad
-                            <input data-id="${detail.id}" data-field="quantity" inputmode="decimal" value="${detail.quantity}" />
+                            <input data-id="${detail.id}" data-field="quantity" inputmode="decimal" value="${detail.quantity}" ${detailReadonly ? "disabled" : ""} />
                         </label>
 
                         <label class="detail-field price-field">
                             Precio unitario
-                            <input data-id="${detail.id}" data-field="unitPrice" inputmode="numeric" value="${detail.unitPrice}" />
+                            <input data-id="${detail.id}" data-field="unitPrice" inputmode="numeric" value="${detail.unitPrice}" ${detailReadonly ? "disabled" : ""} />
                         </label>
 
                         <label class="detail-field extra-field">
                             Precio extra
-                            <input data-id="${detail.id}" data-field="extraPrice" inputmode="numeric" value="${detail.extraPrice}" />
+                            <input data-id="${detail.id}" data-field="extraPrice" inputmode="numeric" value="${detail.extraPrice}" ${detailReadonly ? "disabled" : ""} />
                         </label>
 
                         <div class="detail-field design-field">
                             <label for="design-file-${detail.id}">Diseno PNG</label>
                             <div class="file-control">
-                                <input id="design-file-${detail.id}" class="file-control-input" type="file" accept="image/png" data-id="${detail.id}" data-field="designName" />
+                                <input id="design-file-${detail.id}" class="file-control-input" type="file" accept="image/png" data-id="${detail.id}" data-field="designName" ${detailReadonly ? "disabled" : ""} />
                                 <label class="file-control-picker" for="design-file-${detail.id}">Seleccionar archivo</label>
                                 <span class="file-control-name">${detail.designName || "Sin diseno adjunto"}</span>
                                 ${detail.designName ? `
@@ -723,6 +730,8 @@
         }
 
         async function updateDetailFromInput(event) {
+            if (!canEditOrderDetails()) return;
+
             const input = event.target;
             const id = Number(input.dataset.id);
             const field = input.dataset.field;
@@ -791,6 +800,8 @@
         }
 
         function removeDetail(id) {
+            if (!canEditOrderDetails()) return;
+
             details = details.filter(detail => detail.id !== id);
             if (details.length === 0) {
                 details = [createDetail()];
@@ -896,6 +907,8 @@
         }
 
         document.getElementById("add-detail-button").addEventListener("click", function () {
+            if (!canEditOrderDetails()) return;
+
             details = [...details, createDetail()];
             renderDetails();
         });

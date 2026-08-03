@@ -189,6 +189,26 @@ public class PedidosController : ControllerBase
         [FromBody] VentaImpresionCompletaUpdateRequest request,
         CancellationToken cancellationToken)
     {
+        var currentOrder = await _backendApiClient.GetAsync<VentaImpresionCabDto>(
+            $"api/VentasImpresion/{id}",
+            cancellationToken);
+        if (currentOrder is null)
+        {
+            return NotFound();
+        }
+
+        if (!IsCargaState(currentOrder))
+        {
+            request = request with
+            {
+                Detalles = currentOrder.Detalles.Select(detail => new VentaImpresionDetalleUpdateRequest(
+                    detail.Id, detail.ProductoId, detail.TipoMaquinaId, detail.Cantidad,
+                    detail.PrecioUnitario, detail.PrecioExtra, detail.ArchivoDisenio,
+                    detail.ArchivoDisenioNombre, detail.Observacion, detail.EstadoItem,
+                    detail.CheckImpresion)).ToList()
+            };
+        }
+
         var result = await _backendApiClient.PutResultAsync<VentaImpresionCabDto>(
             $"api/VentasImpresion/completa/{id}",
             request,
@@ -277,6 +297,13 @@ public class PedidosController : ControllerBase
             "OTRO" => "Otro",
             _ => metodoEntrega ?? "Delivery"
         };
+    }
+
+    private static bool IsCargaState(VentaImpresionCabDto order)
+    {
+        var state = $"{order.EstadoVentaId} {order.EstadoVenta}";
+        return state.Contains("carga", StringComparison.OrdinalIgnoreCase) ||
+            state.Contains("cargado", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildFilterQuery(
