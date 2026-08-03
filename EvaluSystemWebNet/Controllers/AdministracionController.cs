@@ -71,6 +71,8 @@ public class AdministracionController : ControllerBase
             return NotFound(new { message = "Modulo administrativo no encontrado." });
         }
 
+        if (!AdministrationPermissions.CanView(HttpContext.Session, module)) return Forbid();
+
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = BuildListQuery(search, page, pageSize);
@@ -96,6 +98,8 @@ public class AdministracionController : ControllerBase
             return BadRequest(new { message = "Este modulo es solo lectura." });
         }
 
+        if (!AdministrationPermissions.CanCreate(HttpContext.Session, module)) return Forbid();
+
         var result = await _backendApiClient.PostResultAsync<JsonElement>(config.Endpoint, body, cancellationToken);
         return ToActionResult(result);
     }
@@ -112,6 +116,8 @@ public class AdministracionController : ControllerBase
         {
             return BadRequest(new { message = "Este modulo es solo lectura." });
         }
+
+        if (!AdministrationPermissions.CanEdit(HttpContext.Session, module)) return Forbid();
 
         var result = await _backendApiClient.PutResultAsync<JsonElement>($"{config.Endpoint}/{Uri.EscapeDataString(id)}", body, cancellationToken);
         return result.IsSuccess
@@ -132,6 +138,8 @@ public class AdministracionController : ControllerBase
             return BadRequest(new { message = "Este modulo es solo lectura." });
         }
 
+        if (!AdministrationPermissions.CanDelete(HttpContext.Session, module)) return Forbid();
+
         var deleted = await _backendApiClient.DeleteAsync($"{config.Endpoint}/{Uri.EscapeDataString(id)}", cancellationToken);
         return deleted ? NoContent() : StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo eliminar el registro." });
     }
@@ -139,6 +147,8 @@ public class AdministracionController : ControllerBase
     [HttpGet("permisos/formularios")]
     public async Task<IActionResult> GetFormularios(CancellationToken cancellationToken)
     {
+        if (!AdministrationPermissions.CanView(HttpContext.Session, "accesos")) return Forbid();
+
         var result = await _backendApiClient.GetResultAsync<JsonElement>("api/Permisos/formularios", cancellationToken);
         return ToActionResult(result);
     }
@@ -146,6 +156,8 @@ public class AdministracionController : ControllerBase
     [HttpGet("permisos/perfil/{perfilId:int}")]
     public async Task<IActionResult> GetPermisosPerfil(int perfilId, CancellationToken cancellationToken)
     {
+        if (!AdministrationPermissions.CanView(HttpContext.Session, "accesos")) return Forbid();
+
         var result = await _backendApiClient.GetResultAsync<JsonElement>($"api/Permisos/perfil/{perfilId}", cancellationToken);
         return ToActionResult(result);
     }
@@ -153,6 +165,8 @@ public class AdministracionController : ControllerBase
     [HttpPost("permisos/perfil-formulario")]
     public async Task<IActionResult> SavePermiso([FromBody] PerfilFormularioPermisoRequest request, CancellationToken cancellationToken)
     {
+        if (!AdministrationPermissions.CanEdit(HttpContext.Session, "accesos")) return Forbid();
+
         var result = await _backendApiClient.PostResultAsync<PerfilFormularioPermisoDto>("api/Permisos/perfil-formulario", request, cancellationToken);
         return result.IsSuccess ? Ok(result.Value) : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage });
     }

@@ -1,9 +1,40 @@
 @page
+@using EvaluSystemWebNet.Services
+@using System.Text.Json
 @{
     Layout = "_AppLayout";
     ViewData["Title"] = "Administracion";
     ViewData["ActiveMenu"] = "administracion";
     ViewData["ShellClass"] = "admin-shell";
+}
+@{
+    var adminModules = new[]
+    {
+        new { Key = "usuarios", Label = "Usuarios" },
+        new { Key = "personas", Label = "Personas" },
+        new { Key = "perfiles", Label = "Perfiles" },
+        new { Key = "accesos", Label = "Accesos" },
+        new { Key = "transportadoras", Label = "Transportadoras" },
+        new { Key = "productos", Label = "Productos" },
+        new { Key = "productoComisiones", Label = "Comisiones por producto" },
+        new { Key = "gruposVenta", Label = "Grupo de ventas" },
+        new { Key = "maquinas", Label = "Tipos de maquina" },
+        new { Key = "formasPago", Label = "Formas de pago" },
+        new { Key = "estadosPago", Label = "Estados de pago" },
+        new { Key = "estadosVenta", Label = "Estados de venta" },
+        new { Key = "tiposDocumento", Label = "Tipos documento" },
+        new { Key = "tiposCliente", Label = "Tipos cliente" },
+        new { Key = "configuraciones", Label = "Configuraciones" },
+        new { Key = "departamentos", Label = "Departamentos" },
+        new { Key = "ciudades", Label = "Ciudades" }
+    }.Where(item => AdministrationPermissions.CanView(HttpContext.Session, item.Key)).ToArray();
+    var initialAdminModule = adminModules.FirstOrDefault()?.Key ?? "";
+    var adminModulePermissions = adminModules.ToDictionary(item => item.Key, item => new
+    {
+        canCreate = AdministrationPermissions.CanCreate(HttpContext.Session, item.Key),
+        canEdit = AdministrationPermissions.CanEdit(HttpContext.Session, item.Key),
+        canDelete = AdministrationPermissions.CanDelete(HttpContext.Session, item.Key)
+    });
 }
 
 @section Styles {
@@ -13,23 +44,10 @@
 <section class="admin-main">
     <div class="admin-workspace">
         <aside class="admin-modules" aria-label="Modulos de administracion">
-            <button class="active" type="button" data-module="usuarios">Usuarios</button>
-            <button type="button" data-module="personas">Personas</button>
-            <button type="button" data-module="perfiles">Perfiles</button>
-            <button type="button" data-module="accesos">Accesos</button>
-            <button type="button" data-module="transportadoras">Transportadoras</button>
-            <button type="button" data-module="productos">Productos</button>
-            <button type="button" data-module="productoComisiones">Comisiones por producto</button>
-            <button type="button" data-module="gruposVenta">Grupo de ventas</button>
-            <button type="button" data-module="maquinas">Tipos de maquina</button>
-            <button type="button" data-module="formasPago">Formas de pago</button>
-            <button type="button" data-module="estadosPago">Estados de pago</button>
-            <button type="button" data-module="estadosVenta">Estados de venta</button>
-            <button type="button" data-module="tiposDocumento">Tipos documento</button>
-            <button type="button" data-module="tiposCliente">Tipos cliente</button>
-            <button type="button" data-module="configuraciones">Configuraciones</button>
-            <button type="button" data-module="departamentos">Departamentos</button>
-            <button type="button" data-module="ciudades">Ciudades</button>
+            @foreach (var module in adminModules)
+            {
+                <button class="@(module.Key == initialAdminModule ? "active" : "")" type="button" data-module="@module.Key">@module.Label</button>
+            }
         </aside>
 
         <div id="crud-panel" class="admin-panels">
@@ -90,9 +108,10 @@
 @section Scripts {
     <script>
         const modules = window.adminModuleDefinitions || {};
+        const adminPermissions = @Html.Raw(JsonSerializer.Serialize(adminModulePermissions));
 
         const state = {
-            module: "usuarios",
+            module: @Html.Raw(JsonSerializer.Serialize(initialAdminModule)),
             records: [],
             editing: null,
             options: { perfiles: [], personas: [], maquinas: [], departamentos: [], tiposDocumento: [], productos: [], usuarios: [] },
@@ -205,7 +224,7 @@
             document.querySelectorAll("[data-module-panel]").forEach(panel => {
                 panel.hidden = panel.dataset.modulePanel !== state.module;
             });
-            activePanel()?.querySelector(".new-record-button")?.toggleAttribute("hidden", Boolean(config.readonly));
+            activePanel()?.querySelector(".new-record-button")?.toggleAttribute("hidden", Boolean(config.readonly || !adminPermissions[state.module]?.canCreate));
             renderForm();
             renderTable();
         }
