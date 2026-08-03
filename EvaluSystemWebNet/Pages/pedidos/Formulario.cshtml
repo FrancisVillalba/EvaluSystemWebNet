@@ -1018,9 +1018,9 @@
         }
 
         async function saveOrder(targetStateId = null) {
-            const previousStateId = saleStatusSelect.value;
             const isStateChange = Boolean(targetStateId);
             const currentStateId = loadedSaleStateId || saleStatusSelect.value || initialSaleState()?.id || "";
+            const previousStateId = currentStateId;
 
             if (targetStateId) {
                 const targetState = stateById(targetStateId);
@@ -1095,14 +1095,45 @@
             try {
                 response = await withAppLoading("Guardando pedido...", async function () {
                     await prepareFilesForSave(payload);
-                    const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
-                    return await fetch(saveUrl, {
-                        method: orderId ? "PUT" : "POST",
+                    const sendOrder = (url, method, body) => fetch(url, {
+                        method,
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify(body)
                     });
+
+                    if (!orderId && isStateChange) {
+                        const initialStateId = initialSaleState()?.id;
+                        const createResponse = await sendOrder("/api/pedidos", "POST", {
+                            ...payload,
+                            estadoVentaId: initialStateId
+                        });
+                        if (!createResponse.ok) {
+                            return createResponse;
+                        }
+
+                        const createdOrder = await createResponse.json();
+                        if (!createdOrder?.id) {
+                            throw new Error("La venta se creo en Carga, pero no se pudo obtener su identificador.");
+                        }
+
+                        orderId = String(createdOrder.id);
+                        const createdDetails = createdOrder.detalles || [];
+                        payload.detalles = payload.detalles.map((detail, index) => ({
+                            ...detail,
+                            id: createdDetails[index]?.id || detail.id
+                        }));
+
+                        loadedSaleStateId = initialStateId || loadedSaleStateId;
+                        window.history.replaceState(null, "", `${window.location.pathname}?id=${orderId}`);
+
+                        return await sendOrder(`/api/pedidos/${orderId}`, "PUT", payload);
+                    }
+
+                    const saveUrl = orderId ? `/api/pedidos/${orderId}` : "/api/pedidos";
+                    return await sendOrder(saveUrl, orderId ? "PUT" : "POST", payload);
+
                 });
             } catch (error) {
                 saleStatusSelect.value = previousStateId;
@@ -1222,7 +1253,7 @@
             await saveOrder();
         });
 
-        const orderId = new URLSearchParams(window.location.search).get("id");
+        let orderId = new URLSearchParams(window.location.search).get("id");
         async function loadInitialOrder() {
             const optionsLoaded = await loadFormOptions();
             if (!optionsLoaded) {
