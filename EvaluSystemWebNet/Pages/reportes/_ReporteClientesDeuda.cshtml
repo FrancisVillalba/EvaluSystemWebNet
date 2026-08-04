@@ -1,0 +1,80 @@
+<section id="customer-debt-panel" class="reports-panel" hidden>
+    <div class="reports-panel-header">
+        <div>
+            <h2>Clientes con pendientes de pago</h2>
+            <p>Pedidos en estado Pendiente de pago o Pago parcial.</p>
+        </div>
+    </div>
+
+    <div class="reports-filters reports-customer-debt-filters">
+        <label for="debt-date-from">Fecha desde<input id="debt-date-from" type="date" /></label>
+        <label for="debt-date-to">Fecha hasta<input id="debt-date-to" type="date" /></label>
+        <label for="debt-client">Cliente<input id="debt-client" type="search" placeholder="Nombre del cliente" /></label>
+        <label for="debt-status">
+            Estado de pago
+            <select id="debt-status">
+                <option value="">Pendiente y parcial</option>
+                <option value="P1">Pendiente de pago</option>
+                <option value="P2">Pago parcial</option>
+            </select>
+        </label>
+        <button id="search-customer-debt" type="button">Buscar</button>
+    </div>
+
+    <div id="customer-debt-kpis" class="reports-summary"></div>
+
+    <div class="reports-table-wrap">
+        <h3 class="reports-table-title">Detalle por cliente</h3>
+        <table class="reports-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th><th>Telefono</th><th>Pedidos</th><th>Total vendido</th>
+                    <th>Pagado</th><th>Saldo pendiente</th><th>Ultimo pedido</th><th>Estado</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="customer-debt-body"></tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    function renderCustomerDebtReport(report) {
+        const clientes = report.clientes || [];
+        customerDebtKpis.innerHTML = `
+            <article><div class="reports-card-info"><span>Deuda total</span><strong>${formatMoney(report.deudaTotal)}</strong><small>Saldo por cobrar</small></div></article>
+            <article><div class="reports-card-info"><span>Clientes con deuda</span><strong>${report.cantidadClientes || 0}</strong><small>${report.cantidadPedidos || 0} pedidos</small></div></article>
+            <article><div class="reports-card-info"><span>Total pagado</span><strong>${formatMoney(report.totalPagado)}</strong><small>De ${formatMoney(report.totalVendido)} vendidos</small></div></article>`;
+        customerDebtBody.innerHTML = clientes.length
+            ? clientes.map(cliente => `
+                <tr>
+                    <td><strong>${escapeHtml(cliente.cliente)}</strong></td><td>${escapeHtml(cliente.telefono || "-")}</td>
+                    <td>${cliente.cantidadPedidos}</td><td>${formatMoney(cliente.totalVendido)}</td>
+                    <td>${formatMoney(cliente.totalPagado)}</td><td><strong>${formatMoney(cliente.saldoPendiente)}</strong></td>
+                    <td>${formatDate(cliente.ultimoPedido)}</td>
+                    <td><span class="reports-lot-status ${statusClass(cliente.estado)}">${escapeHtml(cliente.estado)}</span></td>
+                    <td><button class="reports-detail-button" type="button" data-debt-client="${cliente.clienteId}">Ver detalle</button></td>
+                </tr>
+                <tr data-debt-detail="${cliente.clienteId}" hidden>
+                    <td colspan="9">
+                        <table class="reports-table reports-inner-table">
+                            <thead><tr><th>Pedido</th><th>Fecha</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead>
+                            <tbody>${(cliente.pedidos || []).map(pedido => `
+                                <tr><td>#${pedido.pedidoId}</td><td>${formatDate(pedido.fecha)}</td>
+                                <td>${formatMoney(pedido.totalVenta)}</td><td>${formatMoney(pedido.montoPagado)}</td>
+                                <td><strong>${formatMoney(pedido.saldoPendiente)}</strong></td><td>${escapeHtml(pedido.estadoPago)}</td></tr>`).join("")}</tbody>
+                        </table>
+                    </td>
+                </tr>`).join("")
+            : `<tr><td colspan="9">No hay clientes con pagos pendientes o parciales para los filtros seleccionados.</td></tr>`;
+    }
+
+    document.getElementById("customer-debt-body").addEventListener("click", event => {
+        const button = event.target.closest("[data-debt-client]");
+        if (!button) return;
+        const detail = document.querySelector(`[data-debt-detail="${button.dataset.debtClient}"]`);
+        if (detail) {
+            detail.hidden = !detail.hidden;
+            button.textContent = detail.hidden ? "Ver detalle" : "Ocultar";
+        }
+    });
+</script>

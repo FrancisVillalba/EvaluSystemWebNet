@@ -18,6 +18,10 @@ public class ReportesController : ControllerBase
     public async Task<ActionResult<object>> GetOptions(CancellationToken cancellationToken)
     {
         var usuarios = await _backendApiClient.GetAsync<IEnumerable<UsuarioDto>>("api/Usuarios", cancellationToken);
+        var perfiles = await _backendApiClient.GetAsync<IEnumerable<PerfilDto>>("api/Perfiles", cancellationToken)
+            ?? Enumerable.Empty<PerfilDto>();
+        var productoComisiones = await _backendApiClient.GetAsync<IEnumerable<ProductoComisionDto>>("api/ProductoComisiones", cancellationToken)
+            ?? Enumerable.Empty<ProductoComisionDto>();
         if (usuarios is null)
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudieron obtener opciones de reportes." });
@@ -42,7 +46,20 @@ public class ReportesController : ControllerBase
             .Where(IsPerfilTeamLeader)
             .ToList();
 
-        return Ok(new { vendedores, vendedoresExternos, teamLeaders });
+        var perfilesVentaIds = productoComisiones
+            .Where(comision => comision.Estado)
+            .Select(comision => comision.PerfilId)
+            .ToHashSet();
+        var perfilesVenta = perfiles
+            .Where(perfil => perfil.Estado && perfilesVentaIds.Contains(perfil.Id))
+            .OrderBy(perfil => perfil.Nombre)
+            .ToList();
+        var usuariosVenta = usuarios
+            .Where(usuario => usuario.Estado != false && usuario.PerfilIds.Any(perfilesVentaIds.Contains))
+            .OrderBy(usuario => usuario.Persona ?? usuario.NombreUsuario)
+            .ToList();
+
+        return Ok(new { perfilesVenta, usuariosVenta, vendedores, vendedoresExternos, teamLeaders });
     }
 
     [HttpGet("comisiones-vendedores")]
@@ -51,9 +68,10 @@ public class ReportesController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
         [FromQuery] string? scope = null,
+        [FromQuery] int? perfilId = null,
         CancellationToken cancellationToken = default)
     {
-        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope));
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope), perfilId);
         var result = await _backendApiClient.GetResultAsync<ReporteComisionesDto>(
             $"api/Reportes/comisiones-vendedores?{filters}",
             cancellationToken);
@@ -70,6 +88,7 @@ public class ReportesController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
         [FromQuery] string? scope = null,
+        [FromQuery] int? perfilId = null,
         CancellationToken cancellationToken = default)
     {
         var normalizedFormat = format.Equals("pdf", StringComparison.OrdinalIgnoreCase)
@@ -77,7 +96,7 @@ public class ReportesController : ControllerBase
             : format.Equals("txt", StringComparison.OrdinalIgnoreCase)
                 ? "txt"
                 : "excel";
-        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope));
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope), perfilId);
         var result = await _backendApiClient.GetResultAsync<ExcelFileDto>(
             $"api/Reportes/comisiones-vendedores/{normalizedFormat}?{filters}",
             cancellationToken);
@@ -108,6 +127,32 @@ public class ReportesController : ControllerBase
         return result.IsSuccess && result.Value is not null
             ? Ok(result.Value)
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudieron cargar los lotes de pago." });
+    }
+
+    [HttpGet("clientes-deuda")]
+    public async Task<ActionResult<ReporteClientesDeudaDto>> GetClientesDeuda(
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] string? cliente = null,
+        [FromQuery] string? estadoPago = null,
+        CancellationToken cancellationToken = default)
+    {
+        var filters = new List<string>();
+        if (dateFrom.HasValue) filters.Add($"dateFrom={dateFrom.Value:yyyy-MM-dd}");
+        if (dateTo.HasValue) filters.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
+        if (!string.IsNullOrWhiteSpace(cliente)) filters.Add($"cliente={Uri.EscapeDataString(cliente)}");
+        if (!string.IsNullOrWhiteSpace(estadoPago)) filters.Add($"estadoPago={Uri.EscapeDataString(estadoPago)}");
+
+        var result = await _backendApiClient.GetResultAsync<ReporteClientesDeudaDto>(
+            $"api/Reportes/clientes-deuda?{string.Join("&", filters)}",
+            cancellationToken);
+
+        return result.IsSuccess && result.Value is not null
+            ? Ok(result.Value)
+            : StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                message = result.ErrorMessage ?? "No se pudo cargar el reporte de clientes con deuda."
+            });
     }
 
     [HttpGet("envios")]
@@ -174,7 +219,7 @@ public class ReportesController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo actualizar el lote." });
     }
 
-    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId, string? scope = null)
+    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId, string? scope = null, int? perfilId = null)
     {
         var filters = new List<string>();
 
@@ -196,6 +241,11 @@ public class ReportesController : ControllerBase
         if (!string.IsNullOrWhiteSpace(scope))
         {
             filters.Add($"scope={Uri.EscapeDataString(scope)}");
+        }
+
+        if (perfilId.HasValue)
+        {
+            filters.Add($"perfilId={perfilId.Value}");
         }
 
         return string.Join("&", filters);

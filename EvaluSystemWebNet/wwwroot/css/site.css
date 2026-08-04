@@ -3370,6 +3370,10 @@ body.modal-page-body {
 .reports-shipping-filters {
   grid-template-columns: repeat(5, minmax(140px, 1fr));
 }
+.reports-customer-debt-filters {
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+}
+
 
 .reports-payment-lot-filters {
   grid-template-columns: repeat(5, minmax(130px, 1fr));
@@ -3525,6 +3529,30 @@ body.modal-page-body {
 
 .reports-row-actions button:hover {
   background: #d8eeeb;
+}
+.reports-detail-button {
+  min-height: 34px;
+  border: 1px solid #8eb8c2;
+  border-radius: 7px;
+  padding: 7px 11px;
+  color: #075f72;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.reports-detail-button:hover {
+  background: #e7f5f3;
+}
+
+.reports-inner-table {
+  min-width: 680px;
+  background: #f8fbfc;
+}
+
+.reports-inner-table th,
+.reports-inner-table td {
+  padding: 9px 12px;
 }
 
 .reports-pagination {
