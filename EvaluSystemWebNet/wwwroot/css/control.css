@@ -240,7 +240,7 @@
 .order-flow-event-heading time { color: #63788b; font-size: 12px; white-space: nowrap; }
 .order-flow-event-card p { margin: 5px 0; color: #496273; font-size: 14px; }
 .order-flow-comment { margin-top: 10px; border-left: 3px solid #d7901f; border-radius: 4px; background: #fff7e8; padding: 10px 12px; color: #664b1e; font-size: 14px; }
-.orders-actions { display: flex; gap: 7px; }
+.orders-actions-inner { display: flex; justify-content: flex-end; gap: 7px; }
 .order-flow-button { color: #65429a; background: #f0e9fb; }
 
 @media (width <= 620px) {

@@ -244,6 +244,23 @@
             return total ? `${total.toLocaleString("es-PY", { maximumFractionDigits: 2 })} m` : "0 m";
         }
 
+        function detailStateLabel(value) {
+            return ({ PC: "Carga", PI: "Impresion", CO: "Control", PE: "Pendiente de envio", EE: "Enviado", ET: "Entregado", RE: "Rechazado", XX: "Eliminado" })[String(value || "").trim().toUpperCase()] || value || "Sin estado";
+        }
+
+        function detailStatesMarkup(details) {
+            if (!details.length) {
+                return `<span class="orders-detail-state-empty">Sin detalles</span>`;
+            }
+
+            return `<div class="orders-detail-states">${details.map(detail => {
+                const label = detailStateLabel(detail.stateItem);
+                return `<span class="orders-detail-state" title="${escapeHtml(detail.product || `Item #${detail.id}`)}: ${escapeHtml(label)}">
+                    <span class="orders-detail-product">${escapeHtml(detail.product || `Item #${detail.id}`)}</span>
+                    <span class="orders-status orders-detail-status ${statusClass(label)}">${escapeHtml(label)}</span>
+                </span>`;
+            }).join("")}</div>`;
+        }
         function sellerColorClass(value) {
             const text = String(value || "").trim().toLowerCase();
             let hash = 0;
@@ -302,13 +319,15 @@
                     <td class="orders-strong">${escapeHtml(order.client)}</td>
                     <td><span class="orders-seller ${sellerColorClass(order.seller)}">${escapeHtml(sellerName)}</span></td>
                     <td>${escapeHtml(metersFromDetails(details))}</td>
-                    <td><span class="orders-status ${statusClass(order.status)}">${escapeHtml(order.status)}</span></td>
+                    <td>${detailStatesMarkup(details)}</td>
                     <td><span class="orders-status delivery-method ${statusClass(deliveryMethod)}">${escapeHtml(deliveryMethod)}</span></td>
                     <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
                     <td>${escapeHtml(order.delivery)}</td>
                     <td class="orders-actions">
-                        <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
-                        <button class="orders-edit order-flow-button" type="button" onclick="openOrderFlow('${escapeHtml(order.id)}')">Flujo</button>
+                        <div class="orders-actions-inner">
+                            <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
+                            <button class="orders-edit order-flow-button" type="button" onclick="openOrderFlow('${escapeHtml(order.id)}')">Flujo</button>
+                        </div>
                     </td>
                 </tr>
                     `;
@@ -624,6 +643,10 @@
 
             if (event.data?.type === "order-modal-close") {
                 closeOrderModal();
+            }
+
+            if (event.data?.type === "order-modal-updated") {
+                loadOrders();
             }
 
             if (event.data?.type === "order-modal-saved") {

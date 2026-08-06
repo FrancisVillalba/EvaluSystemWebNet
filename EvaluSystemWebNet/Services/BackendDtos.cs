@@ -360,7 +360,11 @@ public record DeliveryPedidoDto(
     int? DeliveryUsuarioId,
     string? DeliveryUsuario,
     DateTime? FechaTomaDelivery,
-    string Productos);
+    string Productos,
+    string? Transportadora = null,
+    bool GrupoEntregaListo = true,
+    string? MensajeBloqueoEntrega = null,
+    int CantidadPedidosGrupo = 1);
 
 public record DeliveryResumenDto(
     int UsuarioId,
@@ -674,5 +678,5 @@ public record ImpresionDevolverDto(
     string? EstadoVenta,
     string Observacion);
 
-public record NotificacionDto(long Id, string Tipo, string Titulo, string Mensaje, int PedidoId, int? DetalleId, string? Producto, string? Comentario, bool Leida, DateTime FechaCreacion, DateTime? FechaLectura);
+public record NotificacionDto(long Id, string Tipo, string Titulo, string Mensaje, int PedidoId, int? DetalleId, string? Producto, string Cliente, string? Comentario, bool Leida, DateTime FechaCreacion, DateTime? FechaLectura);
 public record NotificacionesResumenDto(int NoLeidas, IEnumerable<NotificacionDto> Items);

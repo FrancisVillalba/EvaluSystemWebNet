@@ -1609,10 +1609,13 @@ body.modal-page-body {
 }
 
 .orders-actions {
+  text-align: right;
+}
+
+.orders-actions-inner {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  text-align: right;
 }
 
 .orders-edit,
@@ -1659,6 +1662,43 @@ body.modal-page-body {
 
 .orders-status.delivery-method {
   min-width: 118px;
+}
+
+.orders-detail-states {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.orders-detail-state {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 210px;
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.orders-detail-product {
+  max-width: 100px;
+  overflow: hidden;
+  color: #314957;
+  font-weight: 750;
+  text-overflow: ellipsis;
+}
+
+.orders-status.orders-detail-status {
+  min-width: 0;
+  padding: 3px 7px;
+  font-size: 0.68rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.orders-detail-state-empty {
+  color: #70828d;
+  font-size: 0.75rem;
 }
 
 .orders-status.cargado,
@@ -3370,6 +3410,10 @@ body.modal-page-body {
 .reports-shipping-filters {
   grid-template-columns: repeat(5, minmax(140px, 1fr));
 }
+
+.reports-commission-filters {
+  grid-template-columns: repeat(4, minmax(150px, 1fr)) minmax(130px, 160px);
+}
 .reports-customer-debt-filters {
   grid-template-columns: repeat(5, minmax(140px, 1fr));
 }
@@ -4884,6 +4928,58 @@ body.modal-page-body {
   outline-offset: 3px;
 }
 
+.detail-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.detail-send-print {
+  border: 1px solid #9fdcbc;
+  border-radius: 7px;
+  background: #e7f7ee;
+  color: #0c6a43;
+  cursor: pointer;
+  padding: 7px 11px;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.detail-send-print:hover {
+  background: #d5f1e1;
+}
+
+.detail-row-actions .row-remove {
+  padding: 7px 11px;
+  font-size: 0.76rem;
+}
+
+.detail-state-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  border: 1px solid #cdd6df;
+  border-radius: 999px;
+  background: #eef2f6;
+  color: #526471;
+  padding: 3px 8px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.detail-state-pc { color: #075f72; background: #e5f7fb; border-color: #a9dfea; }
+.detail-state-pi { color: #19599f; background: #e5f0ff; border-color: #a9cff7; }
+.detail-state-co { color: #6f3aa5; background: #f3e9ff; border-color: #d6b4f5; }
+.detail-state-pe { color: #92510b; background: #fff0df; border-color: #efbd81; }
+.detail-state-ee,
+.detail-state-et { color: #0c6a43; background: #e7f7ee; border-color: #9fdcbc; }
+.detail-state-re,
+.detail-state-xx { color: #9f2f2f; background: #fdecec; border-color: #efaaaa; }
+.detail-state-dv { color: #71500b; background: #fff0bd; border-color: #e3b341; }
+
 .detail-row.detail-row-rejected {
   border-color: #e45b5b;
   background: #fff3f3;
@@ -4953,12 +5049,12 @@ body.modal-page-body {
 }
 
 .summary-tile.stage-warning {
-  outline: 4px solid #ffd34d;
+  outline: 4px solid transparent;
   outline-offset: -4px;
 }
 
 .summary-tile.stage-danger {
-  outline: 4px solid #8b101d;
+  outline: 4px solid transparent;
   outline-offset: -4px;
   animation: dashboard-stage-pulse 1.8s ease-in-out infinite;
 }
@@ -4991,6 +5087,7 @@ body.modal-page-body {
 .app-notification-item:hover { background: #eaf6f7; }
 .app-notification-item strong { color: #102c3a; font-size: .88rem; }
 .app-notification-item span:not(.app-notification-type) { font-size: .8rem; }
+.app-notification-item .app-notification-client { color: #0b6173; font-weight: 800; }
 .app-notification-item em { color: #596f7b; font-size: .76rem; font-style: normal; }
 .app-notification-item time { color: #899ba4; font-size: .68rem; }
 .app-notification-type { justify-self: start; border-radius: 999px; padding: 3px 7px; color: #fff; font-size: .62rem; font-weight: 900; text-transform: uppercase; }

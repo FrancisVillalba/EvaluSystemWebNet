@@ -494,6 +494,7 @@ window.showMessageDialog = function ({
             <button type="button" class="app-notification-item ${item.leida ? "is-read" : "is-unread"}" data-notification-id="${item.id}">
                 <span class="app-notification-type ${item.tipo === "RE" ? "rejected" : "returned"}">${item.tipo === "RE" ? "Rechazado" : "Devuelto"}</span>
                 <strong>${escapeHtml(item.titulo)}</strong>
+                <span class="app-notification-client">Cliente: ${escapeHtml(item.cliente || "Sin cliente")}</span>
                 <span>${escapeHtml(item.mensaje)}</span>
                 ${item.comentario ? `<em>“${escapeHtml(item.comentario)}”</em>` : ""}
                 <time>${escapeHtml(formatDate(item.fechaCreacion))}</time>

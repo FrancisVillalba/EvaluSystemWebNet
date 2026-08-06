@@ -175,8 +175,8 @@ public class BackendApiClient : IBackendApiClient
         string? message = null;
         try
         {
-            var error = await JsonSerializer.DeserializeAsync<BackendErrorResponse>(stream, _jsonOptions, cancellationToken);
-            message = error?.Message;
+            using var error = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            message = ReadErrorMessage(error.RootElement);
         }
         catch
         {
@@ -186,5 +186,39 @@ public class BackendApiClient : IBackendApiClient
         return new BackendApiResult<T>(false, default, message ?? "No se pudo completar la operacion en EvaluSystemBack.", statusCode);
     }
 
-    private record BackendErrorResponse(string? Message);
+    private static string? ReadErrorMessage(JsonElement error)
+    {
+        if (error.TryGetProperty("message", out var message) &&
+            message.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(message.GetString()))
+        {
+            return message.GetString();
+        }
+
+        if (error.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
+        {
+            var validationMessages = errors
+                .EnumerateObject()
+                .SelectMany(field => field.Value.ValueKind == JsonValueKind.Array
+                    ? field.Value.EnumerateArray()
+                        .Where(item => item.ValueKind == JsonValueKind.String)
+                        .Select(item => item.GetString())
+                    : Enumerable.Empty<string?>())
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (validationMessages.Count > 0)
+            {
+                return string.Join(" ", validationMessages);
+            }
+        }
+
+        if (error.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
+        {
+            return title.GetString();
+        }
+
+        return null;
+    }
 }

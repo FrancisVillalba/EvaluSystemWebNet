@@ -222,6 +222,37 @@ public class PedidosController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpPut("{id:int}/detalles/{detalleId:int}/enviar-impresion")]
+    public async Task<ActionResult<VentaImpresionDetDto>> SendDetailToPrint(
+        int id,
+        int detalleId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.PutResultAsync<VentaImpresionDetDto>(
+            $"api/VentasImpresion/{id}/detalles/{detalleId}/enviar-impresion",
+            new { },
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+    }
+
+    [HttpDelete("{id:int}/detalles/{detalleId:int}")]
+    public async Task<IActionResult> DeleteDetail(
+        int id,
+        int detalleId,
+        CancellationToken cancellationToken)
+    {
+        var deleted = await _backendApiClient.DeleteAsync(
+            $"api/VentasImpresion/{id}/detalles/{detalleId}",
+            cancellationToken);
+
+        return deleted
+            ? NoContent()
+            : StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo eliminar el item." });
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
         int id,
@@ -253,6 +284,7 @@ public class PedidosController : ControllerBase
         var vendedor = !string.IsNullOrWhiteSpace(pedido.Vendedor)
             ? pedido.Vendedor
             : vendedores?.GetValueOrDefault(pedido.VendedorId) ?? $"Usuario {pedido.VendedorId}";
+        var details = pedido.Detalles.Select(ToDetailView).ToList();
 
         return new PedidoView(
             pedido.Id.ToString(),
@@ -278,8 +310,9 @@ public class PedidosController : ControllerBase
             pedido.ComprobantePagoNombre ?? string.Empty,
             pedido.Observacion ?? string.Empty,
             pedido.Reposicion,
-            pedido.Detalles.Select(ToDetailView).ToList());
+            details);
     }
+
 
     private static string MetodoEntregaLabel(string? metodoEntrega)
     {
@@ -301,6 +334,20 @@ public class PedidosController : ControllerBase
 
     private static bool IsCargaState(VentaImpresionCabDto order)
     {
+        var detailStates = order.Detalles
+            .Select(x => x.EstadoItem?.Trim())
+            .OfType<string>()
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        if (detailStates.Count > 0)
+        {
+            return detailStates.All(x =>
+                string.Equals(x, "PC", StringComparison.OrdinalIgnoreCase) ||
+                x.Contains("carga", StringComparison.OrdinalIgnoreCase) ||
+                x.Contains("cargado", StringComparison.OrdinalIgnoreCase));
+        }
+
         var state = $"{order.EstadoVentaId} {order.EstadoVenta}";
         return state.Contains("carga", StringComparison.OrdinalIgnoreCase) ||
             state.Contains("cargado", StringComparison.OrdinalIgnoreCase);

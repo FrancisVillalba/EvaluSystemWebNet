@@ -361,7 +361,8 @@
                         <strong>#${order.id}</strong>
                         <span>${escapeHtml(order.estadoVenta || order.estadoVentaId)}</span>
                     </div>
-                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <h3>${escapeHtml(order.cliente)} <small>(${order.cantidadPedidosGrupo || 1} pedidos)</small></h3>
+                    ${order.grupoEntregaListo === false ? `<p style="color:#c62828;font-weight:700;margin:8px 0">${escapeHtml(order.mensajeBloqueoEntrega || "Falta otro pedido para su entrega")}</p>` : ""}
                     <div class="delivery-card-body">
                         <dl>
                             <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
@@ -370,7 +371,7 @@
                         </dl>
                         <div class="delivery-card-side-actions">
                             <button class="delivery-label-button" type="button" data-label-id="${order.id}">Imprimir etiqueta</button>
-                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
+                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}" ${order.grupoEntregaListo === false ? "disabled aria-disabled=\"true\"" : ""}>
                                 ${method.actionText}
                             </button>
                         </div>
@@ -385,7 +386,8 @@
                         <strong>#${order.id}</strong>
                         <span>${escapeHtml(order.metodoEntrega || "-")}</span>
                     </div>
-                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <h3>${escapeHtml(order.cliente)} <small>(${order.cantidadPedidosGrupo || 1} pedidos)</small></h3>
+                    ${order.grupoEntregaListo === false ? `<p style="color:#c62828;font-weight:700;margin:8px 0">${escapeHtml(order.mensajeBloqueoEntrega || "Falta otro pedido para su entrega")}</p>` : ""}
                     <div class="delivery-card-body">
                         <dl>
                             <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
