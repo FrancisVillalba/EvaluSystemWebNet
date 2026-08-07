@@ -2260,6 +2260,23 @@ body.modal-page-body {
   font-weight: 850;
 }
 
+.team-summary-seller {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-summary-seller button {
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: #fff;
+  background: #0c5f72;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
 .team-summary-row strong {
   display: grid;
   justify-items: end;
@@ -3515,13 +3532,23 @@ body.modal-page-body {
 
 .team-leader-seller-accordion summary {
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) repeat(3, minmax(120px, auto));
+  grid-template-columns: auto minmax(180px, 1fr) repeat(3, minmax(120px, auto)) auto;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
   cursor: pointer;
   list-style: none;
   background: #f3f8f9;
+}
+
+.external-seller-download {
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 12px;
+  color: #fff;
+  background: #0c5f72;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .team-leader-seller-accordion summary::-webkit-details-marker {

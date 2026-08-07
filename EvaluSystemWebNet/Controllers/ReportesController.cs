@@ -89,6 +89,7 @@ public class ReportesController : ControllerBase
         [FromQuery] int? vendedorId = null,
         [FromQuery] string? scope = null,
         [FromQuery] int? perfilId = null,
+        [FromQuery] int? vendedorExternoId = null,
         CancellationToken cancellationToken = default)
     {
         var normalizedFormat = format.Equals("pdf", StringComparison.OrdinalIgnoreCase)
@@ -96,7 +97,7 @@ public class ReportesController : ControllerBase
             : format.Equals("txt", StringComparison.OrdinalIgnoreCase)
                 ? "txt"
                 : "excel";
-        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope), perfilId);
+        var filters = BuildFilterQuery(dateFrom, dateTo, vendedorId, NormalizeCommissionsScope(scope), perfilId, vendedorExternoId);
         var result = await _backendApiClient.GetResultAsync<ExcelFileDto>(
             $"api/Reportes/comisiones-vendedores/{normalizedFormat}?{filters}",
             cancellationToken);
@@ -219,7 +220,7 @@ public class ReportesController : ControllerBase
             : StatusCode(StatusCodes.Status502BadGateway, new { message = result.ErrorMessage ?? "No se pudo actualizar el lote." });
     }
 
-    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId, string? scope = null, int? perfilId = null)
+    private static string BuildFilterQuery(DateTime? dateFrom, DateTime? dateTo, int? vendedorId, string? scope = null, int? perfilId = null, int? vendedorExternoId = null)
     {
         var filters = new List<string>();
 
@@ -246,6 +247,11 @@ public class ReportesController : ControllerBase
         if (perfilId.HasValue)
         {
             filters.Add($"perfilId={perfilId.Value}");
+        }
+
+        if (vendedorExternoId.HasValue)
+        {
+            filters.Add($"vendedorExternoId={vendedorExternoId.Value}");
         }
 
         return string.Join("&", filters);

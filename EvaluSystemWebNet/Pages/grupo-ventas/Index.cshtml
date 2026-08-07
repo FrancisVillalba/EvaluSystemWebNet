@@ -123,7 +123,13 @@
                 const width = Math.max((Number(item.totalVenta || 0) / max) * 100, 4);
                 return `
                     <div class="team-summary-row">
-                        <span>${item.vendedor}</span>
+                        <span class="team-summary-seller">
+                            <span>${escapeHtml(item.vendedor)}</span>
+                            <button type="button"
+                                data-download-external-seller="${item.vendedorId}"
+                                data-external-seller-name="${escapeHtml(item.vendedor)}"
+                                title="Descargar detalle de ${escapeHtml(item.vendedor)}">PDF</button>
+                        </span>
                         <div><i style="width:${width}%"></i></div>
                         <strong>
                             ${formatMoney(item.totalVenta)}
@@ -204,6 +210,38 @@
             nextPageButton.disabled = currentSalesPage >= totalPages;
         }
 
+        async function downloadExternalSellerPdf(sellerId, sellerName) {
+            await withAppLoading("Preparando PDF...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) params.set("dateFrom", dateFrom.value);
+                if (dateTo.value) params.set("dateTo", dateTo.value);
+                params.set("scope", "externos");
+                params.set("vendedorExternoId", sellerId);
+
+                const response = await fetch(`/api/reportes/comisiones-vendedores/pdf?${params}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el PDF.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                const safeName = String(sellerName || "vendedor-externo")
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^a-zA-Z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "")
+                    .toLowerCase();
+                link.download = `${safeName || "vendedor-externo"}-${dateFrom.value}-${dateTo.value}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
         async function downloadSalesExcel() {
             if (!currentTeamSales.length) {
                 showToast("No hay ventas para exportar.", "error");
@@ -261,6 +299,17 @@
                 document.getElementById("team-summary-tab").hidden = button.dataset.tab !== "summary";
                 document.getElementById("team-sales-tab").hidden = button.dataset.tab !== "sales";
             });
+        });
+
+        summaryChart.addEventListener("click", event => {
+            const button = event.target.closest("[data-download-external-seller]");
+            if (!button) {
+                return;
+            }
+
+            downloadExternalSellerPdf(
+                button.dataset.downloadExternalSeller,
+                button.dataset.externalSellerName);
         });
 
         dateFrom.addEventListener("change", loadTeamSales);

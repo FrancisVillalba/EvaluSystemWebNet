@@ -57,7 +57,7 @@
         const customerDebtKpis = document.getElementById("customer-debt-kpis");
         const customerDebtBody = document.getElementById("customer-debt-body");
         const sellerUserNames = new Map();
-        let reportCommissionOptions = { perfiles: [], usuarios: [] };
+        let reportCommissionOptions = { perfiles: [], usuarios: [], teamLeaders: [] };
         let paymentLots = [];
         let paymentLotsPage = 1;
         let paymentLotsTotalPages = 1;
@@ -145,6 +145,17 @@
             })[character]);
         }
 
+        function selectedCommissionScope() {
+            const profileName = profileFilter.selectedOptions[0]?.textContent || "";
+            if (profileName.toLocaleLowerCase("es").includes("extern")) {
+                return "externos";
+            }
+
+            return profileName.toLocaleLowerCase("es").includes("team leader")
+                ? "team-leaders"
+                : "";
+        }
+
         function buildParams() {
             const params = new URLSearchParams();
             if (dateFromInput.value) {
@@ -161,6 +172,11 @@
 
             if (profileFilter.value) {
                 params.set("perfilId", profileFilter.value);
+            }
+
+            const scope = selectedCommissionScope();
+            if (scope) {
+                params.set("scope", scope);
             }
             return params;
         }
@@ -248,23 +264,33 @@
             const options = await response.json();
             reportCommissionOptions = {
                 perfiles: options.perfilesVenta || [],
-                usuarios: options.usuariosVenta || []
+                usuarios: options.usuariosVenta || [],
+                teamLeaders: options.teamLeaders || []
             };
             sellerUserNames.clear();
             reportCommissionOptions.usuarios.forEach(seller => {
                 sellerUserNames.set(String(seller.id), seller.nombreUsuario || seller.persona || `vendedor-${seller.id}`);
             });
 
-            profileFilter.innerHTML = `<option value="">Todos los perfiles</option>` + reportCommissionOptions.perfiles
+            profileFilter.innerHTML = reportCommissionOptions.perfiles
                 .map(perfil => `<option value="${perfil.id}">${escapeHtml(perfil.nombre)}</option>`)
                 .join("");
+
+            const salesProfile = reportCommissionOptions.perfiles.find(perfil =>
+                String(perfil.nombre || "").trim().toLocaleLowerCase("es") === "ventas");
+            if (salesProfile) {
+                profileFilter.value = String(salesProfile.id);
+            }
             renderSellerFilter();
         }
 
         function renderSellerFilter() {
             const profileId = Number(profileFilter.value || 0);
-            const sellers = reportCommissionOptions.usuarios
-                .filter(seller => !profileId || (seller.perfilIds || []).map(Number).includes(profileId));
+            const scope = selectedCommissionScope();
+            const sellers = scope === "externos" || scope === "team-leaders"
+                ? reportCommissionOptions.teamLeaders
+                : reportCommissionOptions.usuarios
+                    .filter(seller => !profileId || (seller.perfilIds || []).map(Number).includes(profileId));
 
             sellerFilter.innerHTML = `<option value="">Todos</option>` + sellers
                 .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
@@ -338,12 +364,14 @@
             }
 
             const salesBySeller = details.reduce((groups, detail) => {
-                const sellerName = detail.vendedorOrigen || "Sin vendedor";
-                (groups[sellerName] ||= []).push(detail);
+                const sellerKey = String(detail.vendedorOrigenId || detail.vendedorOrigen || "sin-vendedor");
+                (groups[sellerKey] ||= []).push(detail);
                 return groups;
             }, {});
 
-            return `<div class="team-leader-sales">${Object.entries(salesBySeller).map(([sellerName, sales]) => {
+            return `<div class="team-leader-sales">${Object.values(salesBySeller).map(sales => {
+                const sellerName = sales[0]?.vendedorOrigen || "Sin vendedor";
+                const externalSellerId = sales[0]?.vendedorOrigenId;
                 const orderCount = new Set(sales.map(sale => sale.pedidoId)).size;
                 const totalSales = sales.reduce((sum, sale) => sum + Number(sale.totalDetalle || 0), 0);
                 const totalCommission = sales.reduce((sum, sale) => sum + Number(sale.comisionTotal || 0), 0);
@@ -354,6 +382,12 @@
                         <small>${orderCount} pedidos</small>
                         <small>${formatMoney(totalSales)} vendidos</small>
                         <small>${formatMoney(totalCommission)} comisión</small>
+                        ${selectedCommissionScope() === "externos" && externalSellerId ? `
+                            <button class="external-seller-download" type="button"
+                                data-external-seller-id="${externalSellerId}"
+                                data-external-seller-name="${escapeHtml(sellerName)}"
+                                data-team-leader-id="${seller.vendedorId}"
+                                title="Descargar ventas de ${escapeHtml(sellerName)}">PDF</button>` : ""}
                     </summary>
                     <div class="team-leader-sales-table-wrap">
                         <table class="team-leader-sales-table">
@@ -383,7 +417,7 @@
                             <strong>${formatMoney(calculateSellerCommission(seller))}</strong>
                             <small>${seller.cantidadPedidos} pedidos - ${formatMoney(seller.totalVenta)}</small>
                         </div>
-                            <div class="reports-card-actions">
+                            ${selectedCommissionScope() !== "externos" ? `<div class="reports-card-actions">
                             <button type="button" data-report-format="pdf" data-seller-id="${seller.vendedorId}" data-seller-name="${escapeHtml(seller.vendedor)}" title="Descargar PDF" aria-label="Descargar reporte PDF">
                                 <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -395,7 +429,7 @@
                                     <path d="M17 16v-5"></path>
                                 </svg>
                             </button>
-                        </div>
+                        </div>` : ""}
                         </div>
                         ${renderTeamLeaderSales(seller)}
                     </article>`).join("")
@@ -534,11 +568,14 @@
             return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
         }
 
-        async function downloadReport(format, sellerId, sellerName) {
+        async function downloadReport(format, sellerId, sellerName, externalSellerId) {
             await withAppLoading(`Preparando ${format.toUpperCase()}...`, async function () {
                 const params = buildParams();
                 if (sellerId) {
                     params.set("vendedorId", sellerId);
+                }
+                if (externalSellerId) {
+                    params.set("vendedorExternoId", externalSellerId);
                 }
 
                 const response = await fetch(`/api/reportes/comisiones-vendedores/${format}?${params.toString()}`);
@@ -712,6 +749,18 @@
             }
         });
         summaryHost.addEventListener("click", event => {
+            const externalSellerButton = event.target.closest("[data-external-seller-id]");
+            if (externalSellerButton) {
+                event.preventDefault();
+                event.stopPropagation();
+                downloadReport(
+                    "pdf",
+                    externalSellerButton.dataset.teamLeaderId,
+                    externalSellerButton.dataset.externalSellerName,
+                    externalSellerButton.dataset.externalSellerId);
+                return;
+            }
+
             const button = event.target.closest("[data-report-format]");
             if (!button) {
                 return;
