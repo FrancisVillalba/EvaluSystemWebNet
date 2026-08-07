@@ -71,6 +71,13 @@
                         </select>
                     </label>
 
+                    <label for="filter-payment-status">
+                        Estado de pago
+                        <select id="filter-payment-status">
+                            <option value="">Todos</option>
+                        </select>
+                    </label>
+
                     <label for="filter-seller">
                         Vendedor
                         <select id="filter-seller">
@@ -190,6 +197,7 @@
         const filterClientSelect2Search = document.getElementById("filter-client-select2-search");
         const filterClientSelect2Options = document.getElementById("filter-client-select2-options");
         const statusFilter = document.getElementById("filter-status");
+        const paymentStatusFilter = document.getElementById("filter-payment-status");
         const sellerFilter = document.getElementById("filter-seller");
         const paginationSummary = document.getElementById("order-pagination-summary");
         const currentPageLabel = document.getElementById("order-current-page");
@@ -288,6 +296,10 @@
 
             if (statusFilter.value) {
                 params.set("estadoVentaId", statusFilter.value);
+            }
+
+            if (paymentStatusFilter.value) {
+                params.set("estadoPagoId", paymentStatusFilter.value);
             }
 
             if (sellerFilter.value) {
@@ -533,6 +545,7 @@
                 updateFilterClientSelect2Label();
                 renderFilterClientSelect2Options();
                 statusFilter.innerHTML = optionMarkup(options.estadosVenta || [], "id", "nombre");
+                paymentStatusFilter.innerHTML = optionMarkup(options.estadosPago || [], "id", "nombre");
                 sellerFilter.innerHTML = sellerOptionMarkup(options.vendedores || []);
 
                 if (!canViewAllOrders && currentUserId) {
@@ -686,7 +699,7 @@
             }
         });
 
-        [dateFrom, dateTo, clientFilter, statusFilter, sellerFilter].forEach(filter => {
+        [dateFrom, dateTo, clientFilter, statusFilter, paymentStatusFilter, sellerFilter].forEach(filter => {
             filter.addEventListener("input", function () {
                 currentPage = 1;
                 loadOrders();

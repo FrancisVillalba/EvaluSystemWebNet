@@ -1457,7 +1457,7 @@ body.modal-page-body {
 }
 
 .orders-filters {
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .orders-tabs {
@@ -3477,6 +3477,105 @@ body.modal-page-body {
   gap: 14px;
 }
 
+.reports-summary article.has-team-details {
+  display: block;
+  grid-column: 1 / -1;
+  padding: 0;
+  overflow: hidden;
+}
+
+.reports-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.has-team-details .reports-card-heading {
+  padding: 14px;
+}
+
+.team-leader-sales {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px;
+  border-top: 1px solid #e3ebef;
+}
+
+.team-leader-seller-accordion {
+  border: 1px solid #dbe6eb;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.team-leader-seller-accordion:first-child {
+  margin-top: 14px;
+}
+
+.team-leader-seller-accordion summary {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) repeat(3, minmax(120px, auto));
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  background: #f3f8f9;
+}
+
+.team-leader-seller-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.team-leader-seller-accordion summary strong {
+  margin: 0;
+  font-size: .92rem;
+}
+
+.team-leader-seller-accordion summary small {
+  text-align: right;
+}
+
+.team-leader-accordion-icon::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  background: #0c5f72;
+  font-weight: 900;
+}
+
+.team-leader-seller-accordion[open] .team-leader-accordion-icon::before {
+  content: "−";
+}
+
+.team-leader-sales-table-wrap {
+  overflow-x: auto;
+}
+
+.team-leader-sales-table {
+  min-width: 900px;
+}
+
+.team-leader-sales-table th,
+.team-leader-sales-table td {
+  padding: 10px 12px;
+}
+
+@media (width <= 760px) {
+  .team-leader-seller-accordion summary {
+    grid-template-columns: auto 1fr;
+  }
+
+  .team-leader-seller-accordion summary small {
+    grid-column: 2;
+    text-align: left;
+  }
+}
 .reports-card-info {
   min-width: 0;
 }

@@ -331,17 +331,59 @@
             });
         }
 
+        function renderTeamLeaderSales(seller) {
+            const details = (seller.detalles || []).filter(detail => detail.vendedorOrigen);
+            if (!details.length) {
+                return "";
+            }
+
+            const salesBySeller = details.reduce((groups, detail) => {
+                const sellerName = detail.vendedorOrigen || "Sin vendedor";
+                (groups[sellerName] ||= []).push(detail);
+                return groups;
+            }, {});
+
+            return `<div class="team-leader-sales">${Object.entries(salesBySeller).map(([sellerName, sales]) => {
+                const orderCount = new Set(sales.map(sale => sale.pedidoId)).size;
+                const totalSales = sales.reduce((sum, sale) => sum + Number(sale.totalDetalle || 0), 0);
+                const totalCommission = sales.reduce((sum, sale) => sum + Number(sale.comisionTotal || 0), 0);
+                return `<details class="team-leader-seller-accordion">
+                    <summary>
+                        <span class="team-leader-accordion-icon" aria-hidden="true"></span>
+                        <strong>${escapeHtml(sellerName)}</strong>
+                        <small>${orderCount} pedidos</small>
+                        <small>${formatMoney(totalSales)} vendidos</small>
+                        <small>${formatMoney(totalCommission)} comisión</small>
+                    </summary>
+                    <div class="team-leader-sales-table-wrap">
+                        <table class="team-leader-sales-table">
+                            <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Total venta</th><th>Comisión</th></tr></thead>
+                            <tbody>${sales.map(sale => `<tr>
+                                <td>#${sale.pedidoId}</td>
+                                <td>${formatDate(sale.fecha)}</td>
+                                <td>${escapeHtml(sale.cliente)}</td>
+                                <td>${escapeHtml(sale.producto)}</td>
+                                <td>${Number(sale.cantidad || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                                <td>${formatMoney(sale.totalDetalle)}</td>
+                                <td>${formatMoney(sale.comisionTotal)}</td>
+                            </tr>`).join("")}</tbody>
+                        </table>
+                    </div>
+                </details>`;
+            }).join("")}</div>`;
+        }
         function renderReport(report) {
             const sellers = report.vendedores || [];
             summaryHost.innerHTML = sellers.length
                 ? sellers.map(seller => `
-                    <article>
-                        <div class="reports-card-info">
+                    <article class="${(seller.detalles || []).some(detail => detail.vendedorOrigen) ? "has-team-details" : ""}">
+                        <div class="reports-card-heading">
+                            <div class="reports-card-info">
                             <span>${escapeHtml(seller.vendedor)}</span>
                             <strong>${formatMoney(calculateSellerCommission(seller))}</strong>
                             <small>${seller.cantidadPedidos} pedidos - ${formatMoney(seller.totalVenta)}</small>
                         </div>
-                        <div class="reports-card-actions">
+                            <div class="reports-card-actions">
                             <button type="button" data-report-format="pdf" data-seller-id="${seller.vendedorId}" data-seller-name="${escapeHtml(seller.vendedor)}" title="Descargar PDF" aria-label="Descargar reporte PDF">
                                 <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -354,6 +396,8 @@
                                 </svg>
                             </button>
                         </div>
+                        </div>
+                        ${renderTeamLeaderSales(seller)}
                     </article>`).join("")
                 : `<p>No hay ventas para los filtros seleccionados.</p>`;
         }

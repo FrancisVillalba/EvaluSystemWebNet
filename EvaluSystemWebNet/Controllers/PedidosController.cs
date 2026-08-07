@@ -22,6 +22,7 @@ public class PedidosController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? clienteId = null,
         [FromQuery] string? estadoVentaId = null,
+        [FromQuery] string? estadoPagoId = null,
         [FromQuery] int? vendedorId = null,
         CancellationToken cancellationToken = default)
     {
@@ -49,6 +50,11 @@ public class PedidosController : ControllerBase
         if (!string.IsNullOrWhiteSpace(estadoVentaId))
         {
             filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoPagoId))
+        {
+            filters.Add($"estadoPagoId={Uri.EscapeDataString(estadoPagoId)}");
         }
 
         if (vendedorId.HasValue)
@@ -104,6 +110,7 @@ public class PedidosController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? clienteId = null,
         [FromQuery] string? estadoVentaId = null,
+        [FromQuery] string? estadoPagoId = null,
         [FromQuery] int? vendedorId = null,
         CancellationToken cancellationToken = default)
     {
@@ -128,6 +135,11 @@ public class PedidosController : ControllerBase
             filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(estadoPagoId))
+        {
+            filters.Add($"estadoPagoId={Uri.EscapeDataString(estadoPagoId)}");
+        }
+
         if (vendedorId.HasValue)
         {
             filters.Add($"vendedorId={vendedorId.Value}");
@@ -148,10 +160,11 @@ public class PedidosController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? clienteId = null,
         [FromQuery] string? estadoVentaId = null,
+        [FromQuery] string? estadoPagoId = null,
         [FromQuery] int? vendedorId = null,
         CancellationToken cancellationToken = default)
     {
-        var filters = BuildFilterQuery(dateFrom, dateTo, clienteId, estadoVentaId, vendedorId);
+        var filters = BuildFilterQuery(dateFrom, dateTo, clienteId, estadoVentaId, estadoPagoId, vendedorId);
         var excel = await _backendApiClient.GetAsync<ExcelFileDto>(
             $"api/VentasImpresion/exportar-excel?{filters}",
             cancellationToken);
@@ -358,6 +371,7 @@ public class PedidosController : ControllerBase
         DateTime? dateTo,
         int? clienteId,
         string? estadoVentaId,
+        string? estadoPagoId,
         int? vendedorId)
     {
         var filters = new List<string>();
@@ -380,6 +394,11 @@ public class PedidosController : ControllerBase
         if (!string.IsNullOrWhiteSpace(estadoVentaId))
         {
             filters.Add($"estadoVentaId={Uri.EscapeDataString(estadoVentaId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoPagoId))
+        {
+            filters.Add($"estadoPagoId={Uri.EscapeDataString(estadoPagoId)}");
         }
 
         if (vendedorId.HasValue)
