@@ -109,7 +109,17 @@
         let machines = [];
         let selectedMachine = "";
         let returnDetailId = null;
+        const downloadedFileIds = new Set();
 
+        function markFileAsDownloaded(id) {
+            downloadedFileIds.add(String(id));
+            const button = tableBody.querySelector(`[data-download="${CSS.escape(String(id))}"]`);
+            if (button) {
+                button.classList.add("is-downloaded");
+                button.title = "Archivo descargado";
+                button.setAttribute("aria-label", "Archivo descargado");
+            }
+        }
         function localDateValue(date = new Date()) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -235,7 +245,7 @@
                         <td class="print-file-column">${escapeHtml(item.archivoDisenioNombre || "Archivo de diseno")}</td>
                         <td>
                             <div class="print-row-actions">
-                                <button class="admin-secondary print-icon-button" type="button" data-download="${item.detalleId}" title="Descargar" aria-label="Descargar">
+                                <button class="admin-secondary print-icon-button ${downloadedFileIds.has(String(item.detalleId)) ? "is-downloaded" : ""}" type="button" data-download="${item.detalleId}" title="${downloadedFileIds.has(String(item.detalleId)) ? "Archivo descargado" : "Descargar"}" aria-label="${downloadedFileIds.has(String(item.detalleId)) ? "Archivo descargado" : "Descargar"}">
                                     <svg viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 3v12"></path>
                                         <path d="m7 10 5 5 5-5"></path>
@@ -302,6 +312,7 @@
                 link.click();
                 link.remove();
                 URL.revokeObjectURL(link.href);
+                markFileAsDownloaded(id);
             });
         }
 

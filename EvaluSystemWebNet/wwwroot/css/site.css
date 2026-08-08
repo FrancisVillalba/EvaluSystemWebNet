@@ -3510,6 +3510,19 @@ body.modal-page-body {
   justify-content: center;
 }
 
+
+.print-row-actions .print-icon-button.is-downloaded {
+  color: #7a5200;
+  background: #ffd95a;
+  border-color: #e2ad17;
+  box-shadow: 0 4px 12px rgba(191, 137, 0, 0.2);
+}
+
+.print-row-actions .print-icon-button.is-downloaded:hover {
+  color: #634100;
+  background: #ffcf32;
+  border-color: #cc9300;
+}
 .print-icon-button svg {
   width: 18px;
   height: 18px;

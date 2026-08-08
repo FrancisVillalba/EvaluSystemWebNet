@@ -48,6 +48,7 @@
         const managementDateFromInput = document.getElementById("management-date-from");
         const managementDateToInput = document.getElementById("management-date-to");
         const managementKpis = document.getElementById("management-kpis");
+        const managementProductBody = document.getElementById("management-product-body");
         const managementMachineBody = document.getElementById("management-machine-body");
         const managementCommissionsBody = document.getElementById("management-commissions-body");
         const debtDateFromInput = document.getElementById("debt-date-from");
@@ -516,6 +517,7 @@
         }
 
         function renderManagementSummary(report) {
+            const productos = report.ventasPorProducto || [];
             const maquinas = report.ventasPorMaquina || [];
             const comisiones = report.comisionesPorPerfil || [];
             const totalNeto = Math.max(Number(report.totalVendido || 0) - Number(report.totalComisionPagada || 0), 0);
@@ -544,6 +546,15 @@
                     </div>
                 </article>`;
 
+            managementProductBody.innerHTML = productos.length
+                ? productos.map(item => `
+                    <tr>
+                        <td><strong>${escapeHtml(item.producto)}</strong></td>
+                        <td>${item.cantidadPedidos}</td>
+                        <td>${Number(item.cantidad || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                        <td>${formatMoney(item.totalVenta)}</td>
+                    </tr>`).join("")
+                : `<tr><td colspan="4">No hay ventas por producto para los filtros seleccionados.</td></tr>`;
             managementMachineBody.innerHTML = maquinas.length
                 ? maquinas.map(item => `
                     <tr>
