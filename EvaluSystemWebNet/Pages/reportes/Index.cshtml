@@ -467,6 +467,7 @@
                         <td>${formatDateTime(lot.fechaGeneracion)}</td>
                         <td>${formatDate(lot.fechaDesde)} al ${formatDate(lot.fechaHasta)}</td>
                         <td>${escapeHtml(lot.vendedor || "Todos")}</td>
+                        <td><strong>${escapeHtml(lot.perfil || "Sin especificar")}</strong></td>
                         <td>${lot.cantidadPersonas}</td>
                         <td>${formatMoney(lot.montoTotal)}</td>
                         <td><span class="reports-lot-status ${statusClass(lot.estado)}">${escapeHtml(lot.estado)}</span></td>
@@ -478,7 +479,7 @@
                             </div>
                         </td>
                     </tr>`).join("")
-                : `<tr><td colspan="8">No hay lotes para los filtros seleccionados.</td></tr>`;
+                : `<tr><td colspan="9">No hay lotes para los filtros seleccionados.</td></tr>`;
 
             renderPaymentLotsPagination();
         }
@@ -571,8 +572,9 @@
                         <td><strong>${escapeHtml(item.perfil)}</strong></td>
                         <td>${item.cantidadPedidos}</td>
                         <td>${formatMoney(item.totalVendido)}</td>
+                        <td><strong>${formatMoney(item.totalPagado)}</strong></td>
                     </tr>`).join("")
-                : `<tr><td colspan="3">No hay ventas por perfil para los filtros seleccionados.</td></tr>`;
+                : `<tr><td colspan="4">No hay ventas ni pagos por perfil para los filtros seleccionados.</td></tr>`;
         }
 
         function statusClass(value) {

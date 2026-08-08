@@ -423,6 +423,8 @@ public record LotePagoDto(
     DateTime FechaHasta,
     DateTime FechaPago,
     string? Vendedor,
+    int? PerfilId,
+    string? Perfil,
     decimal MontoTotal,
     int CantidadPersonas,
     string NombreArchivo,
@@ -507,9 +509,11 @@ public record ReporteResumenMaquinaDto(
     decimal TotalVenta);
 
 public record ReporteResumenPerfilComisionDto(
+    int PerfilId,
     string Perfil,
     int CantidadPedidos,
-    decimal TotalVendido);
+    decimal TotalVendido,
+    decimal TotalPagado);
 
 public record ReporteResumenEstadoDto(
     string Estado,
