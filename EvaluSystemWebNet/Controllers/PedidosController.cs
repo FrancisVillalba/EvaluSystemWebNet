@@ -318,6 +318,8 @@ public class PedidosController : ControllerBase
             pedido.FechaTomaDelivery?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
             pedido.FormaPago ?? pedido.FormaPagoId,
             pedido.EstadoPagado ?? pedido.EstadoPagadoId ?? "Pendiente",
+            pedido.TotalVenta,
+            pedido.MontoPagado ?? 0,
             pedido.MontoPagado?.ToString("N0") ?? "0",
             pedido.ComprobantePago ?? string.Empty,
             pedido.ComprobantePagoNombre ?? string.Empty,

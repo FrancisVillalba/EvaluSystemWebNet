@@ -260,6 +260,7 @@ public record GrupoVentaVentaDto(
     string Cliente,
     string Estado,
     decimal TotalVenta,
+    decimal TotalPagado,
     decimal TotalMetros,
     decimal TotalComision);
 

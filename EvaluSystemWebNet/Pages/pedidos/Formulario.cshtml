@@ -860,8 +860,9 @@
                 sellerSelect.value,
                 "Seleccionar vendedor"
             );
-            sellerSelect.disabled = !formOptions.puedeVerTodosPedidos;
-            sellerSelect.classList.toggle("is-locked", !formOptions.puedeVerTodosPedidos);
+            const sellerIsLocked = formOptions.vendedores.length <= 1;
+            sellerSelect.disabled = sellerIsLocked;
+            sellerSelect.classList.toggle("is-locked", sellerIsLocked);
 
             if (!formOptions.puedeVerTodosPedidos && formOptions.usuarioActualId) {
                 sellerSelect.value = String(formOptions.usuarioActualId);
@@ -904,7 +905,7 @@
                 sellerSelect.value = String(formOptions.usuarioActualId);
             }
 
-            sellerSelect.disabled = !formOptions.puedeVerTodosPedidos;
+            sellerSelect.disabled = formOptions.vendedores.length <= 1;
 
             loadedSaleStateId = saleStatusSelect.value;
             renderSaleStatusOptions(saleStatusSelect.value);
@@ -917,9 +918,7 @@
             document.getElementById("order-client").value = order.clientId || "";
             renderClientOptions(order.clientId || "");
             document.getElementById("payment-method").value = order.formaPagoId || "";
-            document.getElementById("order-seller").value = formOptions.puedeVerTodosPedidos
-                ? order.vendedorId || ""
-                : formOptions.usuarioActualId || "";
+            document.getElementById("order-seller").value = order.vendedorId || "";
             document.getElementById("order-delivery").value = order.delivery || today;
             deliveryMethodSelect.value = order.deliveryMethodId || "DELIVERY";
             savedMontoEnvioTransportadora = numberValue(order.montoEnvioTransportadora || 0) || null;
@@ -1143,7 +1142,7 @@
                     archivoDisenio: detail.designPath || null,
                     archivoDisenioNombre: detail.designName || null,
                     observacion: null,
-                    estadoItem: null,
+                    estadoItem: detail.stateItem || null,
                     checkImpresion: detail.checkImpresion === true
                 }))
             };

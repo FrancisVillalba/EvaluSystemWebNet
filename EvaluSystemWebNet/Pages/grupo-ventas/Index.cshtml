@@ -20,6 +20,8 @@
             <label>Desde<input id="team-date-from" type="date" /></label>
             <label>Hasta<input id="team-date-to" type="date" /></label>
             <label>Vendedor externo<select id="team-seller-filter"><option value="">Todos</option></select></label>
+            <label>Cliente<select id="team-client-filter"><option value="">Todos</option></select></label>
+            <label>Estado de pago<select id="team-payment-status-filter"><option value="">Todos</option></select></label>
         </div>
 
         <div class="team-sales-tabs">
@@ -33,7 +35,7 @@
 
         <section id="team-sales-tab" class="team-sales-tab-panel" hidden>
             <div class="admin-table-wrap">
-                <table class="admin-table">
+                <table class="admin-table team-sales-table">
                     <thead>
                         <tr>
                             <th>Pedido</th>
@@ -42,8 +44,10 @@
                             <th>Cliente</th>
                             <th>Estado</th>
                             <th>Total venta</th>
+                            <th>Total pagado</th>
                             <th>Metros</th>
                             <th>Total comision</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="team-sales-body"></tbody>
@@ -69,11 +73,23 @@
     </section>
 </section>
 
+<div id="team-order-form-modal" class="order-form-modal" hidden>
+    <div class="order-form-modal-backdrop" data-team-order-modal-close></div>
+    <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="team-order-form-modal-title">
+        <header class="order-form-modal-header">
+            <h2 id="team-order-form-modal-title">Pedido</h2>
+            <button id="team-order-form-modal-close" type="button" aria-label="Cerrar formulario">&times;</button>
+        </header>
+        <iframe id="team-order-form-frame" title="Formulario de pedido"></iframe>
+    </section>
+</div>
 @section Scripts {
     <script>
         const dateFrom = document.getElementById("team-date-from");
         const dateTo = document.getElementById("team-date-to");
         const sellerFilter = document.getElementById("team-seller-filter");
+        const clientFilter = document.getElementById("team-client-filter");
+        const paymentStatusFilter = document.getElementById("team-payment-status-filter");
         const summaryChart = document.getElementById("team-summary-chart");
         const salesBody = document.getElementById("team-sales-body");
         const salesFoot = document.getElementById("team-sales-foot");
@@ -84,6 +100,10 @@
         const pageInfo = document.getElementById("team-sales-page-info");
         const pageNumber = document.getElementById("team-sales-page-number");
         const salesCount = document.getElementById("team-sales-count");
+        const orderFormModal = document.getElementById("team-order-form-modal");
+        const orderFormFrame = document.getElementById("team-order-form-frame");
+        const orderFormModalTitle = document.getElementById("team-order-form-modal-title");
+        const orderFormModalClose = document.getElementById("team-order-form-modal-close");
         let currentTeamSales = [];
         let currentSalesPage = 1;
 
@@ -111,6 +131,17 @@
             dateTo.value = today.toISOString().slice(0, 10);
         }
 
+
+        function sellerColorClass(value) {
+            const text = String(value || "").trim().toLowerCase();
+            let hash = 0;
+
+            for (let index = 0; index < text.length; index += 1) {
+                hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+            }
+
+            return `seller-color-${Math.abs(hash) % 7}`;
+        }
         function renderSummary(items) {
             if (!items.length) {
                 summaryChart.innerHTML = `<p class="empty-chart">Sin ventas para el periodo seleccionado</p>`;
@@ -124,7 +155,7 @@
                 return `
                     <div class="team-summary-row">
                         <span class="team-summary-seller">
-                            <span>${escapeHtml(item.vendedor)}</span>
+                            <span class="orders-seller ${sellerColorClass(item.vendedor)}">${escapeHtml(item.vendedor)}</span>
                             <button type="button"
                                 data-download-external-seller="${item.vendedorId}"
                                 data-external-seller-name="${escapeHtml(item.vendedor)}"
@@ -170,6 +201,14 @@
             sellerFilter.disabled = !canFilter;
         }
 
+
+        function teamSaleStatusClass(value) {
+            const status = String(value || "").toLowerCase();
+            if (status.includes("activo") || status.includes("entregado")) return "is-success";
+            if (status.includes("pendiente") || status.includes("impres")) return "is-warning";
+            if (status.includes("rechaz") || status.includes("elimin")) return "is-danger";
+            return "is-info";
+        }
         function renderSales(items) {
             currentTeamSales = items;
             currentSalesPage = 1;
@@ -188,20 +227,23 @@
             salesBody.innerHTML = pageItems.length
                 ? pageItems.map(item => `
                     <tr>
-                        <td>${item.pedidoId}</td>
+                        <td><strong class="team-sale-order">#${item.pedidoId}</strong></td>
                         <td>${formatDate(item.fecha)}</td>
-                        <td>${item.vendedor}</td>
-                        <td>${item.cliente}</td>
-                        <td>${item.estado}</td>
-                        <td>${formatMoney(item.totalVenta)}</td>
-                        <td>${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
-                        <td>${formatMoney(item.totalComision)}</td>
+                        <td><span class="orders-seller ${sellerColorClass(item.vendedor)}">${escapeHtml(item.vendedor)}</span></td>
+                        <td class="orders-strong">${escapeHtml(item.cliente)}</td>
+                        <td><span class="team-sale-status ${teamSaleStatusClass(item.estado)}">${escapeHtml(item.estado)}</span></td>
+                        <td class="team-sale-money team-sale-total">${formatMoney(item.totalVenta)}</td>
+                        <td class="team-sale-money team-sale-paid">${formatMoney(item.totalPagado)}</td>
+                        <td class="team-sale-meters">${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
+                        <td class="team-sale-money team-sale-commission">${formatMoney(item.totalComision)}</td>
+                        <td><button class="orders-edit" type="button" data-view-team-sale="${item.pedidoId}">Ver</button></td>
                     </tr>`).join("")
-                : `<tr><td colspan="8">Sin ventas para el periodo seleccionado</td></tr>`;
+                : `<tr><td colspan="10">Sin ventas para el periodo seleccionado</td></tr>`;
             salesFoot.innerHTML = currentTeamSales.length
                 ? `<tr>
-                    <td colspan="7"><strong>Total comision</strong></td>
+                    <td colspan="8"><strong>Total comision</strong></td>
                     <td><strong>${formatMoney(totalCommission)}</strong></td>
+                    <td></td>
                 </tr>`
                 : "";
             pageInfo.textContent = `Pagina ${currentSalesPage} de ${totalPages}`;
@@ -242,6 +284,24 @@
             });
         }
 
+
+        function openOrder(orderId) {
+            orderFormModalTitle.textContent = `Pedido ${orderId}`;
+            orderFormFrame.src = `${window.appUrl("/pedidos/formulario")}?id=${encodeURIComponent(orderId)}&embedded=1`;
+            orderFormModal.hidden = false;
+            document.body.classList.add("is-order-modal-open");
+            orderFormModalClose.focus();
+        }
+
+        function closeOrderModal(shouldRefresh = false) {
+            orderFormModal.hidden = true;
+            orderFormFrame.src = "about:blank";
+            document.body.classList.remove("is-order-modal-open");
+
+            if (shouldRefresh) {
+                loadTeamSales();
+            }
+        }
         async function downloadSalesExcel() {
             if (!currentTeamSales.length) {
                 showToast("No hay ventas para exportar.", "error");
@@ -253,6 +313,8 @@
                 if (dateFrom.value) params.set("dateFrom", dateFrom.value);
                 if (dateTo.value) params.set("dateTo", dateTo.value);
                 if (sellerFilter.value) params.set("vendedorId", sellerFilter.value);
+                if (clientFilter.value) params.set("clienteId", clientFilter.value);
+            if (paymentStatusFilter.value) params.set("estadoPagoId", paymentStatusFilter.value);
                 const response = await fetch(`/api/grupo-ventas/mi-equipo/excel?${params}`);
                 if (!response.ok) {
                     showToast("No se pudo preparar el Excel.", "error");
@@ -270,6 +332,21 @@
             });
         }
 
+        async function loadFilterOptions() {
+            const response = await fetch("/api/pedidos/opciones");
+            if (!response.ok) {
+                showToast("No se pudieron cargar los filtros de clientes y estados de pago.", "error");
+                return;
+            }
+
+            const options = await response.json();
+            clientFilter.innerHTML = '<option value="">Todos</option>' + (options.clientes || [])
+                .map(item => '<option value="' + item.id + '">' + escapeHtml(item.nombre || ('Cliente ' + item.id)) + '</option>')
+                .join("");
+            paymentStatusFilter.innerHTML = '<option value="">Todos</option>' + (options.estadosPago || [])
+                .map(item => '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.nombre || item.id) + '</option>')
+                .join("");
+        }
         async function loadTeamSales() {
             if (!dateFrom.value || !dateTo.value) {
                 setDefaultDates();
@@ -279,6 +356,8 @@
             if (dateFrom.value) params.set("dateFrom", dateFrom.value);
             if (dateTo.value) params.set("dateTo", dateTo.value);
             if (sellerFilter.value) params.set("vendedorId", sellerFilter.value);
+            if (clientFilter.value) params.set("clienteId", clientFilter.value);
+            if (paymentStatusFilter.value) params.set("estadoPagoId", paymentStatusFilter.value);
 
             const response = await fetch(`/api/grupo-ventas/mi-equipo?${params}`);
             if (!response.ok) {
@@ -312,9 +391,45 @@
                 button.dataset.externalSellerName);
         });
 
+
+        salesBody.addEventListener("click", event => {
+            const button = event.target.closest("[data-view-team-sale]");
+            if (button) {
+                openOrder(button.dataset.viewTeamSale);
+            }
+        });
+
+        orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        orderFormModal.addEventListener("click", event => {
+            if (event.target.closest("[data-team-order-modal-close]")) {
+                closeOrderModal();
+            }
+        });
+
+        window.addEventListener("message", event => {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            if (event.data?.type === "order-modal-close") {
+                closeOrderModal();
+            } else if (event.data?.type === "order-modal-updated") {
+                loadTeamSales();
+            } else if (event.data?.type === "order-modal-saved") {
+                closeOrderModal(true);
+            }
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !orderFormModal.hidden) {
+                closeOrderModal();
+            }
+        });
         dateFrom.addEventListener("change", loadTeamSales);
         dateTo.addEventListener("change", loadTeamSales);
         sellerFilter.addEventListener("change", loadTeamSales);
+        clientFilter.addEventListener("change", loadTeamSales);
+        paymentStatusFilter.addEventListener("change", loadTeamSales);
         downloadExcelButton.addEventListener("click", downloadSalesExcel);
         pageSizeSelect.addEventListener("change", function () {
             currentSalesPage = 1;
@@ -329,6 +444,6 @@
             renderSalesPage();
         });
         setDefaultDates();
-        loadTeamSales();
+        loadFilterOptions().then(loadTeamSales);
     </script>
 }

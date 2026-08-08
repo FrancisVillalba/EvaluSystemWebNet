@@ -2194,7 +2194,7 @@ body.modal-page-body {
 
 .team-sales-filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
   align-items: end;
   gap: 12px;
   border: 1px solid #d9e5eb;
@@ -2373,6 +2373,168 @@ body.modal-page-body {
   opacity: 0.45;
 }
 
+
+/* Grupo de ventas: jerarquia visual de filtros, tabla y montos. */
+.team-sales-panel .orders-panel-heading {
+  padding: 4px 4px 10px;
+  border-bottom: 1px solid #dcebed;
+}
+
+.team-sales-panel .orders-panel-heading h2 {
+  color: #073b4c;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.team-sales-panel .orders-panel-heading p {
+  color: #4f7180;
+  font-weight: 700;
+}
+
+.team-sales-panel .orders-export {
+  border-color: #a9dcd6;
+  color: #086170;
+  background: linear-gradient(135deg, #e9faf7, #dff4f2);
+  box-shadow: 0 6px 18px rgba(12, 95, 114, 0.12);
+  font-weight: 900;
+}
+
+.team-sales-filters {
+  background: linear-gradient(135deg, #f8fcfd 0%, #f1f9f8 100%);
+}
+
+.team-sales-filters label {
+  color: #264f60;
+  font-weight: 850;
+}
+
+.team-sales-filters input:focus,
+.team-sales-filters select:focus {
+  border-color: #1597a7;
+  outline: 3px solid rgba(21, 151, 167, 0.12);
+}
+
+.team-sales-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid #dce9ee;
+  border-radius: 10px;
+}
+
+.team-sales-table thead th {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  color: #07586b;
+  background: #eaf7f6;
+  border-bottom: 2px solid #bfe2df;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+}
+
+.team-sales-table tbody tr:nth-child(even) td {
+  background: #f8fbfc;
+}
+
+.team-sales-table tbody tr:hover td {
+  background: #edf8f7;
+}
+
+.team-sales-table tbody td {
+  padding-top: 13px;
+  padding-bottom: 13px;
+  border-bottom-color: #e6eef1;
+  color: #173c4b;
+  font-weight: 650;
+}
+
+.team-sale-order {
+  color: #07586b;
+  font-weight: 900;
+}
+
+.team-sale-money {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900 !important;
+}
+
+.team-sale-total {
+  color: #1457a6 !important;
+}
+
+.team-sale-paid {
+  color: #12824c !important;
+}
+
+.team-sale-commission {
+  color: #7a3eb1 !important;
+}
+
+.team-sale-meters {
+  color: #496b78 !important;
+  font-weight: 800 !important;
+}
+
+.team-sale-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.team-sale-status.is-success {
+  color: #087443;
+  background: #dcf7e9;
+}
+
+.team-sale-status.is-warning {
+  color: #946200;
+  background: #fff1c9;
+}
+
+.team-sale-status.is-danger {
+  color: #a32936;
+  background: #fde3e6;
+}
+
+.team-sale-status.is-info {
+  color: #16657a;
+  background: #dff3f7;
+}
+
+.team-sales-table .orders-edit {
+  min-width: 82px;
+  border-color: #b4dfdb;
+  color: #086170;
+  background: #e6f7f5;
+  box-shadow: 0 4px 12px rgba(12, 95, 114, 0.08);
+  font-weight: 900;
+}
+
+.team-sales-table .orders-edit:hover {
+  color: #fff;
+  background: #0c7181;
+  transform: translateY(-1px);
+}
+
+.team-sales-table tfoot td {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  color: #4b2b78;
+  background: #f4effb;
+  border-top: 2px solid #ded0ef;
+  font-weight: 900;
+}
+
+.team-sales-pagination {
+  font-weight: 750;
+}
 .admin-table tfoot td {
   background: #f8fbfc;
   color: #07145a;

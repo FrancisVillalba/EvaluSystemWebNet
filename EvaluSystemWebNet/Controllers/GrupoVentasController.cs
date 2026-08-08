@@ -19,6 +19,8 @@ public class GrupoVentasController : ControllerBase
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
+        [FromQuery] int? clienteId = null,
+        [FromQuery] string? estadoPagoId = null,
         CancellationToken cancellationToken = default)
     {
         var filters = new List<string>();
@@ -35,6 +37,16 @@ public class GrupoVentasController : ControllerBase
         if (vendedorId.HasValue)
         {
             filters.Add($"vendedorId={vendedorId.Value}");
+        }
+
+        if (clienteId.HasValue)
+        {
+            filters.Add($"clienteId={clienteId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoPagoId))
+        {
+            filters.Add($"estadoPagoId={Uri.EscapeDataString(estadoPagoId)}");
         }
 
         var result = await _backendApiClient.GetResultAsync<GrupoVentaEquipoDto>(
@@ -51,6 +63,8 @@ public class GrupoVentasController : ControllerBase
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] int? vendedorId = null,
+        [FromQuery] int? clienteId = null,
+        [FromQuery] string? estadoPagoId = null,
         CancellationToken cancellationToken = default)
     {
         var filters = new List<string>();
@@ -67,6 +81,16 @@ public class GrupoVentasController : ControllerBase
         if (vendedorId.HasValue)
         {
             filters.Add($"vendedorId={vendedorId.Value}");
+        }
+
+        if (clienteId.HasValue)
+        {
+            filters.Add($"clienteId={clienteId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(estadoPagoId))
+        {
+            filters.Add($"estadoPagoId={Uri.EscapeDataString(estadoPagoId)}");
         }
 
         var result = await _backendApiClient.GetResultAsync<ExcelFileDto>(

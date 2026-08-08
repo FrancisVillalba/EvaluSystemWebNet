@@ -39,6 +39,8 @@ public record PedidoView(
     string DeliveryTakenAt,
     string PaymentMethod,
     string PaymentStatus,
+    decimal TotalVenta,
+    decimal MontoPagado,
     string PaidAmount,
     string ProofPath,
     string ProofName,

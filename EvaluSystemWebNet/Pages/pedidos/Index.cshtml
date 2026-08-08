@@ -97,7 +97,7 @@
 
                 <section id="seller-orders-sales-tab" class="orders-tab-panel">
                     <div class="orders-table-wrap">
-                        <table class="orders-table">
+                        <table class="orders-table team-sales-table orders-financial-table">
                             <thead>
                                 <tr>
                                     <th>Pedido</th>
@@ -108,7 +108,8 @@
                                     <th>Estado</th>
                                     <th>Metodo entrega</th>
                                     <th>Usuario entrega</th>
-                                    <th>Entrega</th>
+                                    <th>Total venta</th>
+                                    <th>Monto pagado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -318,7 +319,7 @@
 
         function renderOrders() {
             if (!orders.length) {
-                body.innerHTML = `<tr><td colspan="10">No hay pedidos para los filtros seleccionados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="11">No hay pedidos para los filtros seleccionados.</td></tr>`;
             } else {
                 body.innerHTML = orders.map(order => {
                     const details = Array.isArray(order.details) ? order.details : [];
@@ -334,7 +335,8 @@
                     <td>${detailStatesMarkup(details)}</td>
                     <td><span class="orders-status delivery-method ${statusClass(deliveryMethod)}">${escapeHtml(deliveryMethod)}</span></td>
                     <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
-                    <td>${escapeHtml(order.delivery)}</td>
+                    <td class="team-sale-money team-sale-total">${formatMoney(order.totalVenta)}</td>
+                    <td class="team-sale-money team-sale-paid">${formatMoney(order.montoPagado)}</td>
                     <td class="orders-actions">
                         <div class="orders-actions-inner">
                             <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
