@@ -130,6 +130,9 @@
                                 <option value="">Seleccionar estado</option>
                             </select>
                         </label>
+                        <button id="order-budget-action" class="order-budget-action" type="button">
+                            Presupuesto PDF
+                        </button>
 
                     </section>
                 </div>
@@ -240,6 +243,7 @@
         const stateSaveAction = document.getElementById("state-save-action");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
+        const orderBudgetAction = document.getElementById("order-budget-action");
         let loadedSaleStateId = "";
         let savedMontoEnvioTransportadora = null;
         let paymentProofs = [];
@@ -539,6 +543,7 @@
             stateNextAction.disabled = !canSendAllToPrint;
             stateDeleteAction.disabled = !hasOrder || !canDeleteCurrentOrder();
             stateSaveAction.disabled = false;
+            orderBudgetAction.disabled = !hasOrder;
 
             stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
             stateDeleteAction.title = stateDeleteAction.disabled && hasOrder
@@ -593,6 +598,36 @@
             transportadoraFeeLabel.textContent = `Gs. ${fee.toLocaleString("es-PY")}`;
             transportadoraFeeMessage.hidden = fee <= 0;
             updatePaymentStatusFromAmount();
+        }
+
+        async function downloadBudgetPdf() {
+            if (!orderId) {
+                window.alert("Guarde el pedido antes de generar el presupuesto.");
+                return;
+            }
+
+            orderBudgetAction.disabled = true;
+            try {
+                const response = await fetch("/api/pedidos/" + orderId + "/presupuesto-pdf");
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || "No se pudo generar el presupuesto.");
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "presupuesto-pedido-" + orderId + ".pdf";
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                window.alert(error.message || "No se pudo generar el presupuesto.");
+            } finally {
+                orderBudgetAction.disabled = false;
+            }
         }
 
         function updatePaymentStatusFromAmount() {
@@ -1258,6 +1293,8 @@
 
             await saveOrder(state.id);
         }
+
+        orderBudgetAction.addEventListener("click", downloadBudgetPdf);
 
         stateSaveAction.addEventListener("click", async function () {
             await saveOrder();

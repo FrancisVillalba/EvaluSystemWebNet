@@ -178,6 +178,20 @@ public class PedidosController : ControllerBase
         return File(bytes, excel.ContentType, excel.FileName);
     }
 
+    [HttpGet("{id:int}/presupuesto-pdf")]
+    public async Task<IActionResult> DownloadBudgetPdf(int id, CancellationToken cancellationToken)
+    {
+        var file = await _backendApiClient.GetAsync<ExcelFileDto>(
+            $"api/Reportes/presupuesto-pedido/{id}",
+            cancellationToken);
+
+        if (file is null || string.IsNullOrWhiteSpace(file.Bytes))
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "No se pudo generar el presupuesto." });
+        }
+
+        return File(Convert.FromBase64String(file.Bytes), file.ContentType, file.FileName);
+    }
     [HttpPost]
     public async Task<ActionResult<VentaImpresionCabDto>> Create(
         [FromBody] VentaImpresionCompletaRequest request,

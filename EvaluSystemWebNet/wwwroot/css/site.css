@@ -1316,6 +1316,30 @@ body.modal-page-body {
   gap: 8px;
   margin: 0 18px 18px;
 }
+.order-budget-action {
+  width: calc(100% - 36px);
+  min-height: 42px;
+  margin: 0 18px 18px;
+  border: 1px solid #4fa89c;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #fff;
+  background: #0c6f78;
+  cursor: pointer;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(12, 111, 120, 0.18);
+}
+
+.order-budget-action:hover {
+  background: #075b64;
+  transform: translateY(-1px);
+}
+.order-budget-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+  transform: none;
+}
 
 .order-delivery-body {
   display: grid;
@@ -4343,16 +4367,16 @@ body.modal-page-body {
 
 .delivery-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
 .delivery-card {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   align-content: start;
   gap: 8px;
-  min-height: 178px;
+  min-height: 158px;
   padding: 12px;
   border: 1px solid #dfe8ed;
   border-radius: 8px;
@@ -4372,7 +4396,7 @@ body.modal-page-body {
   font-size: 0.95rem;
 }
 
-.delivery-card-head span {
+.delivery-card-head > span {
   border-radius: 999px;
   padding: 4px 8px;
   color: #19599f;
@@ -4389,12 +4413,49 @@ body.modal-page-body {
   white-space: nowrap;
   font-size: 0.98rem;
 }
+.delivery-order-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 7px;
+}
+
+.delivery-seller {
+  color: #2f7d5a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.delivery-product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.delivery-product-tag {
+  max-width: 100%;
+  padding: 4px 9px;
+  border: 1px solid #d8c4f1;
+  border-radius: 999px;
+  color: #6941a5;
+  background: #f1e8fb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 
 .delivery-card-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 112px;
+  grid-template-columns: minmax(76px, 0.8fr) minmax(0, 1.6fr);
   align-items: end;
-  gap: 12px;
+  gap: 7px;
   height: 100%;
 }
 
@@ -4441,9 +4502,9 @@ body.modal-page-body {
 .delivery-take {
   display: inline-grid;
   place-items: center;
-  width: 112px;
-  height: 52px;
-  min-height: 52px;
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
   border-radius: 7px;
   padding: 0 10px;
   font-size: 0.86rem;
@@ -4539,13 +4600,13 @@ body.modal-page-body {
 }
 
 .delivery-card-compact .delivery-card-body {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(76px, 0.8fr) minmax(0, 1.6fr);
 }
 
 .delivery-card-side-actions {
   display: grid;
-  align-content: start;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .delivery-route-lots {
@@ -4631,7 +4692,8 @@ body.modal-page-body {
 }
 
 .delivery-label-button {
-  min-height: 34px;
+  width: 100%;
+  min-height: 38px;
   border: 0;
   border-radius: 7px;
   padding: 7px 12px;
@@ -4774,6 +4836,10 @@ body.modal-page-body {
   }
 
   .delivery-card dl {
+    grid-template-columns: 1fr;
+  }
+  .delivery-card-body,
+  .delivery-card-compact .delivery-card-body {
     grid-template-columns: 1fr;
   }
 }

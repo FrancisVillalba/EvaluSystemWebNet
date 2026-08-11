@@ -358,20 +358,22 @@
             return `
                 <article class="delivery-card">
                     <div class="delivery-card-head">
-                        <strong>#${order.id}</strong>
+                        <div class="delivery-order-identity">
+                            <strong>#${order.id}</strong>
+                            <small class="delivery-seller">${escapeHtml(order.vendedor || "Sin vendedor")}</small>
+                        </div>
                         <span>${escapeHtml(order.estadoVenta || order.estadoVentaId)}</span>
                     </div>
-                    <h3>${escapeHtml(order.cliente)} <small>(${order.cantidadPedidosGrupo || 1} pedidos)</small></h3>
-                    ${order.grupoEntregaListo === false ? `<p style="color:#c62828;font-weight:700;margin:8px 0">${escapeHtml(order.mensajeBloqueoEntrega || "Falta otro pedido para su entrega")}</p>` : ""}
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
                     <div class="delivery-card-body">
                         <dl>
-                            <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
                             <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
-                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Imprimir etiqueta</button>
-                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}" ${order.grupoEntregaListo === false ? "disabled aria-disabled=\"true\"" : ""}>
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
+                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
                                 ${method.actionText}
                             </button>
                         </div>
@@ -383,19 +385,21 @@
             return `
                 <article class="delivery-card delivery-card-compact">
                     <div class="delivery-card-head">
-                        <strong>#${order.id}</strong>
+                        <div class="delivery-order-identity">
+                            <strong>#${order.id}</strong>
+                            <small class="delivery-seller">${escapeHtml(order.vendedor || "Sin vendedor")}</small>
+                        </div>
                         <span>${escapeHtml(order.metodoEntrega || "-")}</span>
                     </div>
-                    <h3>${escapeHtml(order.cliente)} <small>(${order.cantidadPedidosGrupo || 1} pedidos)</small></h3>
-                    ${order.grupoEntregaListo === false ? `<p style="color:#c62828;font-weight:700;margin:8px 0">${escapeHtml(order.mensajeBloqueoEntrega || "Falta otro pedido para su entrega")}</p>` : ""}
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
                     <div class="delivery-card-body">
                         <dl>
-                            <div><dt>Entrega</dt><dd>${formatDate(order.fechaEntrega)}</dd></div>
                             <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
-                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Imprimir etiqueta</button>
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
                             <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
                         </div>
                     </div>
