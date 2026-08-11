@@ -637,7 +637,7 @@
                 sellerOrdersSalesTab.hidden = button.dataset.ordersTab !== "sales";
             });
         });
-        orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        orderFormModalClose.addEventListener("click", () => closeOrderModal(true));
         document.getElementById("flow-close").addEventListener("click", closeOrderFlow);
         document.getElementById("flow-close-footer").addEventListener("click", closeOrderFlow);
         flowModal.addEventListener("click", event => { if (event.target === flowModal) closeOrderFlow(); });
