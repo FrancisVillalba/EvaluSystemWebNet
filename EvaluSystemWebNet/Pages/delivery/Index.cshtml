@@ -210,7 +210,10 @@
         }
 
         function formatDate(value) {
-            return value ? new Date(value).toLocaleDateString("es-PY") : "Sin fecha";
+            if (!value) return "Sin fecha";
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return "Sin fecha";
+            return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
         }
 
         function dateValue(value) {
@@ -372,6 +375,7 @@
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
+                            <div class="delivery-card-created"><span>Fecha</span><strong>${escapeHtml(formatDate(order.fechaEntrega))}</strong></div>
                             <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
                             <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
                                 ${method.actionText}
@@ -399,6 +403,7 @@
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
+                            <div class="delivery-card-created"><span>Fecha</span><strong>${escapeHtml(formatDate(order.fechaEntrega))}</strong></div>
                             <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
                             <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
                         </div>

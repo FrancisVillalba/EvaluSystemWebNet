@@ -269,10 +269,14 @@ html {
 html {
   position: relative;
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin-bottom: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   background: #eef3f5;
 }
 
@@ -4607,6 +4611,23 @@ body.modal-page-body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
+}
+.delivery-card-created {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1px;
+}
+
+.delivery-card-created span {
+  color: #6b7c8b;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.delivery-card-created strong {
+  color: #203747;
+  font-size: 0.9rem;
+  font-weight: 400;
 }
 
 .delivery-route-lots {
