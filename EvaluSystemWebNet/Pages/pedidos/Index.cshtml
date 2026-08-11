@@ -106,7 +106,6 @@
                                     <th>Vendedor</th>
                                     <th>Metros</th>
                                     <th>Estado</th>
-                                    <th>Metodo entrega</th>
                                     <th>Usuario entrega</th>
                                     <th>Total venta</th>
                                     <th>Monto pagado</th>
@@ -319,11 +318,10 @@
 
         function renderOrders() {
             if (!orders.length) {
-                body.innerHTML = `<tr><td colspan="11">No hay pedidos para los filtros seleccionados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="10">No hay pedidos para los filtros seleccionados.</td></tr>`;
             } else {
                 body.innerHTML = orders.map(order => {
                     const details = Array.isArray(order.details) ? order.details : [];
-                    const deliveryMethod = order.deliveryMethod || "Sin metodo";
                     const sellerName = shortPersonName(order.seller) || order.seller || "-";
                     return `
                 <tr>
@@ -333,7 +331,6 @@
                     <td><span class="orders-seller ${sellerColorClass(order.seller)}">${escapeHtml(sellerName)}</span></td>
                     <td>${escapeHtml(metersFromDetails(details))}</td>
                     <td>${detailStatesMarkup(details)}</td>
-                    <td><span class="orders-status delivery-method ${statusClass(deliveryMethod)}">${escapeHtml(deliveryMethod)}</span></td>
                     <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
                     <td class="team-sale-money team-sale-total">${formatMoney(order.totalVenta)}</td>
                     <td class="team-sale-money team-sale-paid">${formatMoney(order.montoPagado)}</td>
