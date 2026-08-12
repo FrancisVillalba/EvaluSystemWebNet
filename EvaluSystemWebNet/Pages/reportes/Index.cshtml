@@ -30,6 +30,7 @@
         const dateToInput = document.getElementById("date-to");
         const profileFilter = document.getElementById("profile-filter");
         const sellerFilter = document.getElementById("seller-filter");
+
         const summaryHost = document.getElementById("seller-summary");
         const commissionsTitle = document.getElementById("commissions-title");
         const commissionsDescription = document.getElementById("commissions-description");
@@ -293,10 +294,9 @@
                 : reportCommissionOptions.usuarios
                     .filter(seller => !profileId || (seller.perfilIds || []).map(Number).includes(profileId));
 
-            sellerFilter.innerHTML = `<option value="">Todos</option>` + sellers
-                .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
+            sellerFilter.innerHTML = [`<option value="">Todos</option>`]
+                .concat(sellers.map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`))
                 .join("");
-
         }
 
         async function loadReport() {
@@ -408,7 +408,10 @@
             }).join("")}</div>`;
         }
         function renderReport(report) {
-            const sellers = report.vendedores || [];
+            const sellers = [...(report.vendedores || [])]
+                .sort((left, right) =>
+                    calculateSellerCommission(right) - calculateSellerCommission(left)
+                    || String(left.vendedor || "").localeCompare(String(right.vendedor || ""), "es"));
             summaryHost.innerHTML = sellers.length
                 ? sellers.map(seller => `
                     <article class="${(seller.detalles || []).some(detail => detail.vendedorOrigen) ? "has-team-details" : ""}">
@@ -694,21 +697,33 @@
         debtDateFromInput.value = monthStartValue();
         debtDateToInput.value = localDateValue();
 
-        document.getElementById("search-report").addEventListener("click", loadReport);
+        let reportFilterTimer;
+        function debounceReportFilter(callback) {
+            window.clearTimeout(reportFilterTimer);
+            reportFilterTimer = window.setTimeout(callback, 350);
+        }
+
+        [dateFromInput, dateToInput, sellerFilter].forEach(input => input.addEventListener("change", loadReport));
+
         profileFilter.addEventListener("change", () => {
             sellerFilter.value = "";
             renderSellerFilter();
             loadReport();
         });
-        document.getElementById("search-shipping-report").addEventListener("click", loadShippingReport);
-        document.getElementById("search-management-summary").addEventListener("click", loadManagementSummary);
-        document.getElementById("search-customer-debt").addEventListener("click", loadCustomerDebtReport);
+        [shippingDateFromInput, shippingDateToInput, shippingMethodInput]
+            .forEach(input => input.addEventListener("change", loadShippingReport));
+        shippingClientInput.addEventListener("input", () => debounceReportFilter(loadShippingReport));
+        [managementDateFromInput, managementDateToInput]
+            .forEach(input => input.addEventListener("change", loadManagementSummary));
+        [debtDateFromInput, debtDateToInput, debtStatusInput]
+            .forEach(input => input.addEventListener("change", loadCustomerDebtReport));
+        debtClientInput.addEventListener("input", () => debounceReportFilter(loadCustomerDebtReport));
         document.getElementById("download-bank-txt").addEventListener("click", () => downloadReport("txt", sellerFilter.value, sellerFilter.selectedOptions[0]?.textContent || "todos"));
         document.getElementById("refresh-payment-lots").addEventListener("click", loadPaymentLots);
-        document.getElementById("search-payment-lots").addEventListener("click", () => {
+        [paymentLotsDateFromInput, paymentLotsDateToInput].forEach(input => input.addEventListener("change", () => {
             paymentLotsPage = 1;
             loadPaymentLots();
-        });
+        }));
         document.getElementById("clear-payment-lots").addEventListener("click", () => {
             paymentLotsDateFromInput.value = monthStartValue();
             paymentLotsDateToInput.value = localDateValue();
