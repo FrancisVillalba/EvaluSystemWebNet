@@ -252,17 +252,13 @@
             return total ? `${total.toLocaleString("es-PY", { maximumFractionDigits: 2 })} m` : "0 m";
         }
 
-        function detailStateLabel(value) {
-            return ({ PC: "Carga", PI: "Impresion", CO: "Control", PE: "Pendiente de envio", EE: "Enviado", ET: "Entregado", RE: "Rechazado", XX: "Eliminado" })[String(value || "").trim().toUpperCase()] || value || "Sin estado";
-        }
-
         function detailStatesMarkup(details) {
             if (!details.length) {
                 return `<span class="orders-detail-state-empty">Sin detalles</span>`;
             }
 
             return `<div class="orders-detail-states">${details.map(detail => {
-                const label = detailStateLabel(detail.stateItem);
+                const label = detail.stateItemName || detail.stateItem || "Sin estado";
                 return `<span class="orders-detail-state" title="${escapeHtml(detail.product || `Item #${detail.id}`)}: ${escapeHtml(label)}">
                     <span class="orders-detail-product">${escapeHtml(detail.product || `Item #${detail.id}`)}</span>
                     <span class="orders-status orders-detail-status ${statusClass(label)}">${escapeHtml(label)}</span>

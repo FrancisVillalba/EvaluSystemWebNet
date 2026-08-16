@@ -440,6 +440,7 @@ public class PedidosController : ControllerBase
             detalle.ArchivoDisenioNombre ?? string.Empty,
             detalle.CheckImpresion == true,
             detalle.EstadoItem ?? string.Empty,
+            detalle.EstadoItemNombre ?? detalle.EstadoItem ?? string.Empty,
             detalle.Observacion ?? string.Empty);
     }
 

@@ -269,7 +269,8 @@ public record GrupoVentaVentaDto(
 public record GrupoVentaDetalleEstadoDto(
     int DetalleId,
     string Producto,
-    string EstadoItem);
+    string EstadoItem,
+    string EstadoItemNombre);
 
 public record TipoMaquinaDto(int Id, string Nombre, bool Estado);
 
@@ -648,6 +649,7 @@ public record VentaImpresionDetDto(
     string? ArchivoDisenioNombre,
     string? Observacion,
     string EstadoItem,
+    string EstadoItemNombre,
     bool? CheckImpresion);
 
 public record ImpresionArchivoDto(

@@ -1782,11 +1782,18 @@ body.modal-page-body {
 
 .orders-status.cancelado,
 .orders-status.anulado,
+.orders-status.rechazado,
 .orders-status.eliminar,
 .orders-status.eliminado {
   color: #9f2f2f;
   background: #fdecec;
   border-color: #efaaaa;
+}
+
+.orders-status.devuelto {
+  color: #8a5a07;
+  background: #fff4dc;
+  border-color: #f1ce83;
 }
 
 .orders-status.delivery {
@@ -2549,6 +2556,16 @@ body.modal-page-body {
   color: #fff;
   background: #0c7181;
   transform: translateY(-1px);
+}
+
+.admin-table.team-sales-table .orders-actions-inner {
+  gap: 5px;
+}
+
+.admin-table.team-sales-table .orders-actions-inner .orders-edit {
+  min-width: 62px;
+  min-height: 34px;
+  padding: 6px 9px;
 }
 
 .team-sales-table tfoot td {

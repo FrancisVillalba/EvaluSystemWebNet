@@ -61,6 +61,7 @@ public record PedidoDetalleView(
     string DesignName,
     bool CheckImpresion,
     string StateItem,
+    string StateItemName,
     string Observation);
 
 public record DashboardView(

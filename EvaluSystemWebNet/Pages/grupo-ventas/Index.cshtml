@@ -6,6 +6,10 @@
     ViewData["ShellClass"] = "reports-shell";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/control.css" asp-append-version="true" />
+}
+
 <section class="reports-main">
     <section class="team-sales-panel">
         <div class="orders-panel-heading">
@@ -84,6 +88,16 @@
         <iframe id="team-order-form-frame" title="Formulario de pedido"></iframe>
     </section>
 </div>
+<div id="team-flow-modal" class="control-modal" hidden>
+    <section class="control-modal-card order-flow-modal-card" role="dialog" aria-modal="true" aria-labelledby="team-flow-title">
+        <header>
+            <div><span>Historial completo</span><h2 id="team-flow-title">Flujo del pedido</h2></div>
+            <button id="team-flow-close" class="control-modal-close" type="button" aria-label="Cerrar">&times;</button>
+        </header>
+        <div id="team-flow-content" class="order-flow-timeline"></div>
+        <footer><button id="team-flow-close-footer" class="admin-secondary" type="button">Cerrar</button></footer>
+    </section>
+</div>
 @section Scripts {
     <script>
         const dateFrom = document.getElementById("team-date-from");
@@ -105,6 +119,9 @@
         const orderFormFrame = document.getElementById("team-order-form-frame");
         const orderFormModalTitle = document.getElementById("team-order-form-modal-title");
         const orderFormModalClose = document.getElementById("team-order-form-modal-close");
+        const flowModal = document.getElementById("team-flow-modal");
+        const flowTitle = document.getElementById("team-flow-title");
+        const flowContent = document.getElementById("team-flow-content");
         let currentTeamSales = [];
         let currentSalesPage = 1;
 
@@ -218,9 +235,6 @@
                 .replace(/[^a-z0-9]+/g, "-")
                 .replace(/^-|-$/g, "");
         }
-        function detailStateLabel(value) {
-            return ({ PC: "Carga", PI: "Impresion", CO: "Control", PE: "Pendiente de envio", EE: "Enviado", ET: "Entregado", RE: "Rechazado", XX: "Eliminado" })[String(value || "").trim().toUpperCase()] || value || "Sin estado";
-        }
 
         function detailStatesMarkup(details) {
             if (!details.length) {
@@ -228,7 +242,7 @@
             }
 
             return `<div class="orders-detail-states">${details.map(detail => {
-                const label = detailStateLabel(detail.estadoItem);
+                const label = detail.estadoItemNombre || detail.estadoItem || "Sin estado";
                 return `<span class="orders-detail-state" title="${escapeHtml(detail.producto || `Item #${detail.detalleId}`)}: ${escapeHtml(label)}">
                     <span class="orders-detail-product">${escapeHtml(detail.producto || `Item #${detail.detalleId}`)}</span>
                     <span class="orders-status orders-detail-status ${detailStatusClass(label)}">${escapeHtml(label)}</span>
@@ -263,7 +277,12 @@
                         <td class="team-sale-money team-sale-paid">${formatMoney(item.totalPagado)}</td>
                         <td class="team-sale-meters">${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
                         <td class="team-sale-money team-sale-commission">${formatMoney(item.totalComision)}</td>
-                        <td><button class="orders-edit" type="button" data-view-team-sale="${item.pedidoId}">Ver</button></td>
+                        <td class="orders-actions">
+                            <div class="orders-actions-inner">
+                                <button class="orders-edit" type="button" data-view-team-sale="${item.pedidoId}">Ver</button>
+                                <button class="orders-edit order-flow-button" type="button" data-flow-team-sale="${item.pedidoId}">Flujo</button>
+                            </div>
+                        </td>
                     </tr>`).join("")
                 : `<tr><td colspan="11">Sin ventas para el periodo seleccionado</td></tr>`;
             salesFoot.innerHTML = currentTeamSales.length
@@ -279,6 +298,41 @@
             nextPageButton.disabled = currentSalesPage >= totalPages;
         }
 
+        function formatFlowDate(value) {
+            if (!value) return "-";
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("es-PY", { dateStyle: "short", timeStyle: "medium" });
+        }
+
+        function closeOrderFlow() {
+            flowModal.hidden = true;
+            flowContent.innerHTML = "";
+        }
+
+        async function openOrderFlow(orderId) {
+            flowTitle.textContent = `Flujo del pedido #${orderId}`;
+            flowContent.innerHTML = `<div class="empty-state">Cargando historial...</div>`;
+            flowModal.hidden = false;
+            const response = await fetch(`/api/pedidos/${orderId}/flujo`);
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                flowContent.innerHTML = `<div class="empty-state">${escapeHtml(error?.message || "No se pudo cargar el flujo del pedido.")}</div>`;
+                return;
+            }
+            const events = await response.json() || [];
+            flowContent.innerHTML = events.length ? events.map(event => `
+                <article class="order-flow-event">
+                    <span class="order-flow-dot" aria-hidden="true"></span>
+                    <div class="order-flow-event-card">
+                        <div class="order-flow-event-heading"><strong>${escapeHtml(event.accion)}</strong><time>${escapeHtml(formatFlowDate(event.fechaHora))}</time></div>
+                        <p><b>Usuario:</b> ${escapeHtml(event.usuario || "Sistema")}</p>
+                        <p><b>Estado:</b> ${escapeHtml(event.estadoAnterior || "Sin estado")} → ${escapeHtml(event.estadoNuevo || "Sin estado")}</p>
+                        ${event.detalleId ? `<p><b>Detalle:</b> #${escapeHtml(event.detalleId)}</p>` : ""}
+                        ${event.producto ? `<p><b>Producto:</b> ${escapeHtml(event.producto)}</p>` : ""}
+                        ${event.comentario ? `<div class="order-flow-comment"><b>Comentario:</b> ${escapeHtml(event.comentario)}</div>` : ""}
+                    </div>
+                </article>`).join("") : `<div class="empty-state">Este pedido todavía no tiene eventos registrados.</div>`;
+        }
         async function downloadExternalSellerPdf(sellerId, sellerName) {
             await withAppLoading("Preparando PDF...", async function () {
                 const params = new URLSearchParams();
@@ -420,10 +474,22 @@
 
 
         salesBody.addEventListener("click", event => {
-            const button = event.target.closest("[data-view-team-sale]");
-            if (button) {
-                openOrder(button.dataset.viewTeamSale);
+            const viewButton = event.target.closest("[data-view-team-sale]");
+            if (viewButton) {
+                openOrder(viewButton.dataset.viewTeamSale);
+                return;
             }
+
+            const flowButton = event.target.closest("[data-flow-team-sale]");
+            if (flowButton) {
+                openOrderFlow(flowButton.dataset.flowTeamSale);
+            }
+        });
+
+        document.getElementById("team-flow-close").addEventListener("click", closeOrderFlow);
+        document.getElementById("team-flow-close-footer").addEventListener("click", closeOrderFlow);
+        flowModal.addEventListener("click", event => {
+            if (event.target === flowModal) closeOrderFlow();
         });
 
         orderFormModalClose.addEventListener("click", () => closeOrderModal());
@@ -448,7 +514,10 @@
         });
 
         document.addEventListener("keydown", event => {
-            if (event.key === "Escape" && !orderFormModal.hidden) {
+            if (event.key !== "Escape") return;
+            if (!flowModal.hidden) {
+                closeOrderFlow();
+            } else if (!orderFormModal.hidden) {
                 closeOrderModal();
             }
         });
