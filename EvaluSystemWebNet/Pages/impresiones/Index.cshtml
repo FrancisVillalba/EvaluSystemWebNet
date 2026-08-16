@@ -317,6 +317,14 @@
         }
 
         async function markPrinted(id) {
+            const confirmed = await showConfirmDialog({
+                title: "Marcar como impreso",
+                message: "¿Está seguro de marcar este archivo como impreso?",
+                confirmText: "Sí, marcar impreso",
+                cancelText: "Cancelar",
+                tone: "info"
+            });
+            if (!confirmed) return;
             await withAppLoading("Marcando impresion...", async function () {
                 const response = await fetch(`/api/impresiones/${id}/marcar-impreso`, { method: "PUT" });
                 if (!response.ok) {

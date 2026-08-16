@@ -262,7 +262,14 @@ public record GrupoVentaVentaDto(
     decimal TotalVenta,
     decimal TotalPagado,
     decimal TotalMetros,
-    decimal TotalComision);
+    decimal TotalComision,
+    string? UsuarioEntrega,
+    IEnumerable<GrupoVentaDetalleEstadoDto> Detalles);
+
+public record GrupoVentaDetalleEstadoDto(
+    int DetalleId,
+    string Producto,
+    string EstadoItem);
 
 public record TipoMaquinaDto(int Id, string Nombre, bool Estado);
 

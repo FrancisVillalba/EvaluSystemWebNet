@@ -43,6 +43,7 @@
                             <th>Vendedor</th>
                             <th>Cliente</th>
                             <th>Estado</th>
+                            <th>Usuario entrega</th>
                             <th>Total venta</th>
                             <th>Total pagado</th>
                             <th>Metros</th>
@@ -209,6 +210,31 @@
             if (status.includes("rechaz") || status.includes("elimin")) return "is-danger";
             return "is-info";
         }
+        function detailStatusClass(status) {
+            return String(status || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-|-$/g, "");
+        }
+        function detailStateLabel(value) {
+            return ({ PC: "Carga", PI: "Impresion", CO: "Control", PE: "Pendiente de envio", EE: "Enviado", ET: "Entregado", RE: "Rechazado", XX: "Eliminado" })[String(value || "").trim().toUpperCase()] || value || "Sin estado";
+        }
+
+        function detailStatesMarkup(details) {
+            if (!details.length) {
+                return `<span class="orders-detail-state-empty">Sin detalles</span>`;
+            }
+
+            return `<div class="orders-detail-states">${details.map(detail => {
+                const label = detailStateLabel(detail.estadoItem);
+                return `<span class="orders-detail-state" title="${escapeHtml(detail.producto || `Item #${detail.detalleId}`)}: ${escapeHtml(label)}">
+                    <span class="orders-detail-product">${escapeHtml(detail.producto || `Item #${detail.detalleId}`)}</span>
+                    <span class="orders-status orders-detail-status ${detailStatusClass(label)}">${escapeHtml(label)}</span>
+                </span>`;
+            }).join("")}</div>`;
+        }
         function renderSales(items) {
             currentTeamSales = items;
             currentSalesPage = 1;
@@ -231,17 +257,18 @@
                         <td>${formatDate(item.fecha)}</td>
                         <td><span class="orders-seller ${sellerColorClass(item.vendedor)}">${escapeHtml(item.vendedor)}</span></td>
                         <td class="orders-strong">${escapeHtml(item.cliente)}</td>
-                        <td><span class="team-sale-status ${teamSaleStatusClass(item.estado)}">${escapeHtml(item.estado)}</span></td>
+                        <td>${detailStatesMarkup(Array.isArray(item.detalles) ? item.detalles : [])}</td>
+                        <td>${escapeHtml(item.usuarioEntrega || "-")}</td>
                         <td class="team-sale-money team-sale-total">${formatMoney(item.totalVenta)}</td>
                         <td class="team-sale-money team-sale-paid">${formatMoney(item.totalPagado)}</td>
                         <td class="team-sale-meters">${Number(item.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</td>
                         <td class="team-sale-money team-sale-commission">${formatMoney(item.totalComision)}</td>
                         <td><button class="orders-edit" type="button" data-view-team-sale="${item.pedidoId}">Ver</button></td>
                     </tr>`).join("")
-                : `<tr><td colspan="10">Sin ventas para el periodo seleccionado</td></tr>`;
+                : `<tr><td colspan="11">Sin ventas para el periodo seleccionado</td></tr>`;
             salesFoot.innerHTML = currentTeamSales.length
                 ? `<tr>
-                    <td colspan="8"><strong>Total comision</strong></td>
+                    <td colspan="9"><strong>Total comision</strong></td>
                     <td><strong>${formatMoney(totalCommission)}</strong></td>
                     <td></td>
                 </tr>`
