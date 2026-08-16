@@ -180,7 +180,7 @@
             const from = dateFrom.value ? new Date(`${dateFrom.value}T00:00:00`) : null;
             const to = dateTo.value ? new Date(`${dateTo.value}T23:59:59`) : null;
 
-            return pedidos.flatMap(pedido => (pedido.detalles || []).filter(detalle => !["AP", "RE"].includes(String(detalle.estadoItem || "").trim().toUpperCase())).map(detalle => ({
+            return pedidos.flatMap(pedido => (pedido.detalles || []).map(detalle => ({
                 pedido,
                 detalle,
                 machineId: String(detalle.tipoMaquinaId),
