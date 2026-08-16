@@ -326,7 +326,7 @@ public class PedidosController : ControllerBase
             pedido.EstadoVenta ?? pedido.EstadoVentaId,
             delivery,
             pedido.MetodoEntrega ?? string.Empty,
-            MetodoEntregaLabel(pedido.MetodoEntrega),
+            pedido.MetodoEntregaNombre ?? pedido.MetodoEntrega ?? string.Empty,
             pedido.MontoEnvioTransportadora,
             pedido.DeliveryUsuario ?? string.Empty,
             pedido.FechaTomaDelivery?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
@@ -341,26 +341,6 @@ public class PedidosController : ControllerBase
             pedido.Reposicion,
             details);
     }
-
-
-    private static string MetodoEntregaLabel(string? metodoEntrega)
-    {
-        if (string.IsNullOrWhiteSpace(metodoEntrega))
-        {
-            return "Sin metodo";
-        }
-
-        return (metodoEntrega ?? "DELIVERY").ToUpperInvariant() switch
-        {
-            "DELIVERY" => "Delivery",
-            "RETIRO_LOCAL" => "Retiro en local",
-            "MOTOBOLT" => "Motobolt",
-            "TRANSPORTADORA" => "Transportadora",
-            "OTRO" => "Otro",
-            _ => metodoEntrega ?? "Delivery"
-        };
-    }
-
     private static bool IsCargaState(VentaImpresionCabDto order)
     {
         var detailStates = order.Detalles
