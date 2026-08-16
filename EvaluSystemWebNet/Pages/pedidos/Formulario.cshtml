@@ -453,20 +453,9 @@
         function canDeleteCurrentOrder() {
             return Number(currentSaleState()?.numeroFlujo) === 1;
         }
-
-        function detailStateBadge(value) {
+        function detailStateBadge(value, name) {
             const stateId = String(value || initialSaleState()?.id || "").trim().toUpperCase();
-            const label = ({
-                PC: "Carga",
-                PI: "Impresion",
-                CO: "Control",
-                PE: "Pendiente de envio",
-                EE: "Enviado",
-                ET: "Entregado",
-                RE: "Rechazado",
-                DV: "Devuelto",
-                XX: "Eliminado"
-            })[stateId] || stateId || "Sin estado";
+            const label = name || stateById(stateId)?.nombre || stateId || "Sin estado";
             const cssState = stateId.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "sin-estado";
             return `<small class="detail-state-badge detail-state-${cssState}">${escapeHtml(label)}</small>`;
         }
@@ -566,6 +555,7 @@
                 designFile: seed.designFile || null,
                 checkImpresion: seed.checkImpresion === true,
                 stateItem: seed.stateItem || "",
+                stateItemName: seed.stateItemName || "",
                 observation: seed.observation || ""
             };
         }
@@ -713,7 +703,7 @@
             detailList.innerHTML = details.map((detail, index) => `
                 <article class="detail-row ${String(detail.stateItem || "").trim().toUpperCase() === "RE" ? "detail-row-rejected" : String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-row-returned" : ""}">
                     <div class="detail-row-header">
-                        <span>Detalle #${index + 1} ${detailStateBadge(detail.stateItem)}</span>
+                        <span>Detalle #${index + 1} ${detailStateBadge(detail.stateItem, detail.stateItemName)}</span>
                         <div class="detail-row-actions">${detailItemActions(detail)}</div>
                     </div>
                     ${["RE", "DV"].includes(String(detail.stateItem || "").trim().toUpperCase()) && detail.observation ? `<div class="${String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-returned-comment" : "detail-rejected-comment"}">${escapeHtml(detail.observation)}</div>` : ""}
