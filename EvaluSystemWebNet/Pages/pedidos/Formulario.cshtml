@@ -451,7 +451,7 @@
         }
 
         function canDeleteCurrentOrder() {
-            return Number(currentSaleState()?.numeroFlujo) === 1;
+            return Boolean(orderId);
         }
         function detailStateBadge(value, name) {
             const stateId = String(value || initialSaleState()?.id || "").trim().toUpperCase();
@@ -535,9 +535,7 @@
             orderBudgetAction.disabled = !hasOrder;
 
             stateNextAction.textContent = next ? `Siguiente a ${next.nombre || next.id}` : "Siguiente";
-            stateDeleteAction.title = stateDeleteAction.disabled && hasOrder
-                ? "Solo se puede eliminar un pedido en estado Carga."
-                : "";
+            stateDeleteAction.title = "";
         }
 
         function createDetail(seed = {}) {
@@ -1296,7 +1294,6 @@
 
         stateDeleteAction.addEventListener("click", async function () {
             if (!canDeleteCurrentOrder()) {
-                showToast("Solo se puede eliminar un pedido cuando esta en estado Carga.", "error");
                 return;
             }
 

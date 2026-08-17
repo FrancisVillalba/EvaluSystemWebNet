@@ -56,9 +56,9 @@
                 <tr data-debt-detail="${cliente.clienteId}" hidden>
                     <td colspan="9">
                         <table class="reports-table reports-inner-table">
-                            <thead><tr><th>Pedido</th><th>Fecha</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead>
+                            <thead><tr><th>Pedido</th><th>Fecha</th><th>Vendedor</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead>
                             <tbody>${(cliente.pedidos || []).map(pedido => `
-                                <tr><td>#${pedido.pedidoId}</td><td>${formatDate(pedido.fecha)}</td>
+                                <tr><td>#${pedido.pedidoId}</td><td>${formatDate(pedido.fecha)}</td><td>${escapeHtml(pedido.vendedor || "Sin vendedor")}</td>
                                 <td>${formatMoney(pedido.totalVenta)}</td><td>${formatMoney(pedido.montoPagado)}</td>
                                 <td><strong>${formatMoney(pedido.saldoPendiente)}</strong></td><td>${escapeHtml(pedido.estadoPago)}</td></tr>`).join("")}</tbody>
                         </table>
