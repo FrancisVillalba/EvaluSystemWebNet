@@ -4389,8 +4389,8 @@ body.modal-page-body {
 
 .delivery-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .delivery-card {
@@ -4435,6 +4435,49 @@ body.modal-page-body {
   white-space: nowrap;
   font-size: 0.98rem;
 }
+.delivery-card-tags-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.delivery-card-tags-row .delivery-product-tags {
+  flex: 1 1 auto;
+}
+
+.delivery-cash-debt {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 28px;
+  border: 1px solid #ef8d8d;
+  border-radius: 7px;
+  padding: 4px 8px;
+  color: #bd2020;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.delivery-cash-debt-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.delivery-cash-debt strong {
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
 .delivery-order-identity {
   display: flex;
   align-items: center;
@@ -4475,15 +4518,16 @@ body.modal-page-body {
 
 .delivery-card-body {
   display: grid;
-  grid-template-columns: minmax(76px, 0.8fr) minmax(0, 1.6fr);
-  align-items: end;
-  gap: 7px;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: end;
+  gap: 10px;
   height: 100%;
 }
 
 .delivery-card dl {
   display: grid;
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   margin: 0;
 }
 
@@ -4614,7 +4658,7 @@ body.modal-page-body {
 }
 
 .delivery-assigned-cards {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .delivery-card-compact {
@@ -4622,13 +4666,20 @@ body.modal-page-body {
 }
 
 .delivery-card-compact .delivery-card-body {
-  grid-template-columns: minmax(76px, 0.8fr) minmax(0, 1.6fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .delivery-card-side-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
+}
+
+.delivery-card-side-actions button {
+  min-width: 0;
+  padding-right: 7px;
+  padding-left: 7px;
+  white-space: nowrap;
 }
 .delivery-card-created {
   grid-column: 1 / -1;
@@ -4877,8 +4928,13 @@ body.modal-page-body {
   .delivery-card dl {
     grid-template-columns: 1fr;
   }
+  .delivery-card-tags-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .delivery-card-body,
-  .delivery-card-compact .delivery-card-body {
+  .delivery-card-compact .delivery-card-body,
+  .delivery-card-side-actions {
     grid-template-columns: 1fr;
   }
 }
@@ -5201,10 +5257,27 @@ body.modal-page-body {
   min-height: 42px;
 }
 
+.delivery-sale-link {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #9bcfd7;
+  border-radius: 7px;
+  padding: 7px 12px;
+  color: #0c5f72;
+  background: #f4fbfb;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.delivery-sale-link:hover {
+  background: #dff1ef;
+}
+
 @media (width <= 1120px) {
   .delivery-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
 }
 
 @media (width <= 720px) {

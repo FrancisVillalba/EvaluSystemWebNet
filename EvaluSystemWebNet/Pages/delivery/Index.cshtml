@@ -46,6 +46,7 @@
             </select>
         </label>
 
+
         <button id="refresh-delivery" class="delivery-refresh" type="button">
             <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M21 12a9 9 0 0 1-15.5 6.2" />
@@ -120,6 +121,17 @@
     </div>
 </section>
 
+<div id="order-form-modal" class="order-form-modal" hidden>
+    <div class="order-form-modal-backdrop" data-order-modal-close></div>
+    <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-form-modal-title">
+        <header class="order-form-modal-header">
+            <h2 id="order-form-modal-title">Pedido</h2>
+            <button id="order-form-modal-close" type="button" aria-label="Cerrar formulario">&times;</button>
+        </header>
+        <iframe id="order-form-frame" title="Formulario de pedido"></iframe>
+    </section>
+</div>
+
 @section Scripts {
     <script>
         const methods = {
@@ -178,6 +190,10 @@
         const filterClientSelect2Dropdown = document.getElementById("filter-client-select2-dropdown");
         const filterClientSelect2Search = document.getElementById("filter-client-select2-search");
         const filterClientSelect2Options = document.getElementById("filter-client-select2-options");
+        const orderFormModal = document.getElementById("order-form-modal");
+        const orderFormFrame = document.getElementById("order-form-frame");
+        const orderFormModalTitle = document.getElementById("order-form-modal-title");
+        const orderFormModalClose = document.getElementById("order-form-modal-close");
 
         let ordersByMethod = {
             delivery: [],
@@ -191,6 +207,23 @@
         let activeTab = "delivery";
         let activeView = "pending";
         let filterClients = [];
+
+        function openOrderModal(orderId) {
+            orderFormModalTitle.textContent = `Pedido ${orderId}`;
+            orderFormFrame.src = `${window.appUrl("/pedidos/formulario")}?id=${encodeURIComponent(orderId)}&embedded=1`;
+            orderFormModal.hidden = false;
+            document.body.classList.add("is-order-modal-open");
+            orderFormModalClose.focus();
+        }
+
+        function closeOrderModal(shouldRefresh = false) {
+            orderFormModal.hidden = true;
+            orderFormFrame.src = "about:blank";
+            document.body.classList.remove("is-order-modal-open");
+            if (shouldRefresh) {
+                loadDelivery();
+            }
+        }
 
         function localDateValue(date = new Date()) {
             const year = date.getFullYear();
@@ -214,6 +247,18 @@
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return "Sin fecha";
             return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+        }
+
+        function cashDebtMarkup(order) {
+            const isCash = order.esPagoEfectivo === true
+                || String(order.formaPagoId || "").trim().toUpperCase() === "E"
+                || String(order.formaPago || "").toLowerCase().includes("efectivo");
+            if (!isCash) {
+                return "";
+            }
+            const calculatedDebt = Math.max(0, Number(order.totalVenta || 0) - Number(order.montoPagado || 0));
+            const debt = order.montoDeuda == null ? calculatedDebt : Math.max(0, Number(order.montoDeuda));
+            return `<span class="delivery-cash-debt"><span class="delivery-cash-debt-icon" aria-hidden="true">!</span><strong>Deuda Gs. ${debt.toLocaleString("es-PY", { maximumFractionDigits: 0 })}</strong></span>`;
         }
 
         function dateValue(value) {
@@ -368,15 +413,19 @@
                         <span>${escapeHtml(order.estadoVenta || order.estadoVentaId)}</span>
                     </div>
                     <h3>${escapeHtml(order.cliente)}</h3>
-                    ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                    <div class="delivery-card-tags-row">
+                        ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                        ${cashDebtMarkup(order)}
+                    </div>
                     <div class="delivery-card-body">
                         <dl>
                             <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                            <div><dt>Fecha</dt><dd>${escapeHtml(formatDate(order.fechaEntrega))}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
-                            <div class="delivery-card-created"><span>Fecha</span><strong>${escapeHtml(formatDate(order.fechaEntrega))}</strong></div>
                             <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
+                            <button class="delivery-sale-link" type="button" data-sale-id="${order.id}">Ver venta</button>
                             <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
                                 ${method.actionText}
                             </button>
@@ -396,15 +445,19 @@
                         <span>${escapeHtml(order.metodoEntrega || "-")}</span>
                     </div>
                     <h3>${escapeHtml(order.cliente)}</h3>
-                    ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                    <div class="delivery-card-tags-row">
+                        ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                        ${cashDebtMarkup(order)}
+                    </div>
                     <div class="delivery-card-body">
                         <dl>
                             <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
                             <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                            <div><dt>Fecha</dt><dd>${escapeHtml(formatDate(order.fechaEntrega))}</dd></div>
                         </dl>
                         <div class="delivery-card-side-actions">
-                            <div class="delivery-card-created"><span>Fecha</span><strong>${escapeHtml(formatDate(order.fechaEntrega))}</strong></div>
                             <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
+                            <button class="delivery-sale-link" type="button" data-sale-id="${order.id}">Ver venta</button>
                             <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
                         </div>
                     </div>
@@ -477,6 +530,32 @@
             renderAssigned();
         }
 
+        async function enrichPaymentData(orders) {
+            const pendingIds = [...new Set((orders || [])
+                .filter(order => !order.formaPago)
+                .map(order => Number(order.id))
+                .filter(Number.isFinite))];
+
+            await Promise.all(pendingIds.map(async id => {
+                const response = await fetch(`/api/pedidos/${id}`);
+                if (!response.ok) {
+                    return;
+                }
+                const sale = await response.json();
+                const matchingOrders = (orders || []).filter(order => Number(order.id) === id);
+                matchingOrders.forEach(order => {
+                    order.formaPagoId = sale.formaPagoId;
+                    order.formaPago = sale.formaPago;
+                    order.esPagoEfectivo = String(sale.formaPagoId || "").trim().toUpperCase() === "E";
+                    order.esPagoEfectivo = order.esPagoEfectivo
+                        || String(sale.formaPago || "").toLowerCase().includes("efectivo");
+                    order.montoDeuda = order.esPagoEfectivo
+                        ? Math.max(0, Number(sale.totalVenta || 0) - Number(sale.montoPagado || 0))
+                        : 0;
+                });
+            }));
+        }
+
         async function loadDelivery() {
             await withAppLoading("Cargando envio...", async function () {
                 const entries = Object.entries(methods);
@@ -509,6 +588,7 @@
                 myRoutes = routesResponse.ok ? await routesResponse.json() || [] : [];
                 await loadTrackingData();
                 buildClientOptions();
+                await enrichPaymentData(filteredOrdersForActiveTab());
                 renderAvailable();
             });
         }
@@ -682,17 +762,18 @@
             });
         }
 
-        function setActiveTab(tab) {
+        async function setActiveTab(tab) {
             activeTab = methods[tab] ? tab : "delivery";
             selectedCity = "";
             methodFilter.value = activeTab;
             document.querySelectorAll("[data-delivery-tab]").forEach(button => {
                 button.classList.toggle("active", button.dataset.deliveryTab === activeTab);
             });
+            await enrichPaymentData(filteredOrdersForActiveTab());
             renderAvailable();
         }
 
-        function setActiveView(view) {
+        async function setActiveView(view) {
             activeView = view || "pending";
             pendingPanel.hidden = activeView !== "pending";
             assignedPanel.hidden = activeView !== "assigned";
@@ -702,9 +783,36 @@
             });
 
             if (activeView === "assigned") {
+                await enrichPaymentData(myOrders);
                 renderAssigned();
             }
         }
+
+        orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        orderFormModal.addEventListener("click", event => {
+            if (event.target.closest("[data-order-modal-close]")) {
+                closeOrderModal();
+            }
+        });
+        window.addEventListener("message", event => {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+            if (event.data?.type === "order-modal-close") {
+                closeOrderModal();
+            }
+            if (event.data?.type === "order-modal-updated") {
+                loadDelivery();
+            }
+            if (event.data?.type === "order-modal-saved") {
+                closeOrderModal(true);
+            }
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !orderFormModal.hidden) {
+                closeOrderModal();
+            }
+        });
 
         document.getElementById("refresh-delivery").addEventListener("click", loadDelivery);
         document.getElementById("generate-route").addEventListener("click", generateRouteLot);
@@ -758,8 +866,13 @@
 
             const button = event.target.closest("[data-action][data-id]");
             const labelButton = event.target.closest("[data-label-id]");
+            const saleButton = event.target.closest("[data-sale-id]");
             const routePdfButton = event.target.closest("[data-route-pdf-id]");
             const removeButton = event.target.closest("[data-remove-id]");
+            if (saleButton) {
+                openOrderModal(saleButton.dataset.saleId);
+                return;
+            }
             if (removeButton) {
                 removeAssignedOrder(removeButton.dataset.removeId);
                 return;
