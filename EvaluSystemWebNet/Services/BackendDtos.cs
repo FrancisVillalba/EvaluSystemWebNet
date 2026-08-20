@@ -594,6 +594,13 @@ public record VentaImpresionCompletaUpdateRequest(
     string? EstadoVentaId,
     IEnumerable<VentaImpresionDetalleUpdateRequest> Detalles);
 
+public record ActualizarPagoVentaRequest(
+    string FormaPagoId,
+    decimal? MontoPagado,
+    string? EstadoPagadoId,
+    string? ComprobantePago,
+    string? ComprobantePagoNombre);
+
 public record EliminarPedidoRequest(string Observacion);
 
 public record VentaImpresionDetalleUpdateRequest(

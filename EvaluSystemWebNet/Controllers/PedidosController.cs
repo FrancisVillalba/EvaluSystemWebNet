@@ -209,6 +209,22 @@ public class PedidosController : ControllerBase
 
         return Ok(result.Value);
     }
+    [HttpPut("{id:int}/pago")]
+    public async Task<ActionResult<VentaImpresionCabDto>> UpdatePayment(
+        int id,
+        [FromBody] ActualizarPagoVentaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _backendApiClient.PutResultAsync<VentaImpresionCabDto>(
+            $"api/VentasImpresion/{id}/pago",
+            request,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+    }
+
 
     [HttpPut("{id:int}")]
     public async Task<ActionResult<VentaImpresionCabDto>> Update(

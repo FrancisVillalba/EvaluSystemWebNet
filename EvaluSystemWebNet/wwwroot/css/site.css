@@ -1061,6 +1061,10 @@ body.modal-page-body {
   padding-top: 0;
 }
 
+.payment-group {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .order-data-group {
   grid-template-columns: minmax(190px, 1.05fr) minmax(190px, 1.05fr) minmax(170px, 0.95fr) minmax(118px, 0.42fr);
 }
@@ -1088,6 +1092,10 @@ body.modal-page-body {
 }
 
 .entry-fields .notes-field {
+  grid-column: 1 / -1;
+}
+
+.entry-fields .payment-group .compact-proof-field {
   grid-column: 1 / -1;
 }
 
@@ -1837,7 +1845,11 @@ body.modal-page-body {
     grid-template-columns: 1fr;
   }
 
-  .entry-fields .compact-proof-field {
+  .entry-fields .payment-group .compact-proof-field {
+  grid-column: 1 / -1;
+}
+
+.entry-fields .compact-proof-field {
     grid-column: 1 / -1;
   }
 
@@ -5625,3 +5637,38 @@ body.modal-page-body {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+.payment-register-action {
+  align-self: end;
+  width: 100%;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #087386;
+  border-radius: 8px;
+  background: #087386;
+  color: #fff;
+  font-weight: 800;
+  padding: 9px 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 7px 16px rgba(8, 115, 134, 0.16);
+}
+
+.payment-register-action:hover {
+  background: #056477;
+  transform: translateY(-1px);
+}
+
+.payment-register-action svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+

@@ -77,6 +77,15 @@
                                     <input id="paid-amount" inputmode="numeric" placeholder="0" />
                                 </label>
 
+                                <button id="register-payment-action" class="payment-register-action" type="button" hidden>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M4 6h14a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h13"></path>
+                                        <path d="M16 11h6v4h-6a2 2 0 0 1 0-4Z"></path>
+                                        <path d="M17 13h.01"></path>
+                                    </svg>
+                                    <span>Registrar pago</span>
+                                </button>
+
                                 <div class="field payment-proof-field compact-proof-field">
                                     <label for="payment-proof">Comprobantes de pago</label>
                                     <div class="file-control payment-proof-control">
@@ -241,6 +250,7 @@
         const paymentStatusSelect = document.getElementById("payment-status");
         const saleStatusSelect = document.getElementById("order-sale-status");
         const stateSaveAction = document.getElementById("state-save-action");
+        const registerPaymentAction = document.getElementById("register-payment-action");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
         const orderBudgetAction = document.getElementById("order-budget-action");
@@ -956,6 +966,7 @@
             loadPaymentProofs(order.proofPath || "", order.proofName || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
+            registerPaymentAction.hidden = !order.id;
             renderDetails();
         }
 
@@ -1037,6 +1048,76 @@
             return await response.json();
         }
 
+
+        async function preparePaymentProofsForSave(payload) {
+            for (const proof of paymentProofs) {
+                if (!proof.file) continue;
+                const uploaded = await uploadFile(proof.file, "comprobantes-pago");
+                proof.path = uploaded.ruta || "";
+                proof.name = uploaded.nombreDescarga || uploaded.nombreOriginal || proof.file.name;
+                proof.file = null;
+                proof.url = downloadUrl(proof.path, proof.name);
+            }
+
+            payload.comprobantePago = serializedProofs("path");
+            payload.comprobantePagoNombre = serializedProofs("name");
+            if ((payload.comprobantePago?.length || 0) > 5000 || (payload.comprobantePagoNombre?.length || 0) > 255) {
+                throw new Error("Los comprobantes superan el limite permitido. Quite archivos o use nombres mas cortos.");
+            }
+        }
+
+        async function registerPayment() {
+            if (!orderId) {
+                showToast("Primero debe guardar el pedido.", "error");
+                return;
+            }
+
+            const payload = {
+                formaPagoId: paymentMethodSelect.value,
+                montoPagado: numberValue(document.getElementById("paid-amount").value),
+                estadoPagadoId: paymentStatusSelect.value || null,
+                comprobantePago: serializedProofs("path"),
+                comprobantePagoNombre: serializedProofs("name")
+            };
+
+            if (!payload.formaPagoId) {
+                showToast("Seleccione la forma de pago.", "error");
+                paymentMethodSelect.focus();
+                return;
+            }
+
+            if (isPaidStatusSelected(payload.estadoPagadoId)
+                && !isCashPaymentSelected(payload.formaPagoId)
+                && paymentProofs.length === 0) {
+                showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
+                return;
+            }
+
+            let response;
+            try {
+                response = await withAppLoading("Registrando pago...", async function () {
+                    await preparePaymentProofsForSave(payload);
+                    return await fetch(`/api/pedidos/${orderId}/pago`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                });
+            } catch (error) {
+                showToast(error?.message || "No se pudo cargar el comprobante.", "error");
+                return;
+            }
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo registrar el pago.", "error");
+                return;
+            }
+
+            loadOrder(await response.json());
+            notifyEmbeddedUpdated();
+            showToast("Pago registrado correctamente.", "success");
+        }
         async function prepareFilesForSave(payload) {
             for (const proof of paymentProofs) {
                 if (!proof.file) continue;
@@ -1283,6 +1364,7 @@
         }
 
         orderBudgetAction.addEventListener("click", downloadBudgetPdf);
+        registerPaymentAction.addEventListener("click", registerPayment);
 
         stateSaveAction.addEventListener("click", async function () {
             await saveOrder();
