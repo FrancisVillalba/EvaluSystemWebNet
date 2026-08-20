@@ -944,7 +944,18 @@
             renderSaleStatusOptions(saleStatusSelect.value);
         }
 
+        let persistedPayment = null;
+
         function loadOrder(order) {
+            if (order.id) {
+                persistedPayment = {
+                    formaPagoId: order.formaPagoId || "",
+                    montoPagado: order.montoPagado ?? 0,
+                    estadoPagadoId: order.estadoPagadoId || null,
+                    comprobantePago: order.comprobantePago || null,
+                    comprobantePagoNombre: order.comprobantePagoNombre || null
+                };
+            }
             document.getElementById("order-id").value = order.id || "";
             document.getElementById("order-date").value = order.date || today;
             document.getElementById("order-status").value = order.status || "Cargado";
@@ -1225,13 +1236,13 @@
 
             const payload = {
                 clienteId: Number(clientSelect.value),
-                formaPagoId: paymentMethodSelect.value,
+                formaPagoId: persistedPayment?.formaPagoId || paymentMethodSelect.value,
                 vendedorId: Number(sellerSelect.value),
-                montoPagado: numberValue(document.getElementById("paid-amount").value),
-                estadoPagadoId: paymentStatusSelect.value || null,
+                montoPagado: persistedPayment?.montoPagado ?? 0,
+                estadoPagadoId: persistedPayment?.estadoPagadoId || null,
                 fechaEntrega: document.getElementById("order-delivery").value || null,
-                comprobantePago: serializedProofs("path"),
-                comprobantePagoNombre: serializedProofs("name"),
+                comprobantePago: persistedPayment?.comprobantePago || null,
+                comprobantePagoNombre: persistedPayment?.comprobantePagoNombre || null,
                 observacion: document.getElementById("order-notes").value || null,
                 reposicion: document.getElementById("order-reposicion").checked,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
@@ -1272,14 +1283,6 @@
             if (isMovingFromCargaToImpresion(payload.estadoVentaId) && details.some(detail => !detail.designName)) {
                 saleStatusSelect.value = headerStateId;
                 showToast("Para enviar a impresion debe adjuntar el diseno en todos los detalles.", "error");
-                return;
-            }
-
-            if (isPaidStatusSelected(payload.estadoPagadoId)
-                && !isCashPaymentSelected(payload.formaPagoId)
-                && paymentProofs.length === 0) {
-                saleStatusSelect.value = headerStateId;
-                showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
                 return;
             }
 
