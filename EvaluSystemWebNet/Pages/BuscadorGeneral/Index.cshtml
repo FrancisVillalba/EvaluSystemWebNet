@@ -1,8 +1,8 @@
-@page
+@page "/buscador-general"
 @{
     Layout = "_AppLayout";
-    ViewData["Title"] = "Pedidos";
-    ViewData["ActiveMenu"] = "pedidos";
+    ViewData["Title"] = "Buscador general";
+    ViewData["ActiveMenu"] = "buscador-general";
     ViewData["ShellClass"] = "orders-shell";
 }
 
@@ -14,17 +14,10 @@
             <section class="orders-panel">
                 <div class="orders-panel-heading">
                     <div>
-                        <h2>Pedidos cargados</h2>
+                        <h2>Buscador general</h2>
                         <p id="order-count">0 pedidos encontrados</p>
                     </div>
                     <div class="panel-heading-actions">
-                        <button class="orders-primary" type="button" onclick="openOrder()">
-                            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <path d="M12 5v14" />
-                                <path d="M5 12h14" />
-                            </svg>
-                            <span>Cargar pedido</span>
-                        </button>
                         <button id="download-orders-excel" class="orders-export" type="button">
                             <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                 <path d="M14 3v4a2 2 0 0 0 2 2h4" />
@@ -86,15 +79,6 @@
                     </label>
                 </section>
 
-                <div id="seller-orders-tabs" class="orders-tabs" hidden>
-                    <button class="active" type="button" data-orders-tab="summary">Resumen</button>
-                    <button type="button" data-orders-tab="sales">Ventas</button>
-                </div>
-
-                <section id="seller-orders-summary-tab" class="orders-tab-panel" hidden>
-                    <div id="seller-orders-summary" class="seller-orders-summary"></div>
-                </section>
-
                 <section id="seller-orders-sales-tab" class="orders-tab-panel">
                     <div class="orders-table-wrap">
                         <table class="orders-table team-sales-table orders-financial-table">
@@ -105,6 +89,7 @@
                                     <th>Cliente</th>
                                     <th>Vendedor</th>
                                     <th>Metros</th>
+                                                                        <th>Reposición</th>
                                     <th>Estado</th>
                                     <th>Usuario entrega</th>
                                     <th>Total venta</th>
@@ -170,6 +155,9 @@
         }
 
         const today = localDateValue();
+        const twoMonthsAgoDate = new Date();
+        twoMonthsAgoDate.setMonth(twoMonthsAgoDate.getMonth() - 2);
+        const twoMonthsAgo = localDateValue(twoMonthsAgoDate);
         let orders = [];
         let currentPage = 1;
         let pageSize = 10;
@@ -178,15 +166,11 @@
         let filterClients = [];
         let currentUserId = null;
         let canViewAllOrders = false;
-        let canViewUserSales = false;
         let ordersRequestId = 0;
 
         const body = document.getElementById("orders-body");
         const count = document.getElementById("order-count");
-        const sellerOrdersTabs = document.getElementById("seller-orders-tabs");
-        const sellerOrdersSummaryTab = document.getElementById("seller-orders-summary-tab");
         const sellerOrdersSalesTab = document.getElementById("seller-orders-sales-tab");
-        const sellerOrdersSummary = document.getElementById("seller-orders-summary");
         const dateFrom = document.getElementById("filter-date-from");
         const dateTo = document.getElementById("filter-date-to");
         const clientFilter = document.getElementById("filter-client");
@@ -314,18 +298,19 @@
 
         function renderOrders() {
             if (!orders.length) {
-                body.innerHTML = `<tr><td colspan="10">No hay pedidos para los filtros seleccionados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="11">No hay pedidos para los filtros seleccionados.</td></tr>`;
             } else {
                 body.innerHTML = orders.map(order => {
                     const details = Array.isArray(order.details) ? order.details : [];
                     const sellerName = shortPersonName(order.seller) || order.seller || "-";
                     return `
-                <tr class="${order.reposicion ? "order-replacement-row" : ""}">
+                <tr>
                     <td>${escapeHtml(order.id)}</td>
                     <td>${escapeHtml(order.date)}</td>
                     <td class="orders-strong">${escapeHtml(order.client)}</td>
                     <td><span class="orders-seller ${sellerColorClass(order.seller)}">${escapeHtml(sellerName)}</span></td>
                     <td>${escapeHtml(metersFromDetails(details))}</td>
+                                        <td><span class="general-replacement-${order.reposicion ? "yes" : "no"}">${order.reposicion ? "Sí" : "No"}</span></td>
                     <td>${detailStatesMarkup(details)}</td>
                     <td>${escapeHtml(shortPersonName(order.deliveryUser) || "-")}</td>
                     <td class="team-sale-money team-sale-total">${formatMoney(order.totalVenta)}</td>
@@ -333,7 +318,6 @@
                     <td class="orders-actions">
                         <div class="orders-actions-inner">
                             <button class="orders-edit" type="button" onclick="openOrder('${escapeHtml(order.id)}')">Ver</button>
-                            <button class="orders-edit order-flow-button" type="button" onclick="openOrderFlow('${escapeHtml(order.id)}')">Flujo</button>
                         </div>
                     </td>
                 </tr>
@@ -363,7 +347,7 @@
             flowTitle.textContent = `Flujo del pedido #${orderId}`;
             flowContent.innerHTML = `<div class="empty-state">Cargando historial...</div>`;
             flowModal.hidden = false;
-            const response = await fetch(`/api/pedidos/${orderId}/flujo`);
+            const response = await fetch(`/api/buscadorGeneral/${orderId}/flujo`);
             if (!response.ok) {
                 const error = await response.json().catch(() => null);
                 flowContent.innerHTML = `<div class="empty-state">${escapeHtml(error?.message || "No se pudo cargar el flujo del pedido.")}</div>`;
@@ -382,49 +366,6 @@
                         ${event.comentario ? `<div class="order-flow-comment"><b>Comentario:</b> ${escapeHtml(event.comentario)}</div>` : ""}
                     </div>
                 </article>`).join("") : `<div class="empty-state">Este pedido todavía no tiene eventos registrados.</div>`;
-        }
-        function renderUserSalesSummary(data) {
-            if (!data?.puedeVerVentasUsuario) {
-                sellerOrdersSummary.innerHTML = "";
-                return;
-            }
-
-            const totals = data.totales || {};
-            sellerOrdersSummary.innerHTML = `
-                <div class="seller-summary-metrics">
-                    <article class="summary-card-orders">
-                        <span>Pedidos</span>
-                        <strong>${formatMoney(totals.cantidadPedidos)}</strong>
-                    </article>
-                    <article class="summary-card-sales">
-                        <span>Total venta</span>
-                        <strong>${formatMoney(totals.totalVenta)}</strong>
-                    </article>
-                    <article class="summary-card-meters">
-                        <span>Metros</span>
-                        <strong>${Number(totals.totalMetros || 0).toLocaleString("es-PY", { maximumFractionDigits: 2 })}</strong>
-                    </article>
-                    <article class="summary-card-commission">
-                        <span>Total comision</span>
-                        <strong>${formatMoney(totals.totalComision)}</strong>
-                    </article>
-                </div>`;
-        }
-
-        async function loadUserSalesSummary() {
-            if (!canViewUserSales) {
-                return;
-            }
-
-            const params = buildFilterParams();
-
-            const response = await fetch(`/api/pedidos/mis-ventas?${params}`);
-            if (!response.ok) {
-                showToast("No se pudo cargar el resumen de ventas.", "error");
-                return;
-            }
-
-            renderUserSalesSummary(await response.json());
         }
 
         function openOrder(id = "") {
@@ -522,7 +463,7 @@
 
         async function loadFilterOptions() {
             await withAppLoading("Cargando filtros...", async function () {
-                const response = await fetch("/api/pedidos/opciones");
+                const response = await fetch(`/api/buscadorGeneral/opciones`);
                 if (!response.ok) {
                     showToast("No se pudieron cargar los filtros desde la base de datos.", "error");
                     return;
@@ -532,10 +473,6 @@
                 filterClients = options.clientes || [];
                 currentUserId = options.usuarioActualId || null;
                 canViewAllOrders = options.puedeVerTodosPedidos === true;
-                canViewUserSales = options.puedeVerVentasUsuario === true;
-                sellerOrdersTabs.hidden = !canViewUserSales;
-                sellerOrdersSummaryTab.hidden = !canViewUserSales;
-                sellerOrdersSalesTab.hidden = canViewUserSales;
                 clientFilter.innerHTML = optionMarkup(filterClients, "id", "nombre");
                 updateFilterClientSelect2Label();
                 renderFilterClientSelect2Options();
@@ -556,7 +493,7 @@
             await withAppLoading("Cargando pedidos...", async function () {
                 const params = buildOrderParams(currentPage, pageSize);
 
-                const response = await fetch(`/api/pedidos?${params.toString()}`);
+                const response = await fetch(`/api/buscadorGeneral?${params.toString()}`);
                 if (!response.ok) {
                     showToast("No se pudo cargar pedidos. Verifique que la API EvaluSystemBack este levantada y que haya iniciado sesion.", "error");
                     return;
@@ -577,13 +514,12 @@
                 }
 
                 renderOrders();
-                await loadUserSalesSummary();
             });
         }
 
         async function downloadFilteredOrdersExcel() {
             await withAppLoading("Preparando Excel...", async function () {
-                const response = await fetch(`/api/pedidos/exportar-excel?${buildFilterParams().toString()}`);
+                const response = await fetch(`/api/buscadorGeneral/exportar-excel?${buildFilterParams().toString()}`);
                 if (!response.ok) {
                     showToast("No se pudo preparar el Excel de pedidos.", "error");
                     return;
@@ -625,14 +561,6 @@
         });
 
         downloadOrdersExcelButton.addEventListener("click", downloadFilteredOrdersExcel);
-        sellerOrdersTabs.querySelectorAll("button").forEach(button => {
-            button.addEventListener("click", function () {
-                sellerOrdersTabs.querySelectorAll("button").forEach(item => item.classList.remove("active"));
-                button.classList.add("active");
-                sellerOrdersSummaryTab.hidden = button.dataset.ordersTab !== "summary";
-                sellerOrdersSalesTab.hidden = button.dataset.ordersTab !== "sales";
-            });
-        });
         orderFormModalClose.addEventListener("click", () => closeOrderModal(true));
         document.getElementById("flow-close").addEventListener("click", closeOrderFlow);
         document.getElementById("flow-close-footer").addEventListener("click", closeOrderFlow);
@@ -704,8 +632,7 @@
                 loadOrders();
             });
         });
-
-        dateFrom.value = today;
+        dateFrom.value = twoMonthsAgo;
         dateTo.value = today;
         loadFilterOptions().then(loadOrders);
     </script>

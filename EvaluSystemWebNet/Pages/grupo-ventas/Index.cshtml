@@ -266,7 +266,7 @@
 
             salesBody.innerHTML = pageItems.length
                 ? pageItems.map(item => `
-                    <tr>
+                    <tr class="${item.reposicion ? "order-replacement-row" : ""}">
                         <td><strong class="team-sale-order">#${item.pedidoId}</strong></td>
                         <td>${formatDate(item.fecha)}</td>
                         <td><span class="orders-seller ${sellerColorClass(item.vendedor)}">${escapeHtml(item.vendedor)}</span></td>

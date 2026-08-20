@@ -32,6 +32,7 @@
                 </div>
                 <div class="panel-heading-actions">
                     <span id="machine-count" class="delivery-route-count">0 archivos</span>
+                    <span id="machine-meters" class="delivery-route-count print-meters-count">0 m</span>
                     <button id="refresh-print-files-panel" class="admin-primary" type="button">Actualizar</button>
                 </div>
             </div>
@@ -96,6 +97,7 @@
         const machineMenu = document.getElementById("machine-menu");
         const machineTitle = document.getElementById("machine-title");
         const machineCount = document.getElementById("machine-count");
+        const machineMeters = document.getElementById("machine-meters");
         const tableBody = document.getElementById("print-files-body");
         const search = document.getElementById("print-search");
         const dateFrom = document.getElementById("print-date-from");
@@ -233,6 +235,8 @@
             const selectedMachineData = getMachineGroups().find(machine => machine.id === selectedMachine);
             machineTitle.textContent = selectedMachineData?.name || "Maquina";
             machineCount.textContent = `${rows.length} archivos`;
+            const totalMeters = rows.reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+            machineMeters.textContent = `${formatQuantity(totalMeters)} m`;
             tableBody.innerHTML = rows.length
                 ? rows.map(item => `
                     <tr>

@@ -240,7 +240,40 @@
 .order-flow-event-heading time { color: #63788b; font-size: 12px; white-space: nowrap; }
 .order-flow-event-card p { margin: 5px 0; color: #496273; font-size: 14px; }
 .order-flow-comment { margin-top: 10px; border-left: 3px solid #d7901f; border-radius: 4px; background: #fff7e8; padding: 10px 12px; color: #664b1e; font-size: 14px; }
-.orders-actions-inner { display: flex; justify-content: flex-end; gap: 7px; }
+.orders-actions-inner { display: flex; justify-content: flex-end; gap: 4px; }
+.orders-icon-action {
+  width: 30px;
+  height: 28px;
+  min-width: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.orders-icon-action svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.order-replacement-yes { color: #c62828; font-weight: 800; }
+.order-replacement-no { color: #111827; font-weight: 700; }
+.general-replacement-yes { color: #c62828; font-weight: 800; }
+.general-replacement-no { color: #15803d; font-weight: 800; }
+.orders-table tbody tr.order-replacement-row > td {
+  background: #fff1f2;
+  border-top-color: #fecdd3;
+  border-bottom-color: #fecdd3;
+}
+.orders-table tbody tr.order-replacement-row > td:first-child {
+  box-shadow: inset 4px 0 0 #e53935;
+}
+.orders-table tbody tr.order-replacement-row:hover > td {
+  background: #ffe4e6;
+}
 .order-flow-button { color: #65429a; background: #f0e9fb; }
 
 @media (width <= 620px) {
@@ -270,4 +303,20 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+.admin-table tbody tr.order-replacement-row > td {
+  background: #fff1f2;
+  border-top-color: #fecdd3;
+  border-bottom-color: #fecdd3;
+}
+.admin-table tbody tr.order-replacement-row > td:first-child {
+  box-shadow: inset 4px 0 0 #e53935;
+}
+.admin-table tbody tr.order-replacement-row:hover > td {
+  background: #ffe4e6;
+}
+.print-meters-count {
+  color: #166534;
+  background: #e8f7ed;
+  border-color: #b7e3c4;
 }
