@@ -12,7 +12,7 @@
             <button class="active" type="button" data-report-module="commissions">Comisiones</button>
             <button type="button" data-report-module="payment-lots">Pagos generados</button>
             <button type="button" data-report-module="shipping">Envio de pedidos</button>
-            <button type="button" data-report-module="customer-debt">Clientes con deuda</button>
+            <button type="button" data-report-module="customer-debt">Ventas de clientes</button>
             <button type="button" data-report-module="management-summary">Resumen gerencial</button>
         </aside>
 
@@ -56,6 +56,7 @@
         const debtDateToInput = document.getElementById("debt-date-to");
         const debtClientInput = document.getElementById("debt-client");
         const debtStatusInput = document.getElementById("debt-status");
+        const debtSellerInput = document.getElementById("debt-seller");
         const customerDebtKpis = document.getElementById("customer-debt-kpis");
         const customerDebtBody = document.getElementById("customer-debt-body");
         const sellerUserNames = new Map();
@@ -242,15 +243,16 @@
             if (debtDateToInput.value) params.set("dateTo", debtDateToInput.value);
             if (debtClientInput.value.trim()) params.set("cliente", debtClientInput.value.trim());
             if (debtStatusInput.value) params.set("estadoPago", debtStatusInput.value);
+            if (debtSellerInput.value) params.set("vendedorId", debtSellerInput.value);
             return params;
         }
 
         async function loadCustomerDebtReport() {
-            await withAppLoading("Cargando clientes con deuda...", async function () {
+            await withAppLoading("Cargando ventas de clientes...", async function () {
                 const response = await fetch(`/api/reportes/clientes-deuda?${buildCustomerDebtParams().toString()}`);
                 if (!response.ok) {
                     const error = await response.json().catch(() => null);
-                    showToast(error?.message || "No se pudo cargar el reporte de clientes con deuda.", "error");
+                    showToast(error?.message || "No se pudo cargar el reporte de ventas de clientes.", "error");
                     return;
                 }
                 renderCustomerDebtReport(await response.json());
@@ -284,6 +286,9 @@
                 profileFilter.value = String(salesProfile.id);
             }
             renderSellerFilter();
+            debtSellerInput.innerHTML = `<option value="">Todos</option>` + reportCommissionOptions.usuarios
+                .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
+                .join("");
         }
 
         function renderSellerFilter() {
@@ -469,7 +474,7 @@
                         <td>${lot.id}</td>
                         <td>${formatDateTime(lot.fechaGeneracion)}</td>
                         <td>${formatDate(lot.fechaDesde)} al ${formatDate(lot.fechaHasta)}</td>
-                        <td>${escapeHtml(lot.vendedor || "Todos")}</td>
+                        <td>${escapeHtml(lot.vendedor ? firstNameFirstSurname(lot.vendedor) : "Todos")}</td>
                         <td><strong>${escapeHtml(lot.perfil || "Sin especificar")}</strong></td>
                         <td>${lot.cantidadPersonas}</td>
                         <td>${formatMoney(lot.montoTotal)}</td>
@@ -715,7 +720,7 @@
         shippingClientInput.addEventListener("input", () => debounceReportFilter(loadShippingReport));
         [managementDateFromInput, managementDateToInput]
             .forEach(input => input.addEventListener("change", loadManagementSummary));
-        [debtDateFromInput, debtDateToInput, debtStatusInput]
+        [debtDateFromInput, debtDateToInput, debtStatusInput, debtSellerInput]
             .forEach(input => input.addEventListener("change", loadCustomerDebtReport));
         debtClientInput.addEventListener("input", () => debounceReportFilter(loadCustomerDebtReport));
         document.getElementById("download-bank-txt").addEventListener("click", () => downloadReport("txt", sellerFilter.value, sellerFilter.selectedOptions[0]?.textContent || "todos"));

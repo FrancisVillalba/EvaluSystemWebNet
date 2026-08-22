@@ -1,8 +1,8 @@
 <section id="customer-debt-panel" class="reports-panel" hidden>
     <div class="reports-panel-header">
         <div>
-            <h2>Clientes con pendientes de pago</h2>
-            <p>Pedidos en estado Pendiente de pago o Pago parcial.</p>
+            <h2>Ventas de clientes</h2>
+            <p>Ventas pagadas, parciales y pendientes de pago.</p>
         </div>
     </div>
 
@@ -13,17 +13,21 @@
         <label for="debt-status">
             Estado de pago
             <select id="debt-status">
-                <option value="">Pendiente y parcial</option>
-                <option value="P1">Pendiente de pago</option>
-                <option value="P2">Pago parcial</option>
+                <option value="">Todos</option>
+                <option value="P3">Pagado</option>
+                <option value="PENDIENTE_PARCIAL">Parcial y pendiente</option>
             </select>
+        </label>
+        <label for="debt-seller">
+            Vendedor
+            <select id="debt-seller"><option value="">Todos</option></select>
         </label>
     </div>
 
     <div id="customer-debt-kpis" class="reports-summary"></div>
 
     <div class="reports-table-wrap">
-        <h3 class="reports-table-title">Detalle por cliente</h3>
+        <h3 class="reports-table-title">Ventas por cliente</h3>
         <table class="reports-table">
             <thead>
                 <tr>
@@ -40,8 +44,8 @@
     function renderCustomerDebtReport(report) {
         const clientes = report.clientes || [];
         customerDebtKpis.innerHTML = `
-            <article><div class="reports-card-info"><span>Deuda total</span><strong>${formatMoney(report.deudaTotal)}</strong><small>Saldo por cobrar</small></div></article>
-            <article><div class="reports-card-info"><span>Clientes con deuda</span><strong>${report.cantidadClientes || 0}</strong><small>${report.cantidadPedidos || 0} pedidos</small></div></article>
+            <article><div class="reports-card-info"><span>Saldo pendiente</span><strong>${formatMoney(report.deudaTotal)}</strong><small>Saldo por cobrar</small></div></article>
+            <article><div class="reports-card-info"><span>Clientes</span><strong>${report.cantidadClientes || 0}</strong><small>${report.cantidadPedidos || 0} pedidos</small></div></article>
             <article><div class="reports-card-info"><span>Total pagado</span><strong>${formatMoney(report.totalPagado)}</strong><small>De ${formatMoney(report.totalVendido)} vendidos</small></div></article>`;
         customerDebtBody.innerHTML = clientes.length
             ? clientes.map(cliente => `
@@ -64,7 +68,7 @@
                         </table>
                     </td>
                 </tr>`).join("")
-            : `<tr><td colspan="9">No hay clientes con pagos pendientes o parciales para los filtros seleccionados.</td></tr>`;
+            : `<tr><td colspan="9">No hay ventas de clientes para los filtros seleccionados.</td></tr>`;
     }
 
     document.getElementById("customer-debt-body").addEventListener("click", event => {

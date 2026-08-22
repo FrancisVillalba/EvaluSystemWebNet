@@ -136,6 +136,7 @@ public class ReportesController : ControllerBase
         [FromQuery] DateTime? dateTo = null,
         [FromQuery] string? cliente = null,
         [FromQuery] string? estadoPago = null,
+        [FromQuery] int? vendedorId = null,
         CancellationToken cancellationToken = default)
     {
         var filters = new List<string>();
@@ -143,6 +144,7 @@ public class ReportesController : ControllerBase
         if (dateTo.HasValue) filters.Add($"dateTo={dateTo.Value:yyyy-MM-dd}");
         if (!string.IsNullOrWhiteSpace(cliente)) filters.Add($"cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(estadoPago)) filters.Add($"estadoPago={Uri.EscapeDataString(estadoPago)}");
+        if (vendedorId.HasValue) filters.Add($"vendedorId={vendedorId.Value}");
 
         var result = await _backendApiClient.GetResultAsync<ReporteClientesDeudaDto>(
             $"api/Reportes/clientes-deuda?{string.Join("&", filters)}",
@@ -152,7 +154,7 @@ public class ReportesController : ControllerBase
             ? Ok(result.Value)
             : StatusCode(StatusCodes.Status502BadGateway, new
             {
-                message = result.ErrorMessage ?? "No se pudo cargar el reporte de clientes con deuda."
+                message = result.ErrorMessage ?? "No se pudo cargar el reporte de ventas de clientes."
             });
     }
 

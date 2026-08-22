@@ -1125,7 +1125,7 @@
                 return;
             }
 
-            loadOrder(await response.json());
+            await reloadCurrentOrder();
             notifyEmbeddedUpdated();
             showToast("Pago registrado correctamente.", "success");
         }
