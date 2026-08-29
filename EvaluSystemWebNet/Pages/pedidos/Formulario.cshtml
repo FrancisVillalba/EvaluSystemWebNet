@@ -74,10 +74,10 @@
 
                                 <label class="field" for="paid-amount">
                                     Monto pagado
-                                    <input id="paid-amount" inputmode="numeric" placeholder="0" />
+                                    <input id="paid-amount" inputmode="numeric" placeholder="0" readonly aria-readonly="true" title="Se calcula a partir de los pagos registrados" />
                                 </label>
 
-                                <button id="register-payment-action" class="payment-register-action" type="button" hidden>
+                                <button id="register-payment-action" class="payment-register-action" type="button" disabled title="Guarde el pedido antes de registrar un pago">
                                     <svg viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M4 6h14a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h13"></path>
                                         <path d="M16 11h6v4h-6a2 2 0 0 1 0-4Z"></path>
@@ -86,8 +86,14 @@
                                     <span>Registrar pago</span>
                                 </button>
 
-                                <div class="field payment-history-field">
-                                    <div class="payment-history-heading"><span>Pagos registrados</span></div>
+                                <div class="payment-history-field">
+                                    <div class="payment-history-heading">
+                                        <div>
+                                            <span>Pagos registrados</span>
+                                            <small>Historial de movimientos del pedido</small>
+                                        </div>
+                                        <strong id="payment-history-count" class="payment-history-count">0 pagos</strong>
+                                    </div>
                                     <div class="payment-history-table-wrap">
                                         <table class="payment-history-table">
                                             <thead><tr><th>Fecha</th><th>Forma de pago</th><th>Monto</th><th>Comprobante</th><th>Usuario</th><th></th></tr></thead>
@@ -162,9 +168,9 @@
                     </div>
                 </section>
 
-                <section class="entry-section" aria-label="Detalle de productos y disenos">
+                <section class="entry-section" aria-label="Detalle de productos y diseños">
                     <div class="section-title detail-title">
-                        <span>Detalle de productos y disenos</span>
+                        <span>Detalle de productos y diseños</span>
                         <button type="button" id="add-detail-button">+ Agregar detalle</button>
                     </div>
 
@@ -187,7 +193,7 @@
             <div>
                 <span class="payment-modal-eyebrow">Pago del pedido</span>
                 <h2>Registrar pago</h2>
-                <p>El monto se agregar� al total pagado acumulado.</p>
+                <p>El monto se agregará al total pagado acumulado.</p>
             </div>
             <button id="payment-modal-close" class="payment-modal-close" type="button" aria-label="Cerrar">&times;</button>
         </header>
@@ -212,12 +218,12 @@
             </div>
 
             <div class="field payment-modal-proof">
-                <label for="modal-payment-proof">Comprobante de pago</label>
+                <label id="modal-payment-proof-label" for="modal-payment-proof">Comprobante de pago</label>
                 <div class="payment-modal-file-control">
                     <input id="modal-payment-proof" type="file" accept="image/*,.pdf" />
-                    <label for="modal-payment-proof">Agregar archivos</label>
+                    <label for="modal-payment-proof">Seleccionar archivo</label>
                 </div>
-                <span id="modal-payment-proof-name" class="payment-modal-proof-name">Sin comprobantes adjuntos</span>
+                <span id="modal-payment-proof-name" class="payment-modal-proof-name">Sin comprobante adjunto</span>
             </div>
         </div>
 
@@ -287,6 +293,7 @@
         const proofInput = document.getElementById("payment-proof");
         const proofList = document.getElementById("payment-proof-list");
         const paymentHistoryBody = document.getElementById("payment-history-body");
+        const paymentHistoryCount = document.getElementById("payment-history-count");
         const clientSelect = document.getElementById("order-client");
         const clientSelect2 = document.getElementById("client-select2");
         const clientSelect2Button = document.getElementById("client-select2-button");
@@ -308,6 +315,7 @@
         const modalPaidAmount = document.getElementById("modal-paid-amount");
         const modalPaymentProof = document.getElementById("modal-payment-proof");
         const modalPaymentProofName = document.getElementById("modal-payment-proof-name");
+        const modalPaymentProofLabel = document.getElementById("modal-payment-proof-label");
         const paymentModalCurrentTotal = document.getElementById("payment-modal-current-total");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
@@ -746,7 +754,7 @@
                             <button type="button" class="admin-secondary" data-remove-proof="${index}">Quitar</button>
                         </div>
                     </div>`).join("")
-                : `<span class="file-control-name">Sin comprobantes adjuntos</span>`;
+                : `<span class="file-control-name">Sin comprobante adjunto</span>`;
         }
 
         function removePaymentProof(index) {
@@ -773,7 +781,16 @@
 
         function paymentDate(value) {
             if (!value) return "";
-            return new Intl.DateTimeFormat("es-PY", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+            const parts = new Intl.DateTimeFormat("es-PY", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23"
+            }).formatToParts(new Date(value));
+            const part = type => parts.find(item => item.type === type)?.value || "";
+            return `${part("day")}/${part("month")}/${part("year")} ${part("hour")}:${part("minute")}`;
         }
 
         async function loadPaymentHistory() {
@@ -785,6 +802,7 @@
             }
 
             const payments = await response.json();
+            paymentHistoryCount.textContent = `${payments.length} ${payments.length === 1 ? "pago" : "pagos"}`;
             paymentHistoryBody.innerHTML = payments.length
                 ? payments.map(payment => `
                     <tr>
@@ -792,16 +810,25 @@
                         <td>${escapeHtml(paymentMethodName(payment.formaPagoId))}</td>
                         <td class="payment-history-amount">Gs. ${Number(payment.monto || 0).toLocaleString("es-PY")}</td>
                         <td>${payment.rutaComprobante
-                            ? `<a class="payment-history-download" href="${escapeHtml(downloadUrl(payment.rutaComprobante, payment.nombreComprobante))}" download="${escapeHtml(payment.nombreComprobante || "comprobante")}">${escapeHtml(payment.nombreComprobante || "Descargar")}</a>`
+                            ? `<a class="payment-history-download" href="${escapeHtml(downloadUrl(payment.rutaComprobante, payment.nombreComprobante))}" download="${escapeHtml(payment.nombreComprobante || "comprobante")}" aria-label="Descargar ${escapeHtml(payment.nombreComprobante || "comprobante")}" title="${escapeHtml(payment.nombreComprobante || "Descargar comprobante")}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
+                                    <span>Descargar</span>
+                               </a>`
                             : `<span class="payment-history-no-proof">Sin comprobante</span>`}</td>
                         <td>${escapeHtml(paymentUserName(payment.usuarioId))}</td>
-                        <td><button class="payment-history-delete" type="button" data-delete-payment="${payment.id}">Eliminar</button></td>
+                        <td><button class="payment-history-delete" type="button" data-delete-payment="${payment.id}" aria-label="Eliminar pago" title="Eliminar pago"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></td>
                     </tr>`).join("")
                 : `<tr><td colspan="6" class="payment-history-empty">Sin pagos registrados</td></tr>`;
         }
 
         async function deletePayment(paymentId) {
-            if (!window.confirm("�Desea eliminar este pago?")) return;
+            const confirmed = await showConfirmDialog({
+                title: "Eliminar pago",
+                message: "¿Seguro que desea eliminar este pago? El monto pagado del pedido se recalculará.",
+                confirmText: "Eliminar pago",
+                cancelText: "Conservar"
+            });
+            if (!confirmed) return;
             const response = await withAppLoading("Eliminando pago...", () => fetch(`/api/pedidos/${orderId}/pagos/${paymentId}`, { method: "DELETE" }));
             if (!response.ok) {
                 const error = await response.json().catch(() => null);
@@ -869,13 +896,13 @@
                         </label>
 
                         <div class="detail-field design-field">
-                            <label for="design-file-${detail.id}">Diseno PNG</label>
+                            <label for="design-file-${detail.id}">Diseño PNG</label>
                             <div class="file-control">
                                 <input id="design-file-${detail.id}" class="file-control-input" type="file" accept="image/png" data-id="${detail.id}" data-field="designName" ${detailReadonly ? "disabled" : ""} />
                                 <label class="file-control-picker" for="design-file-${detail.id}">Seleccionar archivo</label>
-                                <span class="file-control-name">${detail.designName || "Sin diseno adjunto"}</span>
+                                <span class="file-control-name">${detail.designName || "Sin diseño adjunto"}</span>
                                 ${detail.designName ? `
-                                    <a class="file-control-download" href="${detail.designUrl || downloadUrl(detail.designPath, detail.designName) || "#"}" download="${detail.designName}" title="Descargar diseno" aria-label="Descargar diseno">
+                                    <a class="file-control-download" href="${detail.designUrl || downloadUrl(detail.designPath, detail.designName) || "#"}" download="${detail.designName}" title="Descargar diseño" aria-label="Descargar diseño">
                                         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                                             <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
                                         </svg>
@@ -1093,7 +1120,10 @@
             loadPaymentProofs(order.proofPath || "", order.proofName || "");
             details = (order.details || [createDetail()]).map(detail => createDetail(detail));
             title.textContent = order.id ? `Editar pedido ${order.id}` : "Nuevo pedido";
-            registerPaymentAction.hidden = !order.id;
+            registerPaymentAction.disabled = !order.id;
+            registerPaymentAction.title = order.id
+                ? "Registrar un nuevo pago"
+                : "Guarde el pedido antes de registrar un pago";
             renderDetails();
         }
 
@@ -1152,11 +1182,6 @@
             }
         });
 
-        document.getElementById("paid-amount").addEventListener("input", function (event) {
-            event.target.value = formatNumber(event.target.value);
-            updatePaymentStatusFromAmount();
-        });
-
         async function uploadFile(file, folder) {
             const formData = new FormData();
             formData.append("archivo", file);
@@ -1208,13 +1233,28 @@
             modalPaymentMethod.value = paymentMethodSelect.value || "";
             modalPaidAmount.value = "";
             modalPaymentProof.value = "";
-            modalPaymentProofName.textContent = "Sin comprobantes adjuntos";
+            modalPaymentProofName.textContent = "Sin comprobante adjunto";
+            updatePaymentProofRequirement();
             paymentModal.showModal();
             modalPaidAmount.focus();
         }
 
         function closePaymentModal() {
             paymentModal.close();
+        }
+
+        function isTransferPayment() {
+            const paymentMethod = formOptions.formasPago.find(
+                item => String(item.id) === String(modalPaymentMethod.value));
+            return String(paymentMethod?.nombre || "").trim().toLocaleLowerCase("es") === "transferencia";
+        }
+
+        function updatePaymentProofRequirement() {
+            const required = isTransferPayment();
+            modalPaymentProof.required = required;
+            modalPaymentProofLabel.textContent = required
+                ? "Comprobante de pago (obligatorio)"
+                : "Comprobante de pago";
         }
 
         async function registerPayment() {
@@ -1236,6 +1276,12 @@
             if (payload.monto <= 0) {
                 showToast("El monto del pago debe ser mayor a cero.", "error");
                 modalPaidAmount.focus();
+                return;
+            }
+
+            if (isTransferPayment() && !paymentFile) {
+                showToast("Adjunte un comprobante para el pago por transferencia.", "error");
+                modalPaymentProof.focus();
                 return;
             }
 
@@ -1320,7 +1366,7 @@
             }
 
             if (!detail.designName) {
-                showToast("Para enviar el item a impresion debe tener un diseno adjunto.", "error");
+                showToast("Para enviar el item a impresion debe tener un diseño adjunto.", "error");
                 return;
             }
 
@@ -1424,7 +1470,7 @@
 
             if (isMovingFromCargaToImpresion(payload.estadoVentaId) && details.some(detail => !detail.designName)) {
                 saleStatusSelect.value = headerStateId;
-                showToast("Para enviar a impresion debe adjuntar el diseno en todos los detalles.", "error");
+                showToast("Para enviar a impresion debe adjuntar el diseño en todos los detalles.", "error");
                 return;
             }
 
@@ -1517,8 +1563,9 @@
         document.getElementById("payment-modal-close").addEventListener("click", closePaymentModal);
         document.getElementById("payment-modal-cancel").addEventListener("click", closePaymentModal);
         modalPaidAmount.addEventListener("input", event => event.target.value = formatNumber(event.target.value));
+        modalPaymentMethod.addEventListener("change", updatePaymentProofRequirement);
         modalPaymentProof.addEventListener("change", function () {
-            modalPaymentProofName.textContent = modalPaymentProof.files?.[0]?.name || "Sin comprobantes adjuntos";
+            modalPaymentProofName.textContent = modalPaymentProof.files?.[0]?.name || "Sin comprobante adjunto";
         });
         paymentModalForm.addEventListener("submit", async function (event) {
             event.preventDefault();
