@@ -601,6 +601,22 @@ public record ActualizarPagoVentaRequest(
     string? ComprobantePago,
     string? ComprobantePagoNombre);
 
+public record PagoVentaImpresionDto(
+    int Id,
+    int VentaImpresionId,
+    DateTime FechaHora,
+    int UsuarioId,
+    string FormaPagoId,
+    decimal Monto,
+    string? RutaComprobante,
+    string? NombreComprobante);
+
+public record PagoVentaImpresionRequest(
+    int VentaImpresionId,
+    string FormaPagoId,
+    decimal Monto,
+    string? RutaComprobante,
+    string? NombreComprobante);
 public record EliminarPedidoRequest(string Observacion);
 
 public record VentaImpresionDetalleUpdateRequest(
@@ -708,3 +724,4 @@ public record ImpresionDevolverDto(
 
 public record NotificacionDto(long Id, string Tipo, string Titulo, string Mensaje, int PedidoId, int? DetalleId, string? Producto, string Cliente, string? Comentario, bool Leida, DateTime FechaCreacion, DateTime? FechaLectura);
 public record NotificacionesResumenDto(int NoLeidas, IEnumerable<NotificacionDto> Items);
+

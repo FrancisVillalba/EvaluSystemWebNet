@@ -5671,4 +5671,155 @@ body.modal-page-body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.payment-modal {
+  width: min(800px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  color: #173f49;
+  box-shadow: 0 24px 70px rgba(15, 45, 55, 0.32);
+}
 
+.payment-modal::backdrop {
+  background: rgba(19, 48, 56, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.payment-modal-card { margin: 0; padding: 0; }
+
+.payment-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 30px 28px 18px;
+}
+
+.payment-modal-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #08798d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.payment-modal-header h2 { margin: 0; font-size: 1.55rem; }
+.payment-modal-header p { margin: 4px 0 0; color: #69818a; }
+
+.payment-modal-close {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: #edf6f8;
+  color: #285965;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.payment-modal-body { display: grid; gap: 24px; padding: 4px 28px 26px; }
+
+.payment-modal-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid #b9dce4;
+  border-radius: 12px;
+  background: #f1fafc;
+  color: #55717a;
+  font-weight: 700;
+}
+
+.payment-modal-total strong { color: #123f49; font-size: 1.35rem; }
+
+.payment-modal-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.payment-modal-file-control {
+  position: relative;
+  min-height: 46px;
+  padding: 5px;
+  border: 1px solid #bfd1d7;
+  border-radius: 9px;
+}
+
+.payment-modal-file-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.payment-modal-file-control label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: #e2f3f3;
+  color: #086275;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.payment-modal-proof-name {
+  display: block;
+  padding: 14px 8px 0;
+  color: #526a75;
+  font-weight: 700;
+}
+
+.payment-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 28px 26px;
+}
+
+.payment-modal-cancel {
+  min-width: 160px;
+  padding: 12px 20px;
+  border: 1px solid #c8d8dd;
+  border-radius: 9px;
+  background: #fff;
+  color: #135567;
+  font-weight: 800;
+}
+
+.payment-modal-footer .payment-register-action {
+  width: auto;
+  min-width: 166px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .payment-modal-fields { grid-template-columns: 1fr; }
+  .payment-modal-total { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .payment-modal-footer { flex-direction: column-reverse; }
+  .payment-modal-footer button { width: 100%; }
+}
+
+
+
+.payment-history-field { grid-column: 1 / -1; min-width: 0; }
+.payment-history-heading { margin-bottom: 10px; color: #164e5b; font-weight: 800; }
+.payment-history-table-wrap { overflow-x: auto; border: 1px solid #d1e0e4; border-radius: 10px; }
+.payment-history-table { width: 100%; border-collapse: collapse; background: #fff; }
+.payment-history-table th, .payment-history-table td { padding: 12px 14px; border-bottom: 1px solid #e3ecef; text-align: left; vertical-align: middle; white-space: nowrap; }
+.payment-history-table th { background: #f2f8fa; color: #52707a; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.payment-history-table tbody tr:last-child td { border-bottom: 0; }
+.payment-history-amount { color: #123f49; font-weight: 800; }
+.payment-history-download { color: #087386; font-weight: 700; text-decoration: none; }
+.payment-history-download:hover { text-decoration: underline; }
+.payment-history-no-proof, .payment-history-empty { color: #71868e; }
+.payment-history-empty { padding: 24px !important; text-align: center !important; }
+.payment-history-delete { padding: 7px 10px; border: 1px solid #e1a9a9; border-radius: 7px; background: #fff; color: #a62c2c; font-weight: 700; cursor: pointer; }
+.payment-history-delete:hover { background: #fff1f1; }

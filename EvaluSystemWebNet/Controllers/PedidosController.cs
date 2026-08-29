@@ -226,6 +226,46 @@ public class PedidosController : ControllerBase
     }
 
 
+    [HttpPost("{id:int}/pagos")]
+    public async Task<ActionResult<PagoVentaImpresionDto>> CreatePayment(
+        int id,
+        [FromBody] PagoVentaImpresionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var backendRequest = request with { VentaImpresionId = id };
+        var result = await _backendApiClient.PostResultAsync<PagoVentaImpresionDto>(
+            "api/PagosVentasImpresion",
+            backendRequest,
+            cancellationToken);
+
+        return result.IsSuccess
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+    }
+
+    [HttpGet("{id:int}/pagos")]
+    public async Task<ActionResult<IEnumerable<PagoVentaImpresionDto>>> GetPayments(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var pagos = await _backendApiClient.GetAsync<IEnumerable<PagoVentaImpresionDto>>(
+            $"api/PagosVentasImpresion/venta/{id}",
+            cancellationToken);
+        return Ok(pagos ?? []);
+    }
+
+    [HttpDelete("{id:int}/pagos/{pagoId:int}")]
+    public async Task<IActionResult> DeletePayment(
+        int id,
+        int pagoId,
+        CancellationToken cancellationToken)
+    {
+        var deleted = await _backendApiClient.DeleteAsync(
+            $"api/PagosVentasImpresion/{pagoId}",
+            cancellationToken);
+        return deleted ? NoContent() : BadRequest(new { message = "No se pudo eliminar el pago." });
+    }
+
     [HttpPut("{id:int}")]
     public async Task<ActionResult<VentaImpresionCabDto>> Update(
         int id,
@@ -451,3 +491,5 @@ public class PedidosController : ControllerBase
             ? Ok(result.Value)
             : StatusCode(result.StatusCode, new { message = result.ErrorMessage ?? "No se pudo cargar el flujo del pedido." });
     }}
+
+

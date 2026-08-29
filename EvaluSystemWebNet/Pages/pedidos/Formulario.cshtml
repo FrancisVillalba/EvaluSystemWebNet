@@ -86,13 +86,18 @@
                                     <span>Registrar pago</span>
                                 </button>
 
-                                <div class="field payment-proof-field compact-proof-field">
-                                    <label for="payment-proof">Comprobantes de pago</label>
-                                    <div class="file-control payment-proof-control">
-                                        <input id="payment-proof" class="file-control-input" type="file" accept="image/*,.pdf" multiple />
-                                        <label class="file-control-picker" for="payment-proof">Agregar archivos</label>
+                                <div class="field payment-history-field">
+                                    <div class="payment-history-heading"><span>Pagos registrados</span></div>
+                                    <div class="payment-history-table-wrap">
+                                        <table class="payment-history-table">
+                                            <thead><tr><th>Fecha</th><th>Forma de pago</th><th>Monto</th><th>Comprobante</th><th>Usuario</th><th></th></tr></thead>
+                                            <tbody id="payment-history-body">
+                                                <tr><td colspan="6" class="payment-history-empty">Sin pagos registrados</td></tr>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div id="payment-proof-list" class="payment-proof-list"></div>
+                                    <input id="payment-proof" type="file" hidden />
+                                    <div id="payment-proof-list" hidden></div>
                                 </div>
                             </fieldset>
                         </div>
@@ -176,7 +181,52 @@
                 </footer>
             </form>
 </section>
+<dialog id="payment-modal" class="payment-modal">
+    <form id="payment-modal-form" class="payment-modal-card" method="dialog">
+        <header class="payment-modal-header">
+            <div>
+                <span class="payment-modal-eyebrow">Pago del pedido</span>
+                <h2>Registrar pago</h2>
+                <p>El monto se agregará al total pagado acumulado.</p>
+            </div>
+            <button id="payment-modal-close" class="payment-modal-close" type="button" aria-label="Cerrar">&times;</button>
+        </header>
 
+        <div class="payment-modal-body">
+            <div class="payment-modal-total">
+                <span>Pagado hasta el momento</span>
+                <strong id="payment-modal-current-total">Gs. 0</strong>
+            </div>
+
+            <div class="payment-modal-fields">
+                <label class="field" for="modal-payment-method">
+                    Forma de pago
+                    <select id="modal-payment-method" required>
+                        <option value="">Seleccionar forma de pago</option>
+                    </select>
+                </label>
+                <label class="field" for="modal-paid-amount">
+                    Monto de este pago
+                    <input id="modal-paid-amount" inputmode="numeric" placeholder="0" required />
+                </label>
+            </div>
+
+            <div class="field payment-modal-proof">
+                <label for="modal-payment-proof">Comprobante de pago</label>
+                <div class="payment-modal-file-control">
+                    <input id="modal-payment-proof" type="file" accept="image/*,.pdf" />
+                    <label for="modal-payment-proof">Agregar archivos</label>
+                </div>
+                <span id="modal-payment-proof-name" class="payment-modal-proof-name">Sin comprobantes adjuntos</span>
+            </div>
+        </div>
+
+        <footer class="payment-modal-footer">
+            <button id="payment-modal-cancel" class="payment-modal-cancel" type="button">Cancelar</button>
+            <button id="payment-modal-save" class="payment-register-action" type="submit">Registrar pago</button>
+        </footer>
+    </form>
+</dialog>
 @section Scripts {
     <script>
         const isEmbedded = @(embedded ? "true" : "false");
@@ -236,6 +286,7 @@
         const transportadoraFeeLabel = document.getElementById("transportadora-fee-label");
         const proofInput = document.getElementById("payment-proof");
         const proofList = document.getElementById("payment-proof-list");
+        const paymentHistoryBody = document.getElementById("payment-history-body");
         const clientSelect = document.getElementById("order-client");
         const clientSelect2 = document.getElementById("client-select2");
         const clientSelect2Button = document.getElementById("client-select2-button");
@@ -251,6 +302,13 @@
         const saleStatusSelect = document.getElementById("order-sale-status");
         const stateSaveAction = document.getElementById("state-save-action");
         const registerPaymentAction = document.getElementById("register-payment-action");
+        const paymentModal = document.getElementById("payment-modal");
+        const paymentModalForm = document.getElementById("payment-modal-form");
+        const modalPaymentMethod = document.getElementById("modal-payment-method");
+        const modalPaidAmount = document.getElementById("modal-paid-amount");
+        const modalPaymentProof = document.getElementById("modal-payment-proof");
+        const modalPaymentProofName = document.getElementById("modal-payment-proof-name");
+        const paymentModalCurrentTotal = document.getElementById("payment-modal-current-total");
         const stateNextAction = document.getElementById("state-next-action");
         const stateDeleteAction = document.getElementById("state-delete-action");
         const orderBudgetAction = document.getElementById("order-budget-action");
@@ -704,6 +762,56 @@
             return values.length === 1 ? values[0] : JSON.stringify(values);
         }
 
+        function paymentMethodName(paymentMethodId) {
+            return formOptions.formasPago.find(item => String(item.id) === String(paymentMethodId))?.nombre || paymentMethodId || "Sin especificar";
+        }
+
+        function paymentUserName(usuarioId) {
+            const user = formOptions.vendedores.find(item => String(item.id) === String(usuarioId));
+            return user ? sellerShortName(user.persona) || user.nombreUsuario || `Usuario ${usuarioId}` : `Usuario ${usuarioId}`;
+        }
+
+        function paymentDate(value) {
+            if (!value) return "";
+            return new Intl.DateTimeFormat("es-PY", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+        }
+
+        async function loadPaymentHistory() {
+            if (!orderId) return;
+            const response = await fetch(`/api/pedidos/${orderId}/pagos`);
+            if (!response.ok) {
+                paymentHistoryBody.innerHTML = `<tr><td colspan="6" class="payment-history-empty">No se pudieron cargar los pagos</td></tr>`;
+                return;
+            }
+
+            const payments = await response.json();
+            paymentHistoryBody.innerHTML = payments.length
+                ? payments.map(payment => `
+                    <tr>
+                        <td>${escapeHtml(paymentDate(payment.fechaHora))}</td>
+                        <td>${escapeHtml(paymentMethodName(payment.formaPagoId))}</td>
+                        <td class="payment-history-amount">Gs. ${Number(payment.monto || 0).toLocaleString("es-PY")}</td>
+                        <td>${payment.rutaComprobante
+                            ? `<a class="payment-history-download" href="${escapeHtml(downloadUrl(payment.rutaComprobante, payment.nombreComprobante))}" download="${escapeHtml(payment.nombreComprobante || "comprobante")}">${escapeHtml(payment.nombreComprobante || "Descargar")}</a>`
+                            : `<span class="payment-history-no-proof">Sin comprobante</span>`}</td>
+                        <td>${escapeHtml(paymentUserName(payment.usuarioId))}</td>
+                        <td><button class="payment-history-delete" type="button" data-delete-payment="${payment.id}">Eliminar</button></td>
+                    </tr>`).join("")
+                : `<tr><td colspan="6" class="payment-history-empty">Sin pagos registrados</td></tr>`;
+        }
+
+        async function deletePayment(paymentId) {
+            if (!window.confirm("¿Desea eliminar este pago?")) return;
+            const response = await withAppLoading("Eliminando pago...", () => fetch(`/api/pedidos/${orderId}/pagos/${paymentId}`, { method: "DELETE" }));
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                showToast(error?.message || "No se pudo eliminar el pago.", "error");
+                return;
+            }
+            await reloadCurrentOrder();
+            notifyEmbeddedUpdated();
+            showToast("Pago eliminado correctamente.", "success");
+        }
         function renderDetails() {
             const detailReadonly = !canEditOrderDetails();
             document.getElementById("add-detail-button").hidden = detailReadonly;
@@ -885,6 +993,14 @@
                 "Seleccionar forma de pago"
             );
 
+            modalPaymentMethod.innerHTML = selectOptions(
+                formOptions.formasPago.map(item => ({
+                    value: item.id,
+                    label: item.nombre || item.id
+                })),
+                modalPaymentMethod.value,
+                "Seleccionar forma de pago"
+            );
             sellerSelect.innerHTML = selectOptions(
                 formOptions.vendedores.map(item => ({
                     value: item.id,
@@ -1077,39 +1193,63 @@
             }
         }
 
-        async function registerPayment() {
+        function openPaymentModal() {
             if (!orderId) {
                 showToast("Primero debe guardar el pedido.", "error");
                 return;
             }
 
+            paymentModalCurrentTotal.textContent = `Gs. ${numberValue(document.getElementById("paid-amount").value).toLocaleString("es-PY")}`;
+            modalPaymentMethod.innerHTML = selectOptions(
+                formOptions.formasPago.map(item => ({ value: item.id, label: item.nombre || item.id })),
+                paymentMethodSelect.value,
+                "Seleccionar forma de pago"
+            );
+            modalPaymentMethod.value = paymentMethodSelect.value || "";
+            modalPaidAmount.value = "";
+            modalPaymentProof.value = "";
+            modalPaymentProofName.textContent = "Sin comprobantes adjuntos";
+            paymentModal.showModal();
+            modalPaidAmount.focus();
+        }
+
+        function closePaymentModal() {
+            paymentModal.close();
+        }
+
+        async function registerPayment() {
+            const paymentFile = modalPaymentProof.files?.[0] || null;
             const payload = {
-                formaPagoId: paymentMethodSelect.value,
-                montoPagado: numberValue(document.getElementById("paid-amount").value),
-                estadoPagadoId: paymentStatusSelect.value || null,
-                comprobantePago: serializedProofs("path"),
-                comprobantePagoNombre: serializedProofs("name")
+                ventaImpresionId: Number(orderId),
+                formaPagoId: modalPaymentMethod.value,
+                monto: numberValue(modalPaidAmount.value),
+                rutaComprobante: null,
+                nombreComprobante: null
             };
 
             if (!payload.formaPagoId) {
                 showToast("Seleccione la forma de pago.", "error");
-                paymentMethodSelect.focus();
+                modalPaymentMethod.focus();
                 return;
             }
 
-            if (isPaidStatusSelected(payload.estadoPagadoId)
-                && !isCashPaymentSelected(payload.formaPagoId)
-                && paymentProofs.length === 0) {
-                showToast("Para marcar como pagado debe adjuntar el comprobante de pago.", "error");
+            if (payload.monto <= 0) {
+                showToast("El monto del pago debe ser mayor a cero.", "error");
+                modalPaidAmount.focus();
                 return;
             }
 
             let response;
             try {
                 response = await withAppLoading("Registrando pago...", async function () {
-                    await preparePaymentProofsForSave(payload);
-                    return await fetch(`/api/pedidos/${orderId}/pago`, {
-                        method: "PUT",
+                    if (paymentFile) {
+                        const uploaded = await uploadFile(paymentFile, "comprobantes-pago");
+                        payload.rutaComprobante = uploaded.ruta || null;
+                        payload.nombreComprobante = uploaded.nombreDescarga || uploaded.nombreOriginal || paymentFile.name;
+                    }
+
+                    return await fetch(`/api/pedidos/${orderId}/pagos`, {
+                        method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload)
                     });
@@ -1125,6 +1265,7 @@
                 return;
             }
 
+            closePaymentModal();
             await reloadCurrentOrder();
             notifyEmbeddedUpdated();
             showToast("Pago registrado correctamente.", "success");
@@ -1169,6 +1310,7 @@
             }
 
             loadOrder(await response.json());
+            await loadPaymentHistory();
         }
 
         async function sendDetailToPrint(detailUiId) {
@@ -1367,7 +1509,21 @@
         }
 
         orderBudgetAction.addEventListener("click", downloadBudgetPdf);
-        registerPaymentAction.addEventListener("click", registerPayment);
+        paymentHistoryBody.addEventListener("click", function (event) {
+            const button = event.target.closest("[data-delete-payment]");
+            if (button) deletePayment(Number(button.dataset.deletePayment));
+        });
+        registerPaymentAction.addEventListener("click", openPaymentModal);
+        document.getElementById("payment-modal-close").addEventListener("click", closePaymentModal);
+        document.getElementById("payment-modal-cancel").addEventListener("click", closePaymentModal);
+        modalPaidAmount.addEventListener("input", event => event.target.value = formatNumber(event.target.value));
+        modalPaymentProof.addEventListener("change", function () {
+            modalPaymentProofName.textContent = modalPaymentProof.files?.[0]?.name || "Sin comprobantes adjuntos";
+        });
+        paymentModalForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            await registerPayment();
+        });
 
         stateSaveAction.addEventListener("click", async function () {
             await saveOrder();
@@ -1452,8 +1608,15 @@
             }
 
             loadOrder(await response.json());
+            await loadPaymentHistory();
         }
 
         loadInitialOrder();
     </script>
 }
+
+
+
+
+
+
