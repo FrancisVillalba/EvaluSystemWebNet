@@ -1,0 +1,913 @@
+@page
+@model PrintKm.Pages.delivery.IndexModel
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Envio";
+    ViewData["ActiveMenu"] = "delivery";
+    ViewData["ShellClass"] = "delivery-shell";
+}
+
+<section class="delivery-main">
+    <section class="delivery-filters" aria-label="Filtros de envio">
+        <label for="filter-date-from">
+            Fecha desde
+            <input id="filter-date-from" type="date" />
+        </label>
+
+        <label for="filter-date-to">
+            Fecha hasta
+            <input id="filter-date-to" type="date" />
+        </label>
+
+        <label for="filter-client">
+            Cliente
+            <select id="filter-client" class="select2-hidden-select">
+                <option value="">Todos</option>
+            </select>
+            <div id="filter-client-select2" class="client-select2">
+                <button id="filter-client-select2-button" class="client-select2-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="filter-client-select2-label">Todos</span>
+                </button>
+                <div id="filter-client-select2-dropdown" class="client-select2-dropdown" hidden>
+                    <input id="filter-client-select2-search" class="client-select2-search" type="search" placeholder="Buscar cliente" autocomplete="off" />
+                    <div id="filter-client-select2-options" class="client-select2-options" role="listbox"></div>
+                </div>
+            </div>
+        </label>
+
+        <label for="filter-method">
+            Metodo de envio
+            <select id="filter-method">
+                <option value="">Todos</option>
+                <option value="delivery">Delivery</option>
+                <option value="transportadora">Transportadora</option>
+                <option value="motobolt">Motobolt</option>
+                <option value="retiro">Retiro del local</option>
+            </select>
+        </label>
+
+
+        <button id="refresh-delivery" class="delivery-refresh" type="button">
+            <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+                <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+                <path d="M18 3v4h-4" />
+                <path d="M6 21v-4h4" />
+            </svg>
+            <span>Actualizar</span>
+        </button>
+    </section>
+
+    <div class="delivery-view-tabs" aria-label="Vistas de envio">
+        <button class="active" type="button" data-delivery-view="pending">Pendientes</button>
+        <button type="button" data-delivery-view="assigned">Mis entregas</button>
+    </div>
+
+    <section id="assigned-panel" class="delivery-panel delivery-extra-panel" hidden>
+        <div class="delivery-panel-header">
+            <div>
+                <h2>Mis entregas</h2>
+                <p>Pedidos tomados sin lote y rutas generadas.</p>
+            </div>
+            <div class="delivery-assigned-actions">
+                <button id="generate-route" class="delivery-refresh" type="button">
+                    <svg class="app-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M3 6h11v10H3z" />
+                        <path d="M14 10h4l3 3v3h-7z" />
+                        <circle cx="7" cy="19" r="2" />
+                        <circle cx="18" cy="19" r="2" />
+                    </svg>
+                    <span>Generar lote</span>
+                </button>
+            </div>
+        </div>
+        <div class="delivery-assigned-block">
+            <div class="delivery-section-title">
+                <h3>Mis pedidos sin lote</h3>
+                <span id="assigned-count">0 pedidos</span>
+            </div>
+            <div id="assigned-list" class="delivery-list delivery-assigned-cards"></div>
+        </div>
+        <div class="delivery-assigned-block">
+            <div class="delivery-section-title">
+                <h3>Mis lotes</h3>
+                <span id="route-lot-count">0 lotes</span>
+            </div>
+            <div id="route-lot-list" class="delivery-route-lots"></div>
+        </div>
+    </section>
+
+    <div class="delivery-tabs" aria-label="Tipos de envio">
+        <button class="active" type="button" data-delivery-tab="delivery">Delivery <strong data-tab-count="delivery">0</strong></button>
+        <button type="button" data-delivery-tab="transportadora">Transportadora <strong data-tab-count="transportadora">0</strong></button>
+        <button type="button" data-delivery-tab="motobolt">Motobolt <strong data-tab-count="motobolt">0</strong></button>
+        <button type="button" data-delivery-tab="retiro">Retiro del local <strong data-tab-count="retiro">0</strong></button>
+    </div>
+
+    <div id="pending-panel" class="delivery-workspace">
+        <aside id="city-menu" class="delivery-cities" aria-label="Ciudades con pedidos para envio"></aside>
+
+        <section class="delivery-panel">
+            <div class="delivery-panel-header">
+                <div>
+                    <h2 id="selected-city-title">Delivery</h2>
+                    <p id="delivery-panel-help">Pedidos disponibles para tomar.</p>
+                </div>
+                <span id="route-count" class="delivery-route-count">0 pedidos</span>
+            </div>
+
+            <div id="available-list" class="delivery-list"></div>
+        </section>
+    </div>
+</section>
+
+<div id="order-form-modal" class="order-form-modal" hidden>
+    <div class="order-form-modal-backdrop" data-order-modal-close></div>
+    <section class="order-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-form-modal-title">
+        <header class="order-form-modal-header">
+            <h2 id="order-form-modal-title">Pedido</h2>
+            <button id="order-form-modal-close" type="button" aria-label="Cerrar formulario">&times;</button>
+        </header>
+        <iframe id="order-form-frame" title="Formulario de pedido"></iframe>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        const methods = {
+            delivery: {
+                label: "Delivery",
+                endpoint: "/api/delivery/disponibles",
+                action: "take",
+                actionText: "Tomar pedido",
+                empty: "No hay pedidos pendientes para delivery.",
+                help: "Pedidos disponibles para tomar."
+            },
+            transportadora: {
+                label: "Transportadora",
+                endpoint: "/api/delivery/transportadora",
+                action: "take",
+                actionText: "Tomar pedido",
+                empty: "No hay pedidos pendientes para transportadora.",
+                help: "Pedidos para llevar a la transportadora."
+            },
+            motobolt: {
+                label: "Motobolt",
+                endpoint: "/api/delivery/motobolt",
+                action: "send",
+                actionText: "Entregado",
+                empty: "No hay pedidos pendientes para Motobolt.",
+                help: "Pedidos para entregar al Motobolt."
+            },
+            retiro: {
+                label: "Retiro del local",
+                endpoint: "/api/delivery/retiro-local",
+                action: "send",
+                actionText: "Entregado",
+                empty: "No hay pedidos pendientes para retiro del local.",
+                help: "Pedidos que el cliente retira en el local."
+            }
+        };
+
+        const availableList = document.getElementById("available-list");
+        const pendingPanel = document.getElementById("pending-panel");
+        const assignedPanel = document.getElementById("assigned-panel");
+        const assignedList = document.getElementById("assigned-list");
+        const assignedCount = document.getElementById("assigned-count");
+        const routeLotList = document.getElementById("route-lot-list");
+        const routeLotCount = document.getElementById("route-lot-count");
+        const cityMenu = document.getElementById("city-menu");
+        const selectedCityTitle = document.getElementById("selected-city-title");
+        const deliveryPanelHelp = document.getElementById("delivery-panel-help");
+        const routeCount = document.getElementById("route-count");
+        const dateFrom = document.getElementById("filter-date-from");
+        const dateTo = document.getElementById("filter-date-to");
+        const methodFilter = document.getElementById("filter-method");
+        const clientFilter = document.getElementById("filter-client");
+        const filterClientSelect2 = document.getElementById("filter-client-select2");
+        const filterClientSelect2Button = document.getElementById("filter-client-select2-button");
+        const filterClientSelect2Label = document.getElementById("filter-client-select2-label");
+        const filterClientSelect2Dropdown = document.getElementById("filter-client-select2-dropdown");
+        const filterClientSelect2Search = document.getElementById("filter-client-select2-search");
+        const filterClientSelect2Options = document.getElementById("filter-client-select2-options");
+        const orderFormModal = document.getElementById("order-form-modal");
+        const orderFormFrame = document.getElementById("order-form-frame");
+        const orderFormModalTitle = document.getElementById("order-form-modal-title");
+        const orderFormModalClose = document.getElementById("order-form-modal-close");
+
+        let ordersByMethod = {
+            delivery: [],
+            transportadora: [],
+            motobolt: [],
+            retiro: []
+        };
+        let myOrders = [];
+        let myRoutes = [];
+        let selectedCity = "";
+        let activeTab = "delivery";
+        let activeView = "pending";
+        let filterClients = [];
+
+        function openOrderModal(orderId) {
+            orderFormModalTitle.textContent = `Pedido ${orderId}`;
+            orderFormFrame.src = `${window.appUrl("/pedidos/formulario")}?id=${encodeURIComponent(orderId)}&embedded=1`;
+            orderFormModal.hidden = false;
+            document.body.classList.add("is-order-modal-open");
+            orderFormModalClose.focus();
+        }
+
+        function closeOrderModal(shouldRefresh = false) {
+            orderFormModal.hidden = true;
+            orderFormFrame.src = "about:blank";
+            document.body.classList.remove("is-order-modal-open");
+            if (shouldRefresh) {
+                loadDelivery();
+            }
+        }
+
+        function localDateValue(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function formatDate(value) {
+            if (!value) return "Sin fecha";
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return "Sin fecha";
+            return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+        }
+
+        function cashDebtMarkup(order) {
+            const isCash = order.esPagoEfectivo === true
+                || String(order.formaPagoId || "").trim().toUpperCase() === "E"
+                || String(order.formaPago || "").toLowerCase().includes("efectivo");
+            if (!isCash) {
+                return "";
+            }
+            const calculatedDebt = Math.max(0, Number(order.totalVenta || 0) - Number(order.montoPagado || 0));
+            const debt = order.montoDeuda == null ? calculatedDebt : Math.max(0, Number(order.montoDeuda));
+            return `<span class="delivery-cash-debt"><span class="delivery-cash-debt-icon" aria-hidden="true">!</span><strong>Deuda Gs. ${debt.toLocaleString("es-PY", { maximumFractionDigits: 0 })}</strong></span>`;
+        }
+
+        function dateValue(value) {
+            return value ? localDateValue(new Date(value)) : "";
+        }
+
+        function cityName(order) {
+            return order.ciudad || "Sin ciudad";
+        }
+
+        function clientOptionLabel(client) {
+            return client.name || "Sin cliente";
+        }
+
+        function localDateTimeFileValue(date = new Date()) {
+            const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return offsetDate.toISOString().slice(0, 16).replaceAll("-", "").replace("T", "").replace(":", "");
+        }
+
+        function formatDateTime(value) {
+            if (!value) {
+                return "Sin fecha";
+            }
+
+            const date = new Date(value);
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        function currentMethod() {
+            return methods[activeTab] || methods.delivery;
+        }
+
+        function allOrders() {
+            return Object.values(ordersByMethod).flat();
+        }
+
+        function allKnownOrders() {
+            return [...allOrders(), ...myOrders];
+        }
+
+        function buildClientOptions() {
+            const clients = new Map();
+            allKnownOrders().forEach(order => {
+                const key = order.cliente || "Sin cliente";
+                clients.set(key, { id: key, name: key });
+            });
+
+            filterClients = Array.from(clients.values()).sort((a, b) => a.name.localeCompare(b.name));
+            clientFilter.innerHTML = `<option value="">Todos</option>` + filterClients
+                .map(client => `<option value="${escapeHtml(client.id)}">${escapeHtml(client.name)}</option>`)
+                .join("");
+            updateFilterClientSelect2Label();
+            renderFilterClientSelect2Options();
+        }
+
+        function updateFilterClientSelect2Label() {
+            const selected = filterClients.find(client => client.id === clientFilter.value);
+            filterClientSelect2Label.textContent = selected ? clientOptionLabel(selected) : "Todos";
+        }
+
+        function renderFilterClientSelect2Options() {
+            const search = filterClientSelect2Search.value.trim().toLowerCase();
+            const selected = clientFilter.value || "";
+            const clients = filterClients.filter(client => !search || client.name.toLowerCase().includes(search));
+            const allOption = `<button class="client-select2-option${selected ? "" : " is-selected"}" type="button" role="option" data-value="">Todos</button>`;
+            const options = clients.map(client => {
+                const isSelected = client.id === selected ? " is-selected" : "";
+                return `<button class="client-select2-option${isSelected}" type="button" role="option" data-value="${escapeHtml(client.id)}">${escapeHtml(clientOptionLabel(client))}</button>`;
+            }).join("");
+
+            filterClientSelect2Options.innerHTML = options || !search
+                ? allOption + options
+                : `<div class="client-select2-empty">Sin resultados</div>`;
+        }
+
+        function setFilterClientSelect2Open(isOpen) {
+            filterClientSelect2Dropdown.hidden = !isOpen;
+            filterClientSelect2Button.setAttribute("aria-expanded", String(isOpen));
+            if (isOpen) {
+                filterClientSelect2Search.value = "";
+                filterClientSelect2Search.focus();
+                renderFilterClientSelect2Options();
+            }
+        }
+
+        function matchesFilters(order, includeCity = true) {
+                const orderDate = dateValue(order.fechaEntrega || order.fechaCreacion);
+                const matchesClient = !clientFilter.value || String(order.cliente || "") === clientFilter.value;
+                const matchesFrom = !dateFrom.value || orderDate >= dateFrom.value;
+                const matchesTo = !dateTo.value || orderDate <= dateTo.value;
+                const matchesCity = !includeCity || !selectedCity || cityName(order) === selectedCity;
+                return matchesClient && matchesFrom && matchesTo && matchesCity;
+        }
+
+        function filteredOrdersForActiveTab() {
+            const methodOrders = ordersByMethod[activeTab] || [];
+            return methodOrders.filter(order => matchesFilters(order));
+        }
+
+        function ordersForMenu() {
+            return (ordersByMethod[activeTab] || []).filter(order => matchesFilters(order, false));
+        }
+
+        function updateTabCounts() {
+            Object.keys(methods).forEach(key => {
+                const count = (ordersByMethod[key] || []).filter(order => matchesFilters(order, false)).length;
+                const badge = document.querySelector(`[data-tab-count="${key}"]`);
+                if (badge) {
+                    badge.textContent = count;
+                }
+            });
+        }
+
+        function renderCityMenu() {
+            const groups = new Map();
+            ordersForMenu().forEach(order => {
+                const city = cityName(order);
+                groups.set(city, (groups.get(city) || 0) + 1);
+            });
+
+            if (selectedCity && !groups.has(selectedCity)) {
+                selectedCity = "";
+            }
+
+            const total = Array.from(groups.values()).reduce((sum, value) => sum + value, 0);
+            const cities = Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+            cityMenu.innerHTML = `
+                <button class="${selectedCity === "" ? "active" : ""}" type="button" data-city="">
+                    <span>Todas</span><strong>${total}</strong>
+                </button>
+                ${cities.map(([city, count]) => `
+                    <button class="${selectedCity === city ? "active" : ""}" type="button" data-city="${escapeHtml(city)}">
+                        <span>${escapeHtml(city)}</span><strong>${count}</strong>
+                    </button>
+                `).join("")}`;
+        }
+
+        function renderCard(order) {
+            const method = currentMethod();
+            return `
+                <article class="delivery-card">
+                    <div class="delivery-card-head">
+                        <div class="delivery-order-identity">
+                            <strong>#${order.id}</strong>
+                            <small class="delivery-seller">${escapeHtml(order.vendedor || "Sin vendedor")}</small>
+                        </div>
+                        <span>${escapeHtml(order.estadoVenta || order.estadoVentaId)}</span>
+                    </div>
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <div class="delivery-card-tags-row">
+                        ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                        ${cashDebtMarkup(order)}
+                    </div>
+                    <div class="delivery-card-body">
+                        <dl>
+                            <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
+                            <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                            <div><dt>Fecha</dt><dd>${escapeHtml(formatDate(order.fechaEntrega))}</dd></div>
+                        </dl>
+                        <div class="delivery-card-side-actions">
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
+                            <button class="delivery-sale-link" type="button" data-sale-id="${order.id}">Ver venta</button>
+                            <button class="delivery-take" type="button" data-action="${method.action}" data-id="${order.id}">
+                                ${method.actionText}
+                            </button>
+                        </div>
+                    </div>
+                </article>`;
+        }
+
+        function renderAssignedCard(order) {
+            return `
+                <article class="delivery-card delivery-card-compact">
+                    <div class="delivery-card-head">
+                        <div class="delivery-order-identity">
+                            <strong>#${order.id}</strong>
+                            <small class="delivery-seller">${escapeHtml(order.vendedor || "Sin vendedor")}</small>
+                        </div>
+                        <span>${escapeHtml(order.metodoEntrega || "-")}</span>
+                    </div>
+                    <h3>${escapeHtml(order.cliente)}</h3>
+                    <div class="delivery-card-tags-row">
+                        ${order.productos ? `<div class="delivery-product-tags">${order.productos.split(",").map(producto => `<span class="delivery-product-tag">${escapeHtml(producto.trim())}</span>`).join("")}</div>` : ""}
+                        ${cashDebtMarkup(order)}
+                    </div>
+                    <div class="delivery-card-body">
+                        <dl>
+                            <div><dt>Telefono</dt><dd>${escapeHtml(order.telefono || "Sin telefono")}</dd></div>
+                            <div><dt>Ciudad</dt><dd>${escapeHtml(order.ciudad || "Sin ciudad")}</dd></div>
+                            <div><dt>Fecha</dt><dd>${escapeHtml(formatDate(order.fechaEntrega))}</dd></div>
+                        </dl>
+                        <div class="delivery-card-side-actions">
+                            <button class="delivery-label-button" type="button" data-label-id="${order.id}">Etiqueta</button>
+                            <button class="delivery-sale-link" type="button" data-sale-id="${order.id}">Ver venta</button>
+                            <button class="delivery-remove-button" type="button" data-remove-id="${order.id}">Quitar</button>
+                        </div>
+                    </div>
+                </article>`;
+        }
+
+        function renderRouteLot(route) {
+            return `
+                <article class="delivery-route-lot">
+                    <button class="delivery-route-pdf" type="button" data-route-pdf-id="${route.id}" data-route-number="${escapeHtml(route.numeroLote)}">PDF ruta</button>
+                    <div>
+                        <span>Lote</span>
+                        <strong>${escapeHtml(route.numeroLote)}</strong>
+                    </div>
+                    <div>
+                        <span>Fecha</span>
+                        <strong>${formatDateTime(route.fechaGeneracion)}</strong>
+                    </div>
+                    <div>
+                        <span>Pedidos</span>
+                        <strong>${route.cantidadPedidos}</strong>
+                    </div>
+                </article>`;
+        }
+
+        function renderAvailable() {
+            const method = currentMethod();
+            const orders = filteredOrdersForActiveTab();
+            updateTabCounts();
+            renderCityMenu();
+            selectedCityTitle.textContent = selectedCity || method.label;
+            deliveryPanelHelp.textContent = method.help;
+            routeCount.textContent = `${orders.length} pedidos`;
+            availableList.innerHTML = orders.length
+                ? orders.map(renderCard).join("")
+                : `<div class="delivery-empty">${method.empty}</div>`;
+        }
+
+        function renderAssigned() {
+            const orders = myOrders.filter(order => matchesFilters(order, false));
+            const routes = myRoutes.filter(route => {
+                const routeDate = dateValue(route.fechaGeneracion);
+                return (!dateFrom.value || routeDate >= dateFrom.value)
+                    && (!dateTo.value || routeDate <= dateTo.value);
+            });
+
+            assignedList.innerHTML = orders.length
+                ? orders.map(renderAssignedCard).join("")
+                : `<div class="delivery-empty">No hay pedidos tomados sin lote.</div>`;
+            assignedCount.textContent = `${orders.length} pedidos`;
+            routeLotList.innerHTML = routes.length
+                ? routes.map(renderRouteLot).join("")
+                : `<div class="delivery-empty">No hay lotes generados para los filtros seleccionados.</div>`;
+            routeLotCount.textContent = `${routes.length} lotes`;
+        }
+
+        function statusClass(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-");
+        }
+
+        async function loadTrackingData() {
+            const params = new URLSearchParams();
+            if (dateFrom.value) {
+                params.set("fechaDesde", dateFrom.value);
+            }
+
+            if (dateTo.value) {
+                params.set("fechaHasta", dateTo.value);
+            }
+            renderAssigned();
+        }
+
+        async function enrichPaymentData(orders) {
+            const pendingIds = [...new Set((orders || [])
+                .filter(order => !order.formaPago)
+                .map(order => Number(order.id))
+                .filter(Number.isFinite))];
+
+            await Promise.all(pendingIds.map(async id => {
+                const response = await fetch(`/api/pedidos/${id}`);
+                if (!response.ok) {
+                    return;
+                }
+                const sale = await response.json();
+                const matchingOrders = (orders || []).filter(order => Number(order.id) === id);
+                matchingOrders.forEach(order => {
+                    order.formaPagoId = sale.formaPagoId;
+                    order.formaPago = sale.formaPago;
+                    order.esPagoEfectivo = String(sale.formaPagoId || "").trim().toUpperCase() === "E";
+                    order.esPagoEfectivo = order.esPagoEfectivo
+                        || String(sale.formaPago || "").toLowerCase().includes("efectivo");
+                    order.montoDeuda = order.esPagoEfectivo
+                        ? Math.max(0, Number(sale.totalVenta || 0) - Number(sale.montoPagado || 0))
+                        : 0;
+                });
+            }));
+        }
+
+        async function loadDelivery() {
+            await withAppLoading("Cargando envio...", async function () {
+                const entries = Object.entries(methods);
+                const responses = await Promise.all(entries.map(([, method]) => fetch(method.endpoint)));
+                const mineResponse = await fetch("/api/delivery/mis-pedidos");
+                const routeParams = new URLSearchParams();
+                if (dateFrom.value) {
+                    routeParams.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    routeParams.set("fechaHasta", dateTo.value);
+                }
+
+                const routesResponse = await fetch(`/api/delivery/mis-rutas?${routeParams.toString()}`);
+
+                for (let index = 0; index < entries.length; index += 1) {
+                    const [key, method] = entries[index];
+                    const response = responses[index];
+                    if (!response.ok) {
+                        ordersByMethod[key] = [];
+                        showToast(`No se pudieron cargar pedidos de ${method.label}.`, "error");
+                        continue;
+                    }
+
+                    ordersByMethod[key] = await response.json() || [];
+                }
+
+                myOrders = mineResponse.ok ? await mineResponse.json() || [] : [];
+                myRoutes = routesResponse.ok ? await routesResponse.json() || [] : [];
+                await loadTrackingData();
+                buildClientOptions();
+                await enrichPaymentData(filteredOrdersForActiveTab());
+                renderAvailable();
+            });
+        }
+
+        async function runOrderAction(id, action) {
+            const url = action === "take"
+                ? `/api/delivery/${id}/tomar`
+                : `/api/delivery/${id}/marcar-enviado`;
+            const loadingText = action === "take" ? "Tomando pedido..." : "Marcando enviado...";
+
+            await withAppLoading(loadingText, async function () {
+                const response = await fetch(url, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo actualizar el pedido.", "error");
+                    return;
+                }
+
+                showToast(action === "take" ? "Pedido tomado." : "Pedido marcado como enviado.", "success");
+                await loadDelivery();
+            });
+        }
+
+        async function removeAssignedOrder(id) {
+            const confirmed = await showConfirmDialog({
+                title: "Quitar pedido",
+                message: `Desea quitar el pedido #${id} de tus pedidos sin lote?`,
+                confirmText: "Quitar",
+                cancelText: "Cancelar",
+                tone: "danger"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            await withAppLoading("Quitando pedido...", async function () {
+                const response = await fetch(`/api/delivery/${id}/quitar`, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo quitar el pedido.", "error");
+                    return;
+                }
+
+                showToast("Pedido quitado y devuelto a pendientes.", "success");
+                await loadDelivery();
+            });
+        }
+
+        async function downloadRoutePdf() {
+            await withAppLoading("Preparando ruta...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) {
+                    params.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    params.set("fechaHasta", dateTo.value);
+                }
+
+                const query = params.toString();
+                const response = await fetch(`/api/delivery/reporte-ruta/pdf${query ? `?${query}` : ""}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el PDF de ruta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `ruta-delivery-${localDateTimeFileValue()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+                await loadDelivery();
+            });
+        }
+
+        async function generateRouteLot() {
+            const visibleOrders = myOrders.filter(order => matchesFilters(order, false));
+            if (visibleOrders.length === 0) {
+                showToast("No hay pedidos tomados sin lote.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirmDialog({
+                title: "Generar lote de ruta",
+                message: `Se generara un lote con ${visibleOrders.length} pedidos tomados sin lote. Desea continuar?`,
+                confirmText: "Generar",
+                cancelText: "Cancelar",
+                tone: "info"
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            await withAppLoading("Generando lote...", async function () {
+                const params = new URLSearchParams();
+                if (dateFrom.value) {
+                    params.set("fechaDesde", dateFrom.value);
+                }
+
+                if (dateTo.value) {
+                    params.set("fechaHasta", dateTo.value);
+                }
+
+                if (clientFilter.value) {
+                    params.set("cliente", clientFilter.value);
+                }
+
+                const query = params.toString();
+                const response = await fetch(`/api/delivery/rutas/generar${query ? `?${query}` : ""}`, { method: "POST" });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo generar el lote.", "error");
+                    return;
+                }
+
+                const route = await response.json();
+                showToast(`Lote ${route.numeroLote} generado.`, "success");
+                await loadDelivery();
+            });
+        }
+
+        async function downloadRouteLotPdf(id, number) {
+            await withAppLoading("Preparando ruta...", async function () {
+                const response = await fetch(`/api/delivery/rutas/${id}/pdf`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    showToast(error?.message || "No se pudo preparar el PDF de ruta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `ruta-${number || id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        async function printTransportadoraLabel(id) {
+            const labelWindow = window.open("", "_blank");
+            if (!labelWindow) {
+                showToast("El navegador bloqueo la nueva pestaña. Habilita las ventanas emergentes e intenta nuevamente.", "error");
+                return;
+            }
+
+            labelWindow.document.title = "Preparando etiqueta";
+            labelWindow.document.body.innerHTML = "<p style='font-family: sans-serif; padding: 24px'>Preparando etiqueta...</p>";
+
+            await withAppLoading("Preparando etiqueta...", async function () {
+                const response = await fetch(`/api/delivery/${id}/transportadora-etiqueta/pdf`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    labelWindow.close();
+                    showToast(error?.message || "No se pudo preparar la etiqueta.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const labelUrl = URL.createObjectURL(blob);
+                labelWindow.location.replace(labelUrl);
+                window.setTimeout(() => URL.revokeObjectURL(labelUrl), 60000);
+            });
+        }
+
+        async function setActiveTab(tab) {
+            activeTab = methods[tab] ? tab : "delivery";
+            selectedCity = "";
+            methodFilter.value = activeTab;
+            document.querySelectorAll("[data-delivery-tab]").forEach(button => {
+                button.classList.toggle("active", button.dataset.deliveryTab === activeTab);
+            });
+            await enrichPaymentData(filteredOrdersForActiveTab());
+            renderAvailable();
+        }
+
+        async function setActiveView(view) {
+            activeView = view || "pending";
+            pendingPanel.hidden = activeView !== "pending";
+            assignedPanel.hidden = activeView !== "assigned";
+            document.querySelector(".delivery-tabs").hidden = activeView !== "pending";
+            document.querySelectorAll("[data-delivery-view]").forEach(button => {
+                button.classList.toggle("active", button.dataset.deliveryView === activeView);
+            });
+
+            if (activeView === "assigned") {
+                await enrichPaymentData(myOrders);
+                renderAssigned();
+            }
+        }
+
+        orderFormModalClose.addEventListener("click", () => closeOrderModal());
+        orderFormModal.addEventListener("click", event => {
+            if (event.target.closest("[data-order-modal-close]")) {
+                closeOrderModal();
+            }
+        });
+        window.addEventListener("message", event => {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+            if (event.data?.type === "order-modal-close") {
+                closeOrderModal();
+            }
+            if (event.data?.type === "order-modal-updated") {
+                loadDelivery();
+            }
+            if (event.data?.type === "order-modal-saved") {
+                closeOrderModal(true);
+            }
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !orderFormModal.hidden) {
+                closeOrderModal();
+            }
+        });
+
+        document.getElementById("refresh-delivery").addEventListener("click", loadDelivery);
+        document.getElementById("generate-route").addEventListener("click", generateRouteLot);
+
+        document.querySelectorAll("[data-delivery-tab]").forEach(button => {
+            button.addEventListener("click", () => setActiveTab(button.dataset.deliveryTab));
+        });
+
+        document.querySelectorAll("[data-delivery-view]").forEach(button => {
+            button.addEventListener("click", () => setActiveView(button.dataset.deliveryView));
+        });
+
+        methodFilter.addEventListener("change", function () {
+            if (methodFilter.value) {
+                setActiveTab(methodFilter.value);
+            } else {
+                renderAvailable();
+            }
+        });
+
+        [dateFrom, dateTo, clientFilter].forEach(input => {
+            input.addEventListener("change", async function () {
+                await loadTrackingData();
+                renderAvailable();
+            });
+        });
+
+        filterClientSelect2Button.addEventListener("click", function () {
+            setFilterClientSelect2Open(filterClientSelect2Dropdown.hidden);
+        });
+
+        filterClientSelect2Search.addEventListener("input", renderFilterClientSelect2Options);
+
+        filterClientSelect2Options.addEventListener("click", function (event) {
+            const option = event.target.closest("[data-value]");
+            if (!option) {
+                return;
+            }
+
+            clientFilter.value = option.dataset.value;
+            updateFilterClientSelect2Label();
+            renderFilterClientSelect2Options();
+            setFilterClientSelect2Open(false);
+            renderAvailable();
+        });
+
+        document.addEventListener("click", event => {
+            if (!filterClientSelect2.contains(event.target)) {
+                setFilterClientSelect2Open(false);
+            }
+
+            const button = event.target.closest("[data-action][data-id]");
+            const labelButton = event.target.closest("[data-label-id]");
+            const saleButton = event.target.closest("[data-sale-id]");
+            const routePdfButton = event.target.closest("[data-route-pdf-id]");
+            const removeButton = event.target.closest("[data-remove-id]");
+            if (saleButton) {
+                openOrderModal(saleButton.dataset.saleId);
+                return;
+            }
+            if (removeButton) {
+                removeAssignedOrder(removeButton.dataset.removeId);
+                return;
+            }
+
+            if (routePdfButton) {
+                downloadRouteLotPdf(routePdfButton.dataset.routePdfId, routePdfButton.dataset.routeNumber);
+                return;
+            }
+
+            if (labelButton) {
+                printTransportadoraLabel(labelButton.dataset.labelId);
+                return;
+            }
+
+            if (button) {
+                runOrderAction(button.dataset.id, button.dataset.action);
+            }
+        });
+
+        cityMenu.addEventListener("click", event => {
+            const button = event.target.closest("[data-city]");
+            if (!button) {
+                return;
+            }
+
+            selectedCity = button.dataset.city || "";
+            renderAvailable();
+        });
+
+        const today = new Date();
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(today.getDate() - 5);
+        dateFrom.value = localDateValue(fiveDaysAgo);
+        dateTo.value = localDateValue(today);
+        loadDelivery();
+    </script>
+}
