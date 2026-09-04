@@ -211,7 +211,7 @@ public record UsuarioDto(
     string? Perfiles,
     bool? Estado);
 
-public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal PrecioMenor, int? MaquinaId, string? Maquina, bool Estado);
+public record ProductoDto(int Id, string Nombre, decimal PrecioBase, decimal PrecioMenor, decimal CompraMinimaCm, int? MaquinaId, string? Maquina, bool Estado);
 
 public record ProductoComisionDto(
     int Id,

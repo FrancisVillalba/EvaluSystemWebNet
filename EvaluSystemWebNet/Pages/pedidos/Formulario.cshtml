@@ -431,8 +431,9 @@
             return formOptions.productos.find(product => String(product.id) === String(productId));
         }
 
-        function minimumPurchaseQuantity() {
-            return Number(formOptions.compraMinimaCm) || 0.2;
+        function minimumPurchaseQuantity(productId) {
+            const product = getProduct(productId);
+            return Number(product?.compraMinimaCm) || 0.2;
         }
 
         function productPriceForQuantity(product, quantity) {
@@ -981,8 +982,8 @@
             if (event.type === "change"
                 && field === "quantity"
                 && numberValue(value) > 0
-                && numberValue(value) < minimumPurchaseQuantity()) {
-                showToast(`La compra minima es de ${minimumPurchaseQuantity().toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
+                && numberValue(value) < minimumPurchaseQuantity(detail.productId)) {
+                showToast(`La compra mínima para ${getProduct(detail.productId)?.nombre || "el producto seleccionado"} es de ${minimumPurchaseQuantity(detail.productId).toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
             }
 
             if (event.type === "input" && ["quantity", "unitPrice", "extraPrice"].includes(field)) {
@@ -1462,9 +1463,10 @@
                 return;
             }
 
-            if (payload.detalles.some(detail => detail.cantidad < minimumPurchaseQuantity())) {
+            const invalidMinimumDetail = payload.detalles.find(detail => detail.cantidad < minimumPurchaseQuantity(detail.productoId));
+            if (invalidMinimumDetail) {
                 saleStatusSelect.value = headerStateId;
-                showToast(`La compra minima es de ${minimumPurchaseQuantity().toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
+                showToast(`La compra mínima para ${getProduct(invalidMinimumDetail.productoId)?.nombre || "el producto seleccionado"} es de ${minimumPurchaseQuantity(invalidMinimumDetail.productoId).toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
                 return;
             }
 
