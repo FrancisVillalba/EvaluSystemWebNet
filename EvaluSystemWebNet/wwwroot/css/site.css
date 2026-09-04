@@ -3948,6 +3948,24 @@ body.modal-page-body {
   background: #e7f5f3;
 }
 
+.reports-proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reports-proof-link {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.reports-no-proof {
+  color: #71818c;
+  white-space: nowrap;
+}
+
 .reports-inner-table {
   min-width: 680px;
   background: #f8fbfc;
@@ -5860,4 +5878,97 @@ body.modal-page-body {
   .payment-history-heading { align-items: flex-start; }
   .payment-history-heading small { display: none; }
   .payment-history-table { min-width: 700px; }
+}
+
+/* Ventas de clientes */
+#customer-debt-panel { padding: 24px; border-radius: 14px; }
+#customer-debt-panel .reports-panel-header { margin-bottom: 24px; }
+#customer-debt-panel .reports-panel-header h2 { font-size: 1.55rem; letter-spacing: -0.02em; }
+#customer-debt-panel .reports-customer-debt-filters { padding: 18px; border-radius: 12px; background: linear-gradient(135deg, #f5fafb 0%, #f8fbfc 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.9); }
+#customer-debt-panel .reports-summary { gap: 14px; margin: 18px 0 20px; }
+#customer-debt-panel .reports-summary article { position: relative; min-height: 108px; padding: 18px 20px; overflow: hidden; border-radius: 12px; background: #fff; box-shadow: 0 8px 22px rgba(15,39,53,.06); }
+#customer-debt-panel .reports-summary article::before { position: absolute; inset: 0 auto 0 0; width: 4px; content: ""; background: #dd8b52; }
+#customer-debt-panel .reports-summary article:nth-child(2)::before { background: #168899; }
+#customer-debt-panel .reports-summary article:nth-child(3)::before { background: #34a06f; }
+#customer-debt-panel .reports-summary strong { margin: 7px 0 5px; font-size: 1.35rem; letter-spacing: -0.02em; }
+#customer-debt-panel .reports-table-wrap { border: 1px solid #e0e9ed; border-radius: 12px; overflow-x: auto; background: #fff; }
+#customer-debt-panel .reports-table-title { margin: 0; padding: 17px 18px; border-bottom: 1px solid #e7eef1; background: #fbfcfd; }
+#customer-debt-panel .reports-customer-row:hover { background: #f8fbfc; }
+#customer-debt-panel .reports-customer-detail-cell { padding: 12px 10px 16px; background: linear-gradient(180deg, #f5f9fa 0%, #f9fbfc 100%); }
+#customer-debt-panel .reports-inner-table { min-width: 980px; overflow: hidden; border: 1px solid #dce8ec; border-radius: 10px; background: #fff; box-shadow: 0 7px 20px rgba(15,39,53,.05); }
+#customer-debt-panel .reports-inner-table thead th { padding: 11px 13px; color: #516b79; background: #edf5f6; border-bottom-color: #d7e5e9; }
+#customer-debt-panel .reports-order-row td { padding: 14px 13px; vertical-align: middle; background: #fff; }
+.reports-order-number { display: inline-flex; padding: 5px 9px; border-radius: 999px; color: #096478; background: #e5f3f4; font-weight: 850; }
+.reports-proof-list { display: grid; gap: 7px; min-width: 210px; }
+.reports-proof-card { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 9px; min-width: 205px; padding: 8px 10px; border: 1px solid #cfe1e5; border-radius: 9px; color: #123542; background: #f8fcfc; text-decoration: none; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.reports-proof-card:hover { border-color: #79b2bd; box-shadow: 0 6px 16px rgba(12,95,114,.12); transform: translateY(-1px); }
+.reports-proof-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; color: #087084; background: #dff1f2; }
+.reports-proof-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.reports-proof-info { min-width: 0; }
+.reports-proof-info strong, .reports-proof-info small { display: block; }
+.reports-proof-info strong { overflow: hidden; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.reports-proof-info small { margin-top: 2px; color: #718590; font-size: .68rem; white-space: nowrap; }
+.reports-proof-open { color: #5d7a86; font-size: .95rem; font-weight: 900; }
+@media (width <= 900px) { #customer-debt-panel { padding: 18px; } #customer-debt-panel .reports-customer-debt-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (width <= 600px) { #customer-debt-panel .reports-customer-debt-filters { grid-template-columns: 1fr; } }
+/* Comprobantes compactos en línea */
+#customer-debt-panel .reports-proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+#customer-debt-panel .reports-proof-card {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 9px;
+}
+
+#customer-debt-panel .reports-proof-icon {
+  width: 32px;
+  height: 32px;
+}
+/* Ajustes compactos del reporte de ventas de clientes */
+#customer-debt-panel .reports-summary article {
+  min-height: 82px;
+  padding: 13px 18px;
+}
+
+#customer-debt-panel .reports-summary strong {
+  margin: 4px 0 2px;
+  font-size: 1.22rem;
+  line-height: 1.15;
+}
+
+#customer-debt-panel .reports-summary span,
+#customer-debt-panel .reports-summary small {
+  line-height: 1.25;
+}
+
+#customer-debt-panel .reports-inner-table th:last-child,
+#customer-debt-panel .reports-inner-table td:last-child {
+  text-align: center;
+}
+
+#customer-debt-panel .reports-proof-list {
+  justify-content: center;
+}
+
+#customer-debt-panel .reports-proof-card {
+  grid-template-columns: 1fr;
+  place-items: center;
+}
+
+#customer-debt-panel .reports-proof-card .reports-proof-icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: transparent;
 }
