@@ -449,6 +449,13 @@
             return formOptions.maquinas.find(machine => String(machine.id) === String(machineId));
         }
 
+        function productsForMachine(machineId) {
+            if (!machineId) return [];
+
+            return formOptions.productos.filter(product =>
+                String(product.maquinaId || "") === String(machineId));
+        }
+
         function findOptionId(items, expectedName) {
             const normalized = expectedName.toLowerCase();
             return items.find(item => String(item.nombre || "").toLowerCase().includes(normalized))?.id || "";
@@ -853,20 +860,6 @@
                     ${["RE", "DV"].includes(String(detail.stateItem || "").trim().toUpperCase()) && detail.observation ? `<div class="${String(detail.stateItem || "").trim().toUpperCase() === "DV" ? "detail-returned-comment" : "detail-rejected-comment"}">${escapeHtml(detail.observation)}</div>` : ""}
 
                     <div class="detail-grid">
-                        <label class="detail-field product-field">
-                            Producto
-                            <select data-id="${detail.id}" data-field="productId" ${detailReadonly ? "disabled" : ""}>
-                                ${selectOptions(
-                                    formOptions.productos.map(product => ({
-                                        value: product.id,
-                                        label: product.nombre
-                                    })),
-                                    detail.productId,
-                                    "Seleccionar producto"
-                                )}
-                            </select>
-                        </label>
-
                         <label class="detail-field machine-field">
                             Maquina
                             <select data-id="${detail.id}" data-field="machineId" ${detailReadonly ? "disabled" : ""}>
@@ -877,6 +870,20 @@
                                     })),
                                     detail.machineId,
                                     "Seleccionar maquina"
+                                )}
+                            </select>
+                        </label>
+
+                        <label class="detail-field product-field">
+                            Producto
+                            <select data-id="${detail.id}" data-field="productId" ${detailReadonly || !detail.machineId ? "disabled" : ""}>
+                                ${selectOptions(
+                                    productsForMachine(detail.machineId).map(product => ({
+                                        value: product.id,
+                                        label: product.nombre
+                                    })),
+                                    detail.productId,
+                                    detail.machineId ? "Seleccionar producto" : "Seleccione una maquina primero"
                                 )}
                             </select>
                         </label>
@@ -964,6 +971,19 @@
                         productId: value,
                         machineId: product?.maquinaId || detail.machineId,
                         unitPrice: product ? formatNumber(productPriceForQuantity(product, detail.quantity)) : detail.unitPrice
+                    };
+                }
+
+                if (field === "machineId") {
+                    const selectedProduct = getProduct(detail.productId);
+                    const productBelongsToMachine = selectedProduct
+                        && String(selectedProduct.maquinaId || "") === String(value);
+
+                    return {
+                        ...detail,
+                        machineId: value,
+                        productId: productBelongsToMachine ? detail.productId : "",
+                        unitPrice: productBelongsToMachine ? detail.unitPrice : ""
                     };
                 }
 
