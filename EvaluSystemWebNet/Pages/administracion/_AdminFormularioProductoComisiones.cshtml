@@ -3,7 +3,7 @@
     <form class="admin-form" data-admin-form>
         <label class="admin-field">Producto<select data-field="productoId" data-source="productos" required><option value="">Seleccionar</option></select></label>
         <label class="admin-field">Perfil<select data-field="perfilId" data-source="perfiles" required><option value="">Seleccionar</option></select></label>
-        <label class="admin-field">Monto por metro<input data-field="montoPorMetro" type="number" value="0" /></label>
+        <label class="admin-field">Monto por metro<input data-field="montoPorMetro" type="text" inputmode="numeric" data-money value="0" /></label>
         <label class="admin-field">Fecha desde<input data-field="fechaDesde" type="date" /></label>
         <label class="admin-field">Fecha hasta<input data-field="fechaHasta" type="date" /></label>
         <label class="admin-check admin-check-field">Activo<input data-field="estado" type="checkbox" checked /></label><div class="admin-form-actions"><div class="admin-form-buttons"><button class="admin-secondary cancel-record-button" type="button">Cancelar</button><button class="admin-primary save-record-button" type="button"><span data-save-label>Crear</span></button></div></div>
@@ -19,7 +19,7 @@
                 columns: [
                     ["producto", "Producto"],
                     ["perfil", "Perfil"],
-                    ["montoPorMetro", "Monto por metro"],
+                    ["montoPorMetro", "Monto por metro", value => Number(value || 0).toLocaleString("es-PY")],
                     ["fechaDesde", "Desde", value => formatDate(value)],
                     ["fechaHasta", "Hasta", value => formatDate(value)],
                     ["estado", "Estado", value => value ? "Activo" : "Inactivo"]
@@ -27,7 +27,7 @@
                 fields: [
                     { name: "productoId", label: "Producto", type: "select", source: "productos", value: "id", text: "nombre", required: true },
                     { name: "perfilId", label: "Perfil", type: "select", source: "perfiles", value: "id", text: "nombre", required: true },
-                    { name: "montoPorMetro", label: "Monto por metro", type: "number", defaultValue: 0 },
+                    { name: "montoPorMetro", label: "Monto por metro", type: "money", defaultValue: 0 },
                     { name: "fechaDesde", label: "Fecha desde", type: "date" },
                     { name: "fechaHasta", label: "Fecha hasta", type: "date" },
                     { name: "estado", label: "Activo", type: "checkbox", defaultValue: true }

@@ -273,7 +273,7 @@ public record GrupoVentaDetalleEstadoDto(
     string EstadoItem,
     string EstadoItemNombre);
 
-public record TipoMaquinaDto(int Id, string Nombre, bool Estado);
+public record TipoMaquinaDto(int Id, string Nombre, decimal MetaMensual, bool Estado);
 
 public record PedidoFormOptionsDto(
     IEnumerable<ClienteDto> Clientes,
