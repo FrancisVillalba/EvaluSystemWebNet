@@ -999,18 +999,26 @@
                 return { ...detail, [field]: value };
             });
 
+            const updatedDetail = details.find(detail => detail.id === id);
+
             if (event.type === "change"
                 && field === "quantity"
                 && numberValue(value) > 0
-                && numberValue(value) < minimumPurchaseQuantity(detail.productId)) {
-                showToast(`La compra mínima para ${getProduct(detail.productId)?.nombre || "el producto seleccionado"} es de ${minimumPurchaseQuantity(detail.productId).toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
+                && updatedDetail
+                && numberValue(value) < minimumPurchaseQuantity(updatedDetail.productId)) {
+                showToast(`La compra mínima para ${getProduct(updatedDetail.productId)?.nombre || "el producto seleccionado"} es de ${minimumPurchaseQuantity(updatedDetail.productId).toLocaleString("es-PY", { minimumFractionDigits: 2 })} cm.`, "error");
             }
 
             if (event.type === "input" && ["quantity", "unitPrice", "extraPrice"].includes(field)) {
-                const detail = details.find(item => item.id === id);
                 const output = detailList.querySelector(`[data-total-id="${id}"]`);
-                if (detail && output) {
-                    output.textContent = `Gs. ${detailTotal(detail).toLocaleString("es-PY")}`;
+                if (updatedDetail && field === "quantity") {
+                    const unitPriceInput = detailList.querySelector(`[data-id="${id}"][data-field="unitPrice"]`);
+                    if (unitPriceInput) {
+                        unitPriceInput.value = updatedDetail.unitPrice;
+                    }
+                }
+                if (updatedDetail && output) {
+                    output.textContent = `Gs. ${detailTotal(updatedDetail).toLocaleString("es-PY")}`;
                 }
                 updateEstimatedTotal();
                 return;
