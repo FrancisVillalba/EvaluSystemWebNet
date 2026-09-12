@@ -170,9 +170,9 @@
             }).join("");
         }
 
-        function renderBars(containerId, items, valueKey) {
+        function renderBars(containerId, items, valueKey, limit) {
             const container = document.getElementById(containerId);
-            const rows = (items || []).slice(0, 10);
+            const rows = (items || []).slice(0, limit);
             const max = Math.max(...rows.map(item => Number(item[valueKey] || 0)), 1);
 
             if (!rows.length) {
@@ -324,8 +324,8 @@
 
             renderTotalDonut(totalGoal);
             renderGoalDonuts(machineGoals);
-            renderBars("payment-bars", dashboard.pendientesPago || [], "monto");
-            renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto");
+            renderBars("payment-bars", dashboard.pendientesPago || [], "monto", 13);
+            renderBars("seller-bars", dashboard.mejoresVendedores || [], "monto", 10);
         }
 
         loadDashboard();
