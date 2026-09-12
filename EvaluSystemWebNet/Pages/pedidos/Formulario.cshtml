@@ -321,6 +321,7 @@
         const stateDeleteAction = document.getElementById("state-delete-action");
         const orderBudgetAction = document.getElementById("order-budget-action");
         let loadedSaleStateId = "";
+        let loadedOrderVersion = null;
         let savedMontoEnvioTransportadora = null;
         let paymentProofs = [];
 
@@ -1119,6 +1120,7 @@
         let persistedPayment = null;
 
         function loadOrder(order) {
+            loadedOrderVersion = order.fechaModificacion || null;
             if (order.id) {
                 persistedPayment = {
                     formaPagoId: order.formaPagoId || "",
@@ -1464,6 +1466,8 @@
                 reposicion: document.getElementById("order-reposicion").checked,
                 metodoEntrega: deliveryMethodSelect.value || "DELIVERY",
                 estadoVentaId: isStateChange ? targetStateId : currentStateId,
+                fechaModificacion: loadedOrderVersion,
+                cambiarEstado: isStateChange,
                 detalles: details.map(detail => ({
                     id: detail.detailId,
                     productoId: Number(detail.productId),
@@ -1539,6 +1543,8 @@
                         }));
 
                         loadedSaleStateId = initialStateId || loadedSaleStateId;
+                        loadedOrderVersion = createdOrder.fechaModificacion || loadedOrderVersion;
+                        payload.fechaModificacion = loadedOrderVersion;
                         window.history.replaceState(null, "", `${window.location.pathname}?id=${orderId}`);
 
                         return await sendOrder(`/api/pedidos/${orderId}`, "PUT", payload);
@@ -1564,6 +1570,9 @@
                 }
 
                 showToast(message, "error");
+                if (response.status === 409) {
+                    await reloadCurrentOrder();
+                }
                 return;
             }
 

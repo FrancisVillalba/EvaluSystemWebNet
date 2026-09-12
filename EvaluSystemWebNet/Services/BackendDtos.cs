@@ -599,6 +599,8 @@ public record VentaImpresionCompletaUpdateRequest(
     string? MetodoEntrega,
     bool Reposicion,
     string? EstadoVentaId,
+    DateTime? FechaModificacion,
+    bool CambiarEstado,
     IEnumerable<VentaImpresionDetalleUpdateRequest> Detalles);
 
 public record ActualizarPagoVentaRequest(
@@ -655,6 +657,7 @@ public record VentaImpresionCabDto(
     string? EstadoPagadoId,
     string? EstadoPagado,
     DateTime? FechaCreacion,
+    DateTime? FechaModificacion,
     DateTime? FechaEntrega,
     string? ComprobantePago,
     string? ComprobantePagoNombre,
@@ -683,7 +686,8 @@ public record VentaImpresionDetDto(
     string? Observacion,
     string EstadoItem,
     string EstadoItemNombre,
-    bool? CheckImpresion);
+    bool? CheckImpresion,
+    DateTime? FechaModificacion);
 
 public record ImpresionArchivoDto(
     int DetalleId,
