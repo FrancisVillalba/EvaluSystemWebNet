@@ -219,10 +219,8 @@ public record ProductoComisionDto(
     string? Producto,
     int PerfilId,
     string? Perfil,
-    decimal MontoPorMetro,
-    bool Estado,
-    DateTime? FechaDesde,
-    DateTime? FechaHasta);
+    decimal Porcentaje,
+    bool Estado);
 
 public record GrupoVentaDto(
     int Id,
