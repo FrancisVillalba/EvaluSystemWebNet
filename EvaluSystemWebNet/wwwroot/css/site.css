@@ -3708,7 +3708,7 @@ body.modal-page-body {
   grid-template-columns: repeat(4, minmax(150px, 1fr)) minmax(130px, 160px);
 }
 .reports-customer-debt-filters {
-  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
 }
 
 

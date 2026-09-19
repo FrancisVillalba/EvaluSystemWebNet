@@ -56,6 +56,7 @@
         const debtDateToInput = document.getElementById("debt-date-to");
         const debtClientInput = document.getElementById("debt-client");
         const debtStatusInput = document.getElementById("debt-status");
+        const debtPaymentMethodInput = document.getElementById("debt-payment-method");
         const debtSellerInput = document.getElementById("debt-seller");
         const customerDebtKpis = document.getElementById("customer-debt-kpis");
         const customerDebtBody = document.getElementById("customer-debt-body");
@@ -238,6 +239,7 @@
             if (debtDateToInput.value) params.set("dateTo", debtDateToInput.value);
             if (debtClientInput.value.trim()) params.set("cliente", debtClientInput.value.trim());
             if (debtStatusInput.value) params.set("estadoPago", debtStatusInput.value);
+            if (debtPaymentMethodInput.value) params.set("formaPagoId", debtPaymentMethodInput.value);
             if (debtSellerInput.value) params.set("vendedorId", debtSellerInput.value);
             return params;
         }
@@ -281,7 +283,10 @@
                 profileFilter.value = String(salesProfile.id);
             }
             renderSellerFilter();
-            debtSellerInput.innerHTML = `<option value="">Todos</option>` + reportCommissionOptions.usuarios
+            debtPaymentMethodInput.innerHTML = `<option value="">Todas</option>` + (options.formasPago || [])
+                .map(method => `<option value="${escapeHtml(method.id)}">${escapeHtml(method.nombre || method.id)}</option>`)
+                .join("");
+            debtSellerInput.innerHTML = `<option value="">Todos</option>` + (options.vendedoresTodos || [])
                 .map(seller => `<option value="${seller.id}">${escapeHtml(seller.persona || seller.nombreUsuario || `Usuario ${seller.id}`)}</option>`)
                 .join("");
         }
@@ -715,7 +720,7 @@
         shippingClientInput.addEventListener("input", () => debounceReportFilter(loadShippingReport));
         [managementDateFromInput, managementDateToInput]
             .forEach(input => input.addEventListener("change", loadManagementSummary));
-        [debtDateFromInput, debtDateToInput, debtStatusInput, debtSellerInput]
+        [debtDateFromInput, debtDateToInput, debtStatusInput, debtPaymentMethodInput, debtSellerInput]
             .forEach(input => input.addEventListener("change", loadCustomerDebtReport));
         debtClientInput.addEventListener("input", () => debounceReportFilter(loadCustomerDebtReport));
         document.getElementById("download-bank-txt").addEventListener("click", () => downloadReport("txt", sellerFilter.value, sellerFilter.selectedOptions[0]?.textContent || "todos"));
